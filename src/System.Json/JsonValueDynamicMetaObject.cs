@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if NET_4_0
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -379,3 +380,4 @@ namespace System.Json
         }
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if NET_4_0 || MONODROID
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
@@ -378,3 +379,4 @@ namespace System.Runtime.Serialization.Json
         }
     }
 }
+#endif

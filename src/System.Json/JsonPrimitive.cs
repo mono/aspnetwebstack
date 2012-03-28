@@ -594,11 +594,26 @@ namespace System.Json
             return result;
         }
 
+	private static bool TryGuidParse (string value, out Guid guid)
+	{
+#if NET_4_0
+		return Guid.TryParse (value, out guid);
+#else
+		try {
+			guid = new Guid (value);
+			return true;
+		} catch (Exception) {
+			guid = Guid.Empty;
+			return false;
+		}
+#endif
+	}
+
         private static ConvertResult StringToGuid(string valueString)
         {
             ConvertResult result = new ConvertResult();
             Guid tempGuid;
-            result.ReadAsFailureKind = Guid.TryParse(valueString, out tempGuid) ? ReadAsFailureKind.NoFailure : ReadAsFailureKind.InvalidFormat;
+            result.ReadAsFailureKind = TryGuidParse(valueString, out tempGuid) ? ReadAsFailureKind.NoFailure : ReadAsFailureKind.InvalidFormat;
             result.Value = tempGuid;
             return result;
         }
@@ -923,7 +938,9 @@ namespace System.Json
                     }
 
                     sb.Append(val, startIndex, count);
+#if NET_4_0
                     Contract.Assert(i < val.Length, "Found that a '\' was the last character in a string, which is invalid JSON. Verify the calling method uses a valid JSON string as the input parameter of this method.");
+#endif
                     switch (val[i])
                     {
                         case '"':
@@ -948,7 +965,9 @@ namespace System.Json
                             sb.Append('\t');
                             break;
                         case 'u':
+#if NET_4_0
                             Contract.Assert((i + 3) < val.Length, String.Format(CultureInfo.CurrentCulture, "Unexpected char {0} at position {1}. The unicode escape sequence should be followed by 4 digits.", val[i], i));
+#endif
                             sb.Append(ParseChar(val.Substring(i + 1, 4), NumberStyles.HexNumber));
                             i += 4;
                             break;
@@ -1046,7 +1065,9 @@ namespace System.Json
             if (jsonType == JsonType.String)
             {
                 string str = UnescapeJsonString(ToString());
+#if NET_4_0
                 Contract.Assert(str.Length >= 2 && str.StartsWith("\"", StringComparison.Ordinal) && str.EndsWith("\"", StringComparison.Ordinal), "The unescaped string must begin and end with quotes.");
+#endif
                 str = str.Substring(1, str.Length - 2);
 
                 if (stringConverters.ContainsKey(type))

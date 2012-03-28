@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+#if NET_4_0 || MONODROID
 using System.Dynamic;
+#endif
 using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
@@ -19,7 +21,11 @@ namespace System.Json
     [SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix",
         Justification = "JsonValue is by definition either a collection or a single object.")]
     [DataContract]
+#if NET_4_0 || MONODROID
     public class JsonValue : IEnumerable<KeyValuePair<string, JsonValue>>, IDynamicMetaObjectProvider
+#else
+    public class JsonValue : IEnumerable<KeyValuePair<string, JsonValue>>
+#endif
     {
         private static JsonValue defaultInstance = new JsonValue();
         private int changingListenersCount;
@@ -277,6 +283,7 @@ namespace System.Json
             return GetKeyValuePairEnumerator();
         }
 
+#if NET_4_0 || MONODROID
         /// <summary>
         /// Gets this instance as a <code>dynamic</code> object.
         /// </summary>
@@ -285,6 +292,7 @@ namespace System.Json
         {
             return this;
         }
+#endif
 
         /// <summary>
         /// Attempts to convert this <see cref="System.Json.JsonValue"/> instance into the type T.
@@ -621,6 +629,7 @@ namespace System.Json
             return result;
         }
 
+#if NET_4_0 || MONODROID
         [SuppressMessage("Microsoft.Design", "CA1033:InterfaceMethodsShouldBeCallableByChildTypes",
             Justification = "Cannot make this class sealed, it needs to have subclasses. But its subclasses are sealed themselves.")]
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
@@ -632,6 +641,7 @@ namespace System.Json
 
             return new JsonValueDynamicMetaObject(parameter, this);
         }
+#endif
 
         /// <summary>
         /// Resolves the specified object to an appropriate JsonValue instance.
