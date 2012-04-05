@@ -72,6 +72,8 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpRequestHeadersExtensionsTest.cs" />
+    <Compile Include="HttpResponseHeadersExtensionsTest.cs" />
     <Compile Include="DataSets\Types\DataContractEnum.cs" />
     <Compile Include="DataSets\Types\DataContractType.cs" />
     <Compile Include="DataSets\Types\DerivedDataContractType.cs" />
@@ -86,15 +88,19 @@
     <Compile Include="DataSets\HttpUnitTestDataSets.cs" />
     <Compile Include="DataSets\Types\XmlSerializableType.cs" />
     <Compile Include="Formatting\DataContractJsonMediaTypeFormatterTests.cs" />
+    <Compile Include="Formatting\SerializerConsistencyTests.cs" />
     <Compile Include="Formatting\XmlSerializerMediaTypeFormatterTests.cs" />
     <Compile Include="Formatting\MediaTypeFormatterTestBase.cs" />
     <Compile Include="Formatting\StringWithQualityHeaderValueComparerTests.cs" />
     <Compile Include="Formatting\FormDataCollectionTests.cs" />
     <Compile Include="Formatting\ContentNegotiationResultTest.cs" />
     <Compile Include="Formatting\FormUrlEncodedJsonTests.cs" />
+    <Compile Include="Headers\CookieStateTest.cs" />
+    <Compile Include="Headers\CookieHeaderValueTest.cs" />
     <Compile Include="HttpClientExtensionsTest.cs" />
     <Compile Include="HttpContentExtensionsTest.cs" />
     <Compile Include="HttpRequestMessageCommonExtensionsTest.cs" />
+    <Compile Include="Internal\HttpValueCollectionTest.cs" />
     <Compile Include="Internal\NonClosingDelegatingStreamTest.cs" />
     <Compile Include="Internal\DelegatingStreamTest.cs" />
     <Compile Include="Mocks\MockNonClosingDelegatingStream.cs" />
@@ -113,13 +119,11 @@
     <Compile Include="Formatting\MediaTypeFormatterCollectionTests.cs" />
     <Compile Include="Formatting\MediaTypeFormatterExtensionsTests.cs" />
     <Compile Include="Formatting\MediaTypeFormatterTests.cs" />
-    <Compile Include="Formatting\MediaTypeHeaderValueEqualityComparerTests.cs" />
     <Compile Include="Formatting\MediaTypeWithQualityHeaderValueComparerTests.cs" />
-    <Compile Include="Formatting\MediaTypeHeadeValueExtensionsTests.cs" />
+    <Compile Include="Formatting\MediaTypeHeaderValueExtensionsTests.cs" />
     <Compile Include="Formatting\ParsedMediaTypeHeaderValueTests.cs" />
     <Compile Include="Formatting\QueryStringMappingTests.cs" />
     <Compile Include="Formatting\RequestHeaderMappingTests.cs" />
-    <Compile Include="Formatting\UriPathExtensionMappingTests.cs" />
     <Compile Include="Formatting\XmlMediaTypeFormatterTests.cs" />
     <Compile Include="Formatting\Parsers\FormUrlEncodedParserTests.cs" />
     <Compile Include="HttpContentCollectionExtensionsTests.cs" />

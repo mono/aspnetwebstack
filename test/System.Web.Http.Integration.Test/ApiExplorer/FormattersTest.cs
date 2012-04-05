@@ -15,10 +15,10 @@ namespace System.Web.Http.ApiExplorer
             ItemFormatter customFormatter = new ItemFormatter();
             config.Formatters.Add(customFormatter);
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, typeof(ItemController));
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, typeof(ItemController));
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiDescription description = explorer.ApiDescriptions.FirstOrDefault(desc => desc.ActionDescriptor.ActionName == "PostItem");
             Assert.True(description.SupportedRequestBodyFormatters.Any(formatter => formatter == customFormatter), "Did not find the custom formatter on the SupportedRequestBodyFormatters.");
         }
@@ -31,10 +31,10 @@ namespace System.Web.Http.ApiExplorer
             ItemFormatter customFormatter = new ItemFormatter();
             config.Formatters.Add(customFormatter);
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, typeof(ItemController));
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, typeof(ItemController));
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiDescription description = explorer.ApiDescriptions.FirstOrDefault(desc => desc.ActionDescriptor.ActionName == "PostItem");
             Assert.True(description.SupportedResponseFormatters.Any(formatter => formatter == customFormatter), "Did not find the custom formatter on the SupportedResponseFormatters.");
         }

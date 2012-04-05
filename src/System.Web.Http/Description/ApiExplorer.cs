@@ -111,7 +111,7 @@ namespace System.Web.Http.Description
         /// <param name="route">The route.</param>
         /// <param name="actionDescriptor">The action descriptor.</param>
         /// <returns>A collection of HttpMethods supported by the action.</returns>
-        public virtual IList<HttpMethod> GetHttpMethodsSupportedByAction(IHttpRoute route, HttpActionDescriptor actionDescriptor)
+        public virtual Collection<HttpMethod> GetHttpMethodsSupportedByAction(IHttpRoute route, HttpActionDescriptor actionDescriptor)
         {
             if (route == null)
             {
@@ -123,7 +123,6 @@ namespace System.Web.Http.Description
                 throw Error.ArgumentNull("actionDescriptor");
             }
 
-            bool isActionVariableSpecified = _actionVariableRegex.IsMatch(route.RouteTemplate) || route.Defaults.ContainsKey(ActionVariableName);
             IList<HttpMethod> supportedMethods = new List<HttpMethod>();
             IList<HttpMethod> actionHttpMethods = actionDescriptor.SupportedHttpMethods;
             HttpMethodConstraint httpMethodConstraint = route.Constraints.Values.FirstOrDefault(c => typeof(HttpMethodConstraint).IsAssignableFrom(c.GetType())) as HttpMethodConstraint;
@@ -137,14 +136,14 @@ namespace System.Web.Http.Description
                 supportedMethods = httpMethodConstraint.AllowedMethods.Intersect(actionHttpMethods).ToList();
             }
 
-            return supportedMethods;
+            return new Collection<HttpMethod>(supportedMethods);
         }
 
         private Collection<ApiDescription> InitializeApiDescriptions()
         {
             Collection<ApiDescription> apiDescriptions = new Collection<ApiDescription>();
-            IHttpControllerFactory controllerFactory = _config.ServiceResolver.GetHttpControllerFactory();
-            IDictionary<string, HttpControllerDescriptor> controllerMappings = controllerFactory.GetControllerMapping();
+            IHttpControllerSelector controllerSelector = _config.Services.GetHttpControllerSelector();
+            IDictionary<string, HttpControllerDescriptor> controllerMappings = controllerSelector.GetControllerMapping();
             if (controllerMappings != null)
             {
                 foreach (var route in _config.Routes)
@@ -366,7 +365,7 @@ namespace System.Web.Http.Description
 
         private string GetApiDocumentation(HttpActionDescriptor actionDescriptor)
         {
-            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.ServiceResolver.GetDocumentationProvider();
+            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.Services.GetDocumentationProvider();
             if (documentationProvider == null)
             {
                 return string.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, actionDescriptor.ActionName);
@@ -377,7 +376,7 @@ namespace System.Web.Http.Description
 
         private string GetApiParameterDocumentation(HttpParameterDescriptor parameterDescriptor)
         {
-            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.ServiceResolver.GetDocumentationProvider();
+            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.Services.GetDocumentationProvider();
             if (documentationProvider == null)
             {
                 return string.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, parameterDescriptor.Prefix ?? parameterDescriptor.ParameterName);

@@ -12,9 +12,9 @@ namespace System.Web.Http.ApiExplorer
         {
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{action}/{id}", new { id = RouteParameter.Optional });
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, typeof(ParameterSourceController));
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, typeof(ParameterSourceController));
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
+            IApiExplorer explorer = config.Services.GetApiExplorer();
 
             ApiDescription description = explorer.ApiDescriptions.FirstOrDefault(desc => desc.ActionDescriptor.ActionName == "GetCompleTypeFromUri");
             Assert.NotNull(description);
@@ -31,9 +31,9 @@ namespace System.Web.Http.ApiExplorer
         {
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{action}/{id}", new { id = RouteParameter.Optional });
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, typeof(ParameterSourceController));
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, typeof(ParameterSourceController));
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
+            IApiExplorer explorer = config.Services.GetApiExplorer();
 
             ApiDescription description = explorer.ApiDescriptions.FirstOrDefault(desc => desc.ActionDescriptor.ActionName == "PostSimpleTypeFromBody");
             Assert.NotNull(description);
@@ -45,9 +45,9 @@ namespace System.Web.Http.ApiExplorer
         {
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{action}/{id}", new { id = RouteParameter.Optional });
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, typeof(ParameterSourceController));
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, typeof(ParameterSourceController));
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
+            IApiExplorer explorer = config.Services.GetApiExplorer();
 
             ApiDescription description = explorer.ApiDescriptions.FirstOrDefault(desc => desc.ActionDescriptor.ActionName == "GetFromHeaderAttribute");
             Assert.NotNull(description);

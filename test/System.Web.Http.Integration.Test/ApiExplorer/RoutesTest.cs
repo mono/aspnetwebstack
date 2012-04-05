@@ -13,7 +13,7 @@ namespace System.Web.Http.ApiExplorer
         public void VerifyDescription_OnEmptyRoute()
         {
             HttpConfiguration config = new HttpConfiguration();
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
 
             Assert.NotNull(explorer);
             Assert.Equal(0, explorer.ApiDescriptions.Count);
@@ -24,7 +24,7 @@ namespace System.Web.Http.ApiExplorer
         {
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Invalid", "badRouteWithNoControler");
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
 
             Assert.NotNull(explorer);
             Assert.Equal(0, explorer.ApiDescriptions.Count);
@@ -71,10 +71,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{id}", new { id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiExplorerHelper.VerifyApiDescriptions(explorer.ApiDescriptions, expectedResults);
         }
 
@@ -101,10 +101,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "myitem/{id}", new { controller = "Item", id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiExplorerHelper.VerifyApiDescriptions(explorer.ApiDescriptions, expectedResults);
         }
 
@@ -149,10 +149,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{action}/{id}", new { id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiExplorerHelper.VerifyApiDescriptions(explorer.ApiDescriptions, expectedResults);
         }
 
@@ -176,10 +176,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{id}", new { action = "RemoveItem", id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             ApiExplorerHelper.VerifyApiDescriptions(explorer.ApiDescriptions, expectedResults);
         }
 
@@ -190,10 +190,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "{controller}/{id}", new { action = "ActionThatDoesNotExist", id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             Assert.Empty(explorer.ApiDescriptions);
         }
 
@@ -204,10 +204,10 @@ namespace System.Web.Http.ApiExplorer
             HttpConfiguration config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "mycontroller/{id}", new { controller = "ControllerThatDoesNotExist", id = RouteParameter.Optional });
 
-            DefaultHttpControllerFactory controllerFactory = ApiExplorerHelper.GetStrictControllerFactory(config, controllerType);
-            config.ServiceResolver.SetService(typeof(IHttpControllerFactory), controllerFactory);
+            DefaultHttpControllerSelector controllerSelector = ApiExplorerHelper.GetStrictControllerSelector(config, controllerType);
+            config.Services.Replace(typeof(IHttpControllerSelector), controllerSelector);
 
-            IApiExplorer explorer = config.ServiceResolver.GetApiExplorer();
+            IApiExplorer explorer = config.Services.GetApiExplorer();
             Assert.Empty(explorer.ApiDescriptions);
         }
     }

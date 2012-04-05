@@ -198,6 +198,20 @@ namespace System.Net.Http.Formatting
             Assert.True(serializedString.Contains("\r\n"), "Using JsonSerializer with Indent set to true should emit data with indentation.");
         }
 
+        [Theory]
+        [InlineData(typeof(IQueryable<string>))]
+        [InlineData(typeof(IEnumerable<string>))]
+        public void UseJsonFormatterWithNull(Type type)
+        {
+            JsonMediaTypeFormatter xmlFormatter = new JsonMediaTypeFormatter { UseDataContractJsonSerializer = false};
+            MemoryStream memoryStream = new MemoryStream();
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+            Assert.Task.Succeeds(xmlFormatter.WriteToStreamAsync(type, null, memoryStream, contentHeaders, transportContext: null));
+            memoryStream.Position = 0;
+            string serializedString = new StreamReader(memoryStream).ReadToEnd();
+            Assert.True(serializedString.Contains("null"), "Using Json formatter to serialize null should emit 'null'.");
+        }
+
         [Fact]
         [Trait("Description", "OnWriteToStreamAsync() roundtrips JsonValue.")]
         public void WriteToStreamAsync_RoundTripsJToken()

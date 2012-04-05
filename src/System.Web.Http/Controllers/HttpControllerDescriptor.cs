@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Net.Http;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Filters;
 using System.Web.Http.Internal;
@@ -155,6 +156,44 @@ namespace System.Web.Http.Controllers
         }
 
         /// <summary>
+        /// Creates a controller instance for the given <see cref="HttpRequestMessage"/>
+        /// </summary>
+        /// <param name="request">The request message</param>
+        /// <returns></returns>
+        public virtual IHttpController CreateController(HttpRequestMessage request)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            // Invoke the controller activator
+            IHttpController instance = HttpControllerActivator.Create(request, this, ControllerType);
+            return instance;
+        }
+
+        /// <summary>
+        /// Releases an <see cref="IHttpController"/> instance.
+        /// </summary>
+        /// <param name="controllerContext">The controller context.</param>
+        /// <param name="controller">The controller.</param>
+        public virtual void ReleaseController(IHttpController controller, HttpControllerContext controllerContext)
+        {
+            if (controller == null)
+            {
+                throw Error.ArgumentNull("controller");
+            }
+
+            if (controllerContext == null)
+            {
+                throw Error.ArgumentNull("controllerContext");
+            }
+
+            // just delegate the work to the activator
+            HttpControllerActivator.Release(controller, controllerContext);
+        }
+
+        /// <summary>
         /// Returns the collection of <see cref="IFilter">filters</see> associated with this descriptor's controller.
         /// </summary>
         /// <remarks>The default implementation calls <see cref="GetCustomAttributes{IFilter}()"/>.</remarks>
@@ -216,25 +255,25 @@ namespace System.Web.Http.Controllers
                 }
             }
 
-            // For everything still null we call the dependency resolver as normal.
+            // For everything still null we fall back to the default service list.
             if (_controllerActivator == null)
             {
-                _controllerActivator = Configuration.ServiceResolver.GetHttpControllerActivator();
+                _controllerActivator = Configuration.Services.GetHttpControllerActivator();
             }
 
             if (_actionSelector == null)
             {
-                _actionSelector = Configuration.ServiceResolver.GetActionSelector();
+                _actionSelector = Configuration.Services.GetActionSelector();
             }
 
             if (_actionInvoker == null)
             {
-                _actionInvoker = Configuration.ServiceResolver.GetActionInvoker();
+                _actionInvoker = Configuration.Services.GetActionInvoker();
             }
 
             if (_actionValueBinder == null)
             {
-                _actionValueBinder = Configuration.ServiceResolver.GetActionValueBinder();
+                _actionValueBinder = Configuration.Services.GetActionValueBinder();
             }
         }
 
@@ -253,8 +292,8 @@ namespace System.Web.Http.Controllers
             Contract.Assert(configuration != null);
             if (serviceType != null)
             {
-                return (TBase)configuration.ServiceResolver.GetService(serviceType) ??
-                       (TBase)Activator.CreateInstance(serviceType);
+                return (TBase)configuration.DependencyResolver.GetService(serviceType)
+                    ?? (TBase)Activator.CreateInstance(serviceType);
             }
 
             return null;

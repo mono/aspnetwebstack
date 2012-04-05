@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Web.Http.Internal;
 
 namespace System.Web.Http.Dispatcher
 {
@@ -9,12 +8,8 @@ namespace System.Web.Http.Dispatcher
     /// </summary>
     internal sealed class HttpControllerTypeCache
     {
-        private const string TypeCacheName = "MS-ControllerTypeCache.xml";
-        private const string WildcardNamespace = ".*";
-
         private readonly HttpConfiguration _configuration;
-        private readonly IBuildManager _buildManager;
-        private readonly Dictionary<string, ILookup<string, Type>> _cache;
+        private readonly Lazy<Dictionary<string, ILookup<string, Type>>> _cache;
 
         public HttpControllerTypeCache(HttpConfiguration configuration)
         {
@@ -24,13 +19,12 @@ namespace System.Web.Http.Dispatcher
             }
 
             _configuration = configuration;
-            _buildManager = _configuration.ServiceResolver.GetBuildManager();
-            _cache = InitializeCache();
+            _cache = new Lazy<Dictionary<string, ILookup<string, Type>>>(InitializeCache);
         }
 
         internal Dictionary<string, ILookup<string, Type>> Cache
         {
-            get { return _cache; }
+            get { return _cache.Value; }
         }
 
         public ICollection<Type> GetControllerTypes(string controllerName)
@@ -43,7 +37,7 @@ namespace System.Web.Http.Dispatcher
             HashSet<Type> matchingTypes = new HashSet<Type>();
 
             ILookup<string, Type> namespaceLookup;
-            if (_cache.TryGetValue(controllerName, out namespaceLookup))
+            if (_cache.Value.TryGetValue(controllerName, out namespaceLookup))
             {
                 foreach (var namespaceGroup in namespaceLookup)
                 {
@@ -56,27 +50,18 @@ namespace System.Web.Http.Dispatcher
 
         private Dictionary<string, ILookup<string, Type>> InitializeCache()
         {
-            List<Type> controllerTypes = HttpControllerTypeCacheUtil.GetFilteredTypesFromAssemblies(TypeCacheName, IsControllerType, _buildManager);
+            IAssembliesResolver assembliesResolver = _configuration.Services.GetAssembliesResolver();
+            IHttpControllerTypeResolver controllersResolver = _configuration.Services.GetHttpControllerTypeResolver();
+
+            ICollection<Type> controllerTypes = controllersResolver.GetControllerTypes(assembliesResolver);
             var groupedByName = controllerTypes.GroupBy(
-                t => t.Name.Substring(0, t.Name.Length - DefaultHttpControllerFactory.ControllerSuffix.Length),
+                t => t.Name.Substring(0, t.Name.Length - DefaultHttpControllerSelector.ControllerSuffix.Length),
                 StringComparer.OrdinalIgnoreCase);
 
             return groupedByName.ToDictionary(
                 g => g.Key,
                 g => g.ToLookup(t => t.Namespace ?? String.Empty, StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase);
-        }
-
-        // TODO: Shouldn't "Controller" suffix be matched case-SENsitive so that we don't match "testcontroller" but only "testController"?
-        public static bool IsControllerType(Type t)
-        {
-            return
-                t != null &&
-                t.IsClass &&
-                t.IsPublic &&
-                t.Name.EndsWith(DefaultHttpControllerFactory.ControllerSuffix, StringComparison.OrdinalIgnoreCase) &&
-                !t.IsAbstract &&
-                TypeHelper.HttpControllerType.IsAssignableFrom(t);
         }
     }
 }

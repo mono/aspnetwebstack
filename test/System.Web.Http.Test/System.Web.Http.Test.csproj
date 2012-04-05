@@ -81,14 +81,16 @@
     <Compile Include="Controllers\HttpConfigurationTest.cs" />
     <Compile Include="Controllers\VoidResultConverterTest.cs" />
     <Compile Include="DictionaryExtensionsTest.cs" />
+    <Compile Include="Dispatcher\DefaultHttpControllerSelectorTest.cs" />
+    <Compile Include="Dispatcher\DefaultHttpControllerActivatorTest.cs" />
     <Compile Include="Filters\HttpFilterCollectionTest.cs" />
     <Compile Include="HttpResponseMessageExtensionsTest.cs" />
     <Compile Include="HttpResponseExceptionTest.cs" />
     <Compile Include="HttpServerTest.cs" />
     <Compile Include="HttpRequestMessageExtensionsTest.cs" />
     <Compile Include="HttpRouteCollectionExtensionsTest.cs" />
-    <Compile Include="Dispatcher\DefaultBuildManagerTest.cs" />
     <Compile Include="QueryableAttributeTest.cs" />
+    <Compile Include="Dispatcher\DefaultAssembliesResolverTest.cs" />
     <Compile Include="Controllers\ApiControllerActionInvokerTest.cs" />
     <Compile Include="Controllers\ApiControllerActionSelectorTest.cs" />
     <Compile Include="Controllers\HttpParameterDescriptorTest.cs" />
@@ -114,8 +116,10 @@
     <Compile Include="Query\DataModel.cs" />
     <Compile Include="Query\ODataQueryDeserializerTests.cs" />
     <Compile Include="Routing\HttpRouteTest.cs" />
+    <Compile Include="Routing\MediaTypeFormatterExtensionsTests.cs" />
+    <Compile Include="Routing\UriPathExtensionMappingTests.cs" />
     <Compile Include="Routing\UrlHelperTest.cs" />
-    <Compile Include="Services\DependencyResolverTests.cs" />
+    <Compile Include="Services\DefaultServicesTests.cs" />
     <Compile Include="Tracing\FormattingUtilitiesTest.cs" />
     <Compile Include="Tracing\HttpRequestMessageExtensionsTest.cs" />
     <Compile Include="Tracing\ITraceWriterExtensionsTest.cs" />
@@ -129,12 +133,13 @@
     <Compile Include="Tracing\Tracers\HttpActionInvokerTracerTest.cs" />
     <Compile Include="Tracing\Tracers\HttpActionSelectorTracerTest.cs" />
     <Compile Include="Tracing\Tracers\ActionValueBinderTracerTest.cs" />
+    <Compile Include="Tracing\Tracers\HttpControllerDescriptorTracerTest.cs" />
     <Compile Include="Tracing\Tracers\HttpControllerTracerTest.cs" />
     <Compile Include="Tracing\Tracers\AuthorizationFilterAttributeTracerTest.cs" />
     <Compile Include="Tracing\Tracers\AuthorizationFilterTracerTest.cs" />
     <Compile Include="Tracing\Tracers\ContentNegotiatorTracerTest.cs" />
     <Compile Include="Tracing\Tracers\HttpControllerActivatorTracerTest.cs" />
-    <Compile Include="Tracing\Tracers\HttpControllerFactoryTracerTest.cs" />
+    <Compile Include="Tracing\Tracers\HttpControllerSelectorTracerTest.cs" />
     <Compile Include="Tracing\Tracers\ExceptionFilterAttributeTracerTest.cs" />
     <Compile Include="Tracing\Tracers\ExceptionFilterTracerTest.cs" />
     <Compile Include="Tracing\Tracers\FilterTracerTest.cs" />
@@ -242,7 +247,9 @@
     <Compile Include="Validation\Validators\DataAnnotationsModelValidatorTest.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ValueProviders\Providers\RouteDataValueProviderFactoryTest.cs" />
     <Compile Include="ValueProviders\Providers\NameValueCollectionValueProviderTest.cs" />
+    <Compile Include="ValueProviders\Providers\QueryStringValueProviderFactoryTest.cs" />
     <Compile Include="ValueProviders\Providers\QueryStringValueProviderTest.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -265,9 +272,10 @@
       <Project>{FCCC4CB7-BAF7-4A57-9F89-E5766FE536C0}</Project>
       <Name>Microsoft.TestCommon</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controllers\Helpers\" />
+    <ProjectReference Include="..\System.Net.Http.Formatting.Test.Unit\System.Net.Http.Formatting.Test.Unit.csproj">
+      <Project>{7AF77741-9158-4D5F-8782-8F21FADF025F}</Project>
+      <Name>System.Net.Http.Formatting.Test.Unit</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

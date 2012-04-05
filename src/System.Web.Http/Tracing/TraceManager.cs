@@ -10,7 +10,7 @@ namespace System.Web.Http.Tracing
     {
         public void Initialize(HttpConfiguration configuration)
         {
-            ITraceWriter traceWriter = configuration.ServiceResolver.GetTraceWriter();
+            ITraceWriter traceWriter = configuration.Services.GetTraceWriter();
             if (traceWriter != null)
             {
                 // Install tracers only when a custom trace writer has been registered
@@ -24,52 +24,52 @@ namespace System.Web.Http.Tracing
             CreateActionSelectorTracer(configuration, traceWriter);
             CreateActionValueBinderTracer(configuration, traceWriter);
             CreateContentNegotiatorTracer(configuration, traceWriter);
-            CreateControllerActivatorTracer(configuration, traceWriter); 
-            CreateControllerFactoryTracer(configuration, traceWriter);
+            CreateControllerActivatorTracer(configuration, traceWriter);
+            CreateControllerSelectorTracer(configuration, traceWriter);
             CreateMessageHandlerTracers(configuration, traceWriter);
             CreateMediaTypeFormatterTracers(configuration, traceWriter);
         }
 
         private static void CreateActionInvokerTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IHttpActionInvoker invoker = configuration.ServiceResolver.GetService(typeof(IHttpActionInvoker)) as IHttpActionInvoker;
+            IHttpActionInvoker invoker = configuration.Services.GetActionInvoker();
             HttpActionInvokerTracer tracer = new HttpActionInvokerTracer(invoker, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IHttpActionInvoker), tracer);
+            configuration.Services.Replace(typeof(IHttpActionInvoker), tracer);
         }
 
         private static void CreateActionSelectorTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IHttpActionSelector selector = configuration.ServiceResolver.GetService(typeof(IHttpActionSelector)) as IHttpActionSelector;
+            IHttpActionSelector selector = configuration.Services.GetActionSelector();
             HttpActionSelectorTracer tracer = new HttpActionSelectorTracer(selector, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IHttpActionSelector), tracer);
+            configuration.Services.Replace(typeof(IHttpActionSelector), tracer);
         }
 
         private static void CreateActionValueBinderTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IActionValueBinder binder = configuration.ServiceResolver.GetService(typeof(IActionValueBinder)) as IActionValueBinder;
+            IActionValueBinder binder = configuration.Services.GetActionValueBinder();
             ActionValueBinderTracer tracer = new ActionValueBinderTracer(binder, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IActionValueBinder), tracer);
+            configuration.Services.Replace(typeof(IActionValueBinder), tracer);
         }
 
         private static void CreateContentNegotiatorTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IContentNegotiator negotiator = configuration.ServiceResolver.GetService(typeof(IContentNegotiator)) as IContentNegotiator;
+            IContentNegotiator negotiator = configuration.Services.GetContentNegotiator();
             ContentNegotiatorTracer tracer = new ContentNegotiatorTracer(negotiator, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IContentNegotiator), tracer);
+            configuration.Services.Replace(typeof(IContentNegotiator), tracer);
         }
 
         private static void CreateControllerActivatorTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IHttpControllerActivator activator = configuration.ServiceResolver.GetService(typeof(IHttpControllerActivator)) as IHttpControllerActivator;
+            IHttpControllerActivator activator = configuration.Services.GetHttpControllerActivator();
             HttpControllerActivatorTracer tracer = new HttpControllerActivatorTracer(activator, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IHttpControllerActivator), tracer);
+            configuration.Services.Replace(typeof(IHttpControllerActivator), tracer);
         }
 
-        private static void CreateControllerFactoryTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
+        private static void CreateControllerSelectorTracer(HttpConfiguration configuration, ITraceWriter traceWriter)
         {
-            IHttpControllerFactory factory = configuration.ServiceResolver.GetService(typeof(IHttpControllerFactory)) as IHttpControllerFactory;
-            HttpControllerFactoryTracer tracer = new HttpControllerFactoryTracer(factory, traceWriter);
-            configuration.ServiceResolver.SetService(typeof(IHttpControllerFactory), tracer);
+            IHttpControllerSelector controllerSelector = configuration.Services.GetHttpControllerSelector();
+            HttpControllerSelectorTracer tracer = new HttpControllerSelectorTracer(controllerSelector, traceWriter);
+            configuration.Services.Replace(typeof(IHttpControllerSelector), tracer);
         }
 
         private static void CreateMediaTypeFormatterTracers(HttpConfiguration configuration, ITraceWriter traceWriter)
@@ -77,8 +77,8 @@ namespace System.Web.Http.Tracing
             for (int i = 0; i < configuration.Formatters.Count; i++)
             {
                 configuration.Formatters[i] = MediaTypeFormatterTracer.CreateTracer(
-                                                configuration.Formatters[i],             
-                                                traceWriter, 
+                                                configuration.Formatters[i],
+                                                traceWriter,
                                                 request: null);
             }
         }

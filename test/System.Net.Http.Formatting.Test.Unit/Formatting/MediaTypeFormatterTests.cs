@@ -1,12 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Net.Http.Formatting.DataSets;
 using System.Net.Http.Formatting.Mocks;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.TestCommon;
 using Moq;
 using Xunit;
@@ -17,6 +15,8 @@ namespace System.Net.Http.Formatting
 {
     public class MediaTypeFormatterTests
     {
+        private const string TestMediaType = "text/test";
+
         [Fact]
         [Trait("Description", "MediaTypeFormatter is public, abstract, and unsealed.")]
         public void TypeIsCorrect()
@@ -582,6 +582,90 @@ namespace System.Net.Http.Formatting
             TestStruct result = (TestStruct)MediaTypeFormatter.GetDefaultValueForType(typeof(TestStruct));
 
             Assert.Equal(s, result);
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_ThrowsOnNullType()
+        {
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+            Assert.ThrowsArgumentNull(() => formatter.SetDefaultContentHeaders(null, contentHeaders, TestMediaType), "type");
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_ThrowsOnNullHeaders()
+        {
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            Type type = typeof(object);
+            Assert.ThrowsArgumentNull(() => formatter.SetDefaultContentHeaders(type, null, TestMediaType), "headers");
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_UsesNonNullMediaType()
+        {
+            // Arrange
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            Type type = typeof(object);
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+
+            // Act
+            formatter.SetDefaultContentHeaders(type, contentHeaders, TestMediaType);
+
+            // Assert
+            Assert.Equal(TestMediaType, contentHeaders.ContentType.MediaType);
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_UsesDefaultSupportedMediaType()
+        {
+            // Arrange
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            formatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue(TestMediaType));
+            Type type = typeof(object);
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+
+            // Act
+            formatter.SetDefaultContentHeaders(type, contentHeaders, null);
+
+            // Assert
+            Assert.Equal(TestMediaType, contentHeaders.ContentType.MediaType);
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_UsesDefaultSupportedEncoding()
+        {
+            // Arrange
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            Encoding encoding = new UnicodeEncoding();
+            formatter.SupportedEncodings.Add(encoding);
+            Type type = typeof(object);
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+
+            // Act
+            formatter.SetDefaultContentHeaders(type, contentHeaders, TestMediaType);
+
+            // Assert
+            Assert.Equal(TestMediaType, contentHeaders.ContentType.MediaType);
+            Assert.Equal(encoding.WebName, contentHeaders.ContentType.CharSet);
+        }
+
+        [Fact]
+        public void SetDefaultContentHeaders_UsesDefaultSupportedMediaTypeAndEncoding()
+        {
+            // Arrange
+            MockMediaTypeFormatter formatter = new MockMediaTypeFormatter();
+            formatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue(TestMediaType));
+            Encoding encoding = new UnicodeEncoding();
+            formatter.SupportedEncodings.Add(encoding);
+            Type type = typeof(object);
+            HttpContentHeaders contentHeaders = FormattingUtilities.CreateEmptyContentHeaders();
+
+            // Act
+            formatter.SetDefaultContentHeaders(type, contentHeaders, null);
+
+            // Assert
+            Assert.Equal(TestMediaType, contentHeaders.ContentType.MediaType);
+            Assert.Equal(encoding.WebName, contentHeaders.ContentType.CharSet);
         }
 
         public struct TestStruct

@@ -2,6 +2,9 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Web.Http;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace System.Net.Http.Formatting
 {
@@ -57,23 +60,6 @@ namespace System.Net.Http.Formatting
             get { return Items.OfType<FormUrlEncodedMediaTypeFormatter>().FirstOrDefault(); }
         }
 
-        public MediaTypeFormatter Find(string mediaType)
-        {
-            MediaTypeHeaderValue val = MediaTypeHeaderValue.Parse(mediaType);
-            return Find(val);
-        }
-
-        /// <summary>
-        /// Find a formatter in this collection that matches the requested media type.
-        /// </summary>
-        /// <returns>Returns a formatter or null if not found.</returns>
-        public MediaTypeFormatter Find(MediaTypeHeaderValue mediaType)
-        {
-            var comparer = MediaTypeHeaderValueEqualityComparer.EqualityComparer;
-            MediaTypeFormatter formatter = Items.FirstOrDefault(f => f.SupportedMediaTypes.Any(mt => comparer.Equals(mt, mediaType)));
-            return formatter;
-        }
-
         /// <summary>
         /// Helper to search a collection for a formatter that can read the .NET type in the given mediaType.
         /// </summary>
@@ -84,11 +70,11 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
             if (mediaType == null)
             {
-                throw new ArgumentNullException("mediaType");
+                throw Error.ArgumentNull("mediaType");
             }
 
             foreach (MediaTypeFormatter formatter in this.Items)
@@ -100,6 +86,46 @@ namespace System.Net.Http.Formatting
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Helper to search a collection for a formatter that can write the .NET type in the given mediaType.
+        /// </summary>
+        /// <param name="type">.NET type to read</param>
+        /// <param name="mediaType">media type to match on.</param>
+        /// <returns>Formatter that can write the type. Null if no formatter found.</returns>
+        public MediaTypeFormatter FindWriter(Type type, MediaTypeHeaderValue mediaType)
+        {
+            if (type == null)
+            {
+                throw Error.ArgumentNull("type");
+            }
+            if (mediaType == null)
+            {
+                throw Error.ArgumentNull("mediaType");
+            }
+
+            foreach (MediaTypeFormatter formatter in Items)
+            {
+                MediaTypeHeaderValue match;
+                if (formatter.CanWriteAs(type, mediaType, out match))
+                {
+                    return formatter;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns true if the type is one of those loosely defined types that should be excluded from validation
+        /// </summary>
+        /// <param name="type">.NET <see cref="Type"/> to validate</param>
+        /// <returns><c>true</c> if the type should be excluded.</returns>
+        public static bool IsTypeExcludedFromValidation(Type type)
+        {
+            return FormattingUtilities.IsJTokenType(type) || typeof(XObject).IsAssignableFrom(type) || typeof(XmlNode).IsAssignableFrom(type) 
+                || typeof(FormDataCollection).IsAssignableFrom(type);
         }
 
         /// <summary>
