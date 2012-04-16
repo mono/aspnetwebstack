@@ -1,4 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -24,6 +26,9 @@ namespace System.Web.Http.Controllers
         private readonly Collection<HttpMethod> _supportedHttpMethods = new Collection<HttpMethod>();
 
         private HttpActionBinding _actionBinding;
+
+        private static readonly ResponseMessageResultConverter _responseMessageResultConverter = new ResponseMessageResultConverter();
+        private static readonly VoidResultConverter _voidResultConverter = new VoidResultConverter();
 
         protected HttpActionDescriptor()
         {
@@ -60,7 +65,7 @@ namespace System.Web.Http.Controllers
         public virtual HttpActionBinding ActionBinding
         {
             get
-            {                
+            {
                 if (_actionBinding == null)
                 {
                     IActionValueBinder actionValueBinder = _controllerDescriptor.ActionValueBinder;
@@ -71,7 +76,7 @@ namespace System.Web.Http.Controllers
             }
             set
             {
-                if (value == null) 
+                if (value == null)
                 {
                     throw Error.PropertyNull();
                 }
@@ -163,11 +168,11 @@ namespace System.Web.Http.Controllers
 
             if (type == null)
             {
-                return new VoidResultConverter();
+                return _voidResultConverter;
             }
             else if (typeof(HttpResponseMessage).IsAssignableFrom(type))
             {
-                return new ResponseMessageResultConverter();
+                return _responseMessageResultConverter;
             }
             else
             {

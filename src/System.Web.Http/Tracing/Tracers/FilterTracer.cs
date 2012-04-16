@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Web.Http.Filters;
 
-namespace System.Web.Http.Tracing
+namespace System.Web.Http.Tracing.Tracers
 {
     /// <summary>
     /// Base class and helper for the creation of filter tracers.

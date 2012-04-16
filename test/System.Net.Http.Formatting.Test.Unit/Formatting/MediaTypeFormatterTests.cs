@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http.Formatting.DataSets;
@@ -36,6 +38,20 @@ namespace System.Net.Http.Formatting
             Collection<MediaTypeMapping> mappings = formatter.MediaTypeMappings;
             Assert.NotNull(mappings);
             Assert.Equal(0, mappings.Count);
+        }
+
+        [Fact]
+        public void MaxCollectionKeySize_RoundTrips()
+        {
+            Assert.Reflection.IntegerProperty<MediaTypeFormatter, int>(
+                null, 
+                c => MediaTypeFormatter.MaxHttpCollectionKeys,
+                expectedDefaultValue: 1000,
+                minLegalValue: 1,
+                illegalLowerValue: 0,
+                maxLegalValue: null,
+                illegalUpperValue: null,
+                roundTripTestValue: 125);
         }
 
         [Fact]

@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using Xunit;
@@ -17,6 +19,12 @@ namespace System.Web.Http.Controllers
         {
             _context.Request = _request;
             _context.Configuration = new HttpConfiguration();
+        }
+
+        [Fact]
+        public void Convert_WhenContextIsNull_Throws()
+        {
+            Assert.ThrowsArgumentNull(() => _objectValueConverter.Convert(controllerContext: null, actionResult: new object()), "controllerContext");
         }
 
         [Fact]

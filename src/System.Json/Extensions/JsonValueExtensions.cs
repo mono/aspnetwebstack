@@ -1,4 +1,5 @@
-﻿#if NET_4_0 || MONODROID
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+#if NET_4_0 || MONODROID
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;

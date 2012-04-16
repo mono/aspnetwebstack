@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Http;
@@ -38,7 +40,7 @@ namespace System.Web.Http.WebHost
                     // Use the property in .NET 4.5 if available
                     if (srPropertyInfo != null)
                     {
-                        Action<HttpResponseBase, bool> setter = (Action<HttpResponseBase, bool>)Delegate.CreateDelegate(typeof(HttpResponseBase), srPropertyInfo.GetSetMethod(), throwOnBindFailure: false);
+                        Action<HttpResponseBase, bool> setter = (Action<HttpResponseBase, bool>)Delegate.CreateDelegate(typeof(Action<HttpResponseBase, bool>), srPropertyInfo.GetSetMethod(), throwOnBindFailure: false);
                         return httpContext => setter(httpContext.Response, true);
                     }
 

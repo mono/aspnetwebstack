@@ -1,4 +1,7 @@
-﻿using System.Globalization;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Globalization;
+using System.Net.Http;
 using System.Web.Http.Controllers;
 using Xunit;
 using Assert = Microsoft.TestCommon.AssertEx;
@@ -18,7 +21,8 @@ namespace System.Web.Http.ValueProviders.Providers
         [Fact]
         public void GetValueProvider_ReturnsQueryStringValueProviderInstaceWithInvariantCulture()
         {
-            var context = new HttpActionContext();
+            var controllerContext = new HttpControllerContext() { Request = new HttpRequestMessage() };
+            var context = new HttpActionContext() { ControllerContext = controllerContext };
 
             IValueProvider result = _factory.GetValueProvider(context);
 

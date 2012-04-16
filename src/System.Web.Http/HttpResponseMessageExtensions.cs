@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
-using System.Net.Http;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
 
-namespace System.Web.Http
+using System.ComponentModel;
+using System.Web.Http;
+
+namespace System.Net.Http
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class HttpResponseMessageExtensions

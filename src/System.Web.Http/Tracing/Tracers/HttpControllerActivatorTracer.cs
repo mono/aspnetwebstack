@@ -1,4 +1,6 @@
-﻿using System.Net.Http;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Properties;
@@ -11,7 +13,6 @@ namespace System.Web.Http.Tracing.Tracers
     internal class HttpControllerActivatorTracer : IHttpControllerActivator
     {
         private const string CreateMethodName = "Create";
-        private const string ReleaseMethodName = "Release";
 
         private readonly IHttpControllerActivator _innerActivator;
         private readonly ITraceWriter _traceWriter;
@@ -46,30 +47,10 @@ namespace System.Web.Http.Tracing.Tracers
 
             if (controller != null && !(controller is HttpControllerTracer))
             {
-                controller = new HttpControllerTracer(controller, _traceWriter);
+                controller = new HttpControllerTracer(request, controller, _traceWriter);
             }
 
             return controller;
-        }
-
-        void IHttpControllerActivator.Release(IHttpController controller, HttpControllerContext controllerContext)
-        {
-            _traceWriter.TraceBeginEnd(
-                controllerContext.Request,
-                TraceCategories.ControllersCategory,
-                TraceLevel.Info,
-                _innerActivator.GetType().Name,
-                ReleaseMethodName,
-                beginTrace: (tr) =>
-                {
-                    tr.Message = controller == null ? SRResources.TraceNoneObjectMessage : controller.GetType().FullName;
-                },
-                execute: () =>
-                {
-                    _innerActivator.Release(controller, controllerContext);
-                },
-                endTrace: null,
-                errorTrace: null);
         }
     }
 }

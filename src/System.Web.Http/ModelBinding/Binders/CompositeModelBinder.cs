@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Web.Http.Controllers;
@@ -18,11 +20,15 @@ namespace System.Web.Http.ModelBinding.Binders
     public class CompositeModelBinder : IModelBinder
     {
         public CompositeModelBinder(IEnumerable<ModelBinderProvider> modelBinderProviders)
+            : this(modelBinderProviders.ToArray())
         {
-            Providers = modelBinderProviders.ToList();
+        }
+        public CompositeModelBinder(ModelBinderProvider[] modelBinderProviders)
+        {
+            Providers = modelBinderProviders;
         }
 
-        private List<ModelBinderProvider> Providers { get; set; }
+        private ModelBinderProvider[] Providers { get; set; }
 
         public virtual bool BindModel(HttpActionContext actionContext, ModelBindingContext bindingContext)
         {

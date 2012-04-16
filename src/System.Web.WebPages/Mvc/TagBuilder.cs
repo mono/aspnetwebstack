@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -176,7 +178,7 @@ namespace System.Web.Mvc
             InnerHtml = HttpUtility.HtmlEncode(innerText);
         }
 
-        internal IHtmlString ToHtmlString(TagRenderMode renderMode)
+        internal HtmlString ToHtmlString(TagRenderMode renderMode)
         {
             return new HtmlString(ToString(renderMode));
         }

@@ -1,4 +1,6 @@
-﻿using System.Net.Http;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Net.Http;
 using System.Threading;
 using System.Web.Http.Controllers;
 using System.Web.Http.Internal;
@@ -83,30 +85,6 @@ namespace System.Web.Http.Dispatcher
             catch (Exception ex)
             {
                 throw Error.InvalidOperation(ex, SRResources.DefaultControllerFactory_ErrorCreatingController, controllerType.Name);
-            }
-        }
-
-        /// <summary>
-        /// Releases the <paramref name="controller"/> instance 
-        /// </summary>
-        /// <param name="controllerContext">The <see cref="HttpControllerContext"/> containing </param>
-        /// <param name="controller">The <see cref="IHttpController"/> that is to be released</param>
-        public void Release(IHttpController controller, HttpControllerContext controllerContext)
-        {
-            if (controller == null)
-            {
-                throw Error.ArgumentNull("controller");
-            }
-
-            if (controllerContext == null)
-            {
-                throw Error.ArgumentNull("controllerContext");
-            }
-
-            IDisposable disposable = controller as IDisposable;
-            if (disposable != null)
-            {
-                disposable.Dispose();
             }
         }
     }

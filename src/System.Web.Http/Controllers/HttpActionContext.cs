@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Web.Http.ModelBinding;
 
@@ -13,7 +15,7 @@ namespace System.Web.Http.Controllers
         private readonly Dictionary<string, object> _operationArguments = new Dictionary<string, object>();
         private HttpActionDescriptor _actionDescriptor;
         private HttpControllerContext _controllerContext;
-
+       
         public HttpActionContext(HttpControllerContext controllerContext, HttpActionDescriptor actionDescriptor)
         {
             if (controllerContext == null)

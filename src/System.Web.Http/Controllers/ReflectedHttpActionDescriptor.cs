@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -7,6 +9,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using System.Web.Http.Internal;
@@ -313,9 +316,20 @@ namespace System.Web.Http.Controllers
             }
 
             // Method called via reflection.
-            private static Task<object> Convert<T>(Task<T> task)
+            private static Task<object> Convert<T>(object taskAsObject)
             {
+                Task<T> task = (Task<T>)taskAsObject;
                 return task.Then(r => (object)r);
+            }
+
+            // Do not inline or optimize this method to avoid stack-related reflection demand issues when
+            // running from the GAC in medium trust
+            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            private static Func<object, Task<object>> CompileGenericTaskConversionDelegate(Type taskValueType)
+            {
+                Contract.Assert(taskValueType != null);
+
+                return (Func<object, Task<object>>)Delegate.CreateDelegate(typeof(Func<object, Task<object>>), _convertOfTMethod.MakeGenericMethod(taskValueType));
             }
 
             private static Func<object, object[], Task<object>> GetExecutor(MethodInfo methodInfo)
@@ -375,13 +389,14 @@ namespace System.Web.Http.Controllers
                         // for: public Task<T> Action()
                         // constructs: return (Task<object>)Convert<T>(((Task<T>)instance).method((T0) param[0], ...))
                         Type taskValueType = TypeHelper.GetTaskInnerTypeOrNull(methodCall.Type);
-                        MethodInfo convertMethod = _convertOfTMethod.MakeGenericMethod(taskValueType);
-                        Expression<Func<object, object[], Task<object>>> conversionLambda =
-                            Expression.Lambda<Func<object, object[], Task<object>>>(
-                                Expression.Convert(Expression.Call(convertMethod, methodCall), typeof(Task<object>)),
-                                instanceParameter,
-                                parametersParameter);
-                        return conversionLambda.Compile();
+                        var compiledConversion = CompileGenericTaskConversionDelegate(taskValueType);
+
+                        return (instance, methodParameters) =>
+                        {
+                            object callResult = compiled(instance, methodParameters);
+                            Task<object> convertedResult = compiledConversion(callResult);
+                            return convertedResult;
+                        };
                     }
                     else
                     {
@@ -408,11 +423,15 @@ namespace System.Web.Http.Controllers
                 // Throw if a method declares a return type of Task and returns an instance of Task<Task> or Task<Task<T>>
                 // This most likely indicates that the developer forgot to call Unwrap() somewhere.
                 Contract.Assert(method.ReturnType == typeof(Task));
-                Type innerTaskType = TypeHelper.GetTaskInnerTypeOrNull(type);
-                if (innerTaskType != null && typeof(Task).IsAssignableFrom(innerTaskType))
+                // Fast path: check if type is exactly Task first.
+                if (type != typeof(Task))
                 {
-                    throw Error.InvalidOperation(SRResources.ActionExecutor_WrappedTaskInstance,
-                        method.Name, method.DeclaringType.Name, type.FullName);
+                    Type innerTaskType = TypeHelper.GetTaskInnerTypeOrNull(type);
+                    if (innerTaskType != null && typeof(Task).IsAssignableFrom(innerTaskType))
+                    {
+                        throw Error.InvalidOperation(SRResources.ActionExecutor_WrappedTaskInstance,
+                            method.Name, method.DeclaringType.Name, type.FullName);
+                    }
                 }
             }
         }

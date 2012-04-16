@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Http.Metadata;
@@ -8,17 +10,17 @@ namespace System.Web.Http.Validation.Validators
 {
     public class ValidatableObjectAdapter : ModelValidator
     {
-        public ValidatableObjectAdapter(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders)
-            : base(metadata, validatorProviders)
+        public ValidatableObjectAdapter(IEnumerable<ModelValidatorProvider> validatorProviders)
+            : base(validatorProviders)
         {
         }
 
-        public override IEnumerable<ModelValidationResult> Validate(object container)
+        public override IEnumerable<ModelValidationResult> Validate(ModelMetadata metadata, object container)
         {
             // NOTE: Container is never used here, because IValidatableObject doesn't give you
             // any way to get access to your container.
 
-            object model = Metadata.Model;
+            object model = metadata.Model;
             if (model == null)
             {
                 return Enumerable.Empty<ModelValidationResult>();

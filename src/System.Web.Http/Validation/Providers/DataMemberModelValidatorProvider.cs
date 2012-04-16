@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Web.Http.Metadata;
@@ -20,7 +22,7 @@ namespace System.Web.Http.Validation.Providers
                 bool isDataContract = GetTypeDescriptor(metadata.ContainerType).GetAttributes().OfType<DataContractAttribute>().Any();
                 if (isDataContract && dataMemberAttribute.IsRequired)
                 {
-                    return new[] { new RequiredMemberModelValidator(metadata, validatorProviders) };
+                    return new[] { new RequiredMemberModelValidator(validatorProviders) };
                 }
             }
             return new ModelValidator[0];

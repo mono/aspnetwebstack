@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Http.Metadata;
@@ -12,7 +14,7 @@ namespace System.Web.Http.Validation.Providers
 {
     public class DataAnnotationsModelValidatorProviderTest
     {
-        private static CachedDataAnnotationsModelMetadataProvider _metadataProvider = new CachedDataAnnotationsModelMetadataProvider();
+        private static DataAnnotationsModelMetadataProvider _metadataProvider = new DataAnnotationsModelMetadataProvider();
         private static IEnumerable<ModelValidatorProvider> _noValidatorProviders = Enumerable.Empty<ModelValidatorProvider>();
 
         // Validation attribute adapter registration
@@ -27,8 +29,8 @@ namespace System.Web.Http.Validation.Providers
 
         private class MyValidationAttributeAdapter : DataAnnotationsModelValidator
         {
-            public MyValidationAttributeAdapter(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders, ValidationAttribute attribute)
-                : base(metadata, validatorProviders, attribute)
+            public MyValidationAttributeAdapter(IEnumerable<ModelValidatorProvider> validatorProviders, ValidationAttribute attribute)
+                : base(validatorProviders, attribute)
             {
 
             }
@@ -36,12 +38,12 @@ namespace System.Web.Http.Validation.Providers
 
         private class MyValidationAttributeAdapterBadCtor : ModelValidator
         {
-            public MyValidationAttributeAdapterBadCtor(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders)
-                : base(metadata, validatorProviders)
+            public MyValidationAttributeAdapterBadCtor(IEnumerable<ModelValidatorProvider> validatorProviders)
+                : base(validatorProviders)
             {
             }
 
-            public override IEnumerable<ModelValidationResult> Validate(object container)
+            public override IEnumerable<ModelValidationResult> Validate(ModelMetadata metadata, object container)
             {
                 throw new NotImplementedException();
             }
@@ -49,8 +51,8 @@ namespace System.Web.Http.Validation.Providers
 
         private class MyDefaultValidationAttributeAdapter : DataAnnotationsModelValidator
         {
-            public MyDefaultValidationAttributeAdapter(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders, ValidationAttribute attribute)
-                : base(metadata, validatorProviders, attribute)
+            public MyDefaultValidationAttributeAdapter(IEnumerable<ModelValidatorProvider> validatorProviders, ValidationAttribute attribute)
+                : base(validatorProviders, attribute)
             {
             }
         }
@@ -77,7 +79,7 @@ namespace System.Web.Http.Validation.Providers
             var factory = provider.AttributeFactories.Values.Single();
             var metadata = _metadataProvider.GetMetadataForType(() => null, typeof(object));
             var attribute = new MyValidationAttribute();
-            var validator = factory(metadata, _noValidatorProviders, attribute);
+            var validator = factory(_noValidatorProviders, attribute);
             Assert.IsType<MyValidationAttributeAdapter>(validator);
         }
 
@@ -136,7 +138,7 @@ namespace System.Web.Http.Validation.Providers
         public void RegisterAdapterFactoryGuardClauses()
         {
             var provider = new DataAnnotationsModelValidatorProvider();
-            DataAnnotationsModelValidationFactory factory = (metadata, validatorProviders, attribute) => null;
+            DataAnnotationsModelValidationFactory factory = (validatorProviders, attribute) => null;
 
             // Attribute type cannot be null
             Assert.ThrowsArgumentNull(
@@ -199,7 +201,7 @@ namespace System.Web.Http.Validation.Providers
             // Arrange
             var provider = new DataAnnotationsModelValidatorProvider();
             var metadata = _metadataProvider.GetMetadataForType(() => null, typeof(MyValidatedClass));
-            ModelValidator validator = new Mock<ModelValidator>(metadata, _noValidatorProviders).Object;
+            ModelValidator validator = new Mock<ModelValidator>(_noValidatorProviders).Object;
             DataAnnotationsModelValidationFactory factory = delegate { return validator; };
             provider.RegisterDefaultAdapterFactory(factory);
 
@@ -225,12 +227,12 @@ namespace System.Web.Http.Validation.Providers
 
         private class MyValidatableAdapter : ModelValidator
         {
-            public MyValidatableAdapter(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders)
-                : base(metadata, validatorProviders)
+            public MyValidatableAdapter(IEnumerable<ModelValidatorProvider> validatorProviders)
+                : base(validatorProviders)
             {
             }
 
-            public override IEnumerable<ModelValidationResult> Validate(object container)
+            public override IEnumerable<ModelValidationResult> Validate(ModelMetadata metadata, object container)
             {
                 throw new NotImplementedException();
             }
@@ -238,12 +240,12 @@ namespace System.Web.Http.Validation.Providers
 
         private class MyValidatableAdapterBadCtor : ModelValidator
         {
-            public MyValidatableAdapterBadCtor(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders, int unused)
-                : base(metadata, validatorProviders)
+            public MyValidatableAdapterBadCtor(IEnumerable<ModelValidatorProvider> validatorProviders, int unused)
+                : base(validatorProviders)
             {
             }
 
-            public override IEnumerable<ModelValidationResult> Validate(object container)
+            public override IEnumerable<ModelValidationResult> Validate(ModelMetadata metadata, object container)
             {
                 throw new NotImplementedException();
             }
@@ -274,7 +276,7 @@ namespace System.Web.Http.Validation.Providers
 
             var factory = provider.ValidatableFactories.Values.Single();
             var metadata = _metadataProvider.GetMetadataForType(() => null, typeof(object));
-            var validator = factory(metadata, _noValidatorProviders);
+            var validator = factory(_noValidatorProviders);
             Assert.IsType<MyValidatableAdapter>(validator);
         }
 
@@ -333,7 +335,7 @@ namespace System.Web.Http.Validation.Providers
         public void RegisterValidatableObjectAdapterFactoryGuardClauses()
         {
             var provider = new DataAnnotationsModelValidatorProvider();
-            DataAnnotationsValidatableObjectAdapterFactory factory = (metadata, context) => null;
+            DataAnnotationsValidatableObjectAdapterFactory factory = (context) => null;
 
             // Attribute type cannot be null
             Assert.ThrowsArgumentNull(
@@ -396,7 +398,7 @@ namespace System.Web.Http.Validation.Providers
             // Arrange
             var provider = new DataAnnotationsModelValidatorProvider();
             var metadata = _metadataProvider.GetMetadataForType(() => null, typeof(MyValidatableClass));
-            ModelValidator validator = new Mock<ModelValidator>(metadata, _noValidatorProviders).Object;
+            ModelValidator validator = new Mock<ModelValidator>(_noValidatorProviders).Object;
             DataAnnotationsValidatableObjectAdapterFactory factory = delegate { return validator; };
             provider.RegisterDefaultValidatableObjectAdapterFactory(factory);
 
@@ -473,7 +475,7 @@ namespace System.Web.Http.Validation.Providers
 
             // Act
             ModelValidator[] validators = provider.GetValidators(metadata, _noValidatorProviders).ToArray();
-            ModelValidationResult[] results = validators.SelectMany(o => o.Validate(model)).ToArray();
+            ModelValidationResult[] results = validators.SelectMany(o => o.Validate(metadata, model)).ToArray();
 
             // Assert
             Assert.Empty(validators);

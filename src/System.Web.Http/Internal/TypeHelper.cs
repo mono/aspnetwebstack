@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -92,16 +94,6 @@ namespace System.Web.Http.Internal
         internal static bool HasStringConverter(Type type)
         {
             return TypeDescriptor.GetConverter(type).CanConvertFrom(typeof(string));
-        }
-
-        internal static IEnumerable GetAsEnumerable(object o)
-        {
-            // string implements IEnumerable<char>, but we want to treat it as a primitive type. 
-            if (o.GetType() == typeof(string))
-            {
-                return null;
-            }
-            return o as IEnumerable;
         }
 
         /// <summary>

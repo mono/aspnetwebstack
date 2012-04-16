@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Web.Http.Metadata;
 
 namespace System.Web.Http.Validation.Validators
@@ -8,8 +10,8 @@ namespace System.Web.Http.Validation.Validators
     /// </summary>
     public class RequiredMemberModelValidator : ModelValidator
     {
-        public RequiredMemberModelValidator(ModelMetadata metadata, IEnumerable<ModelValidatorProvider> validatorProviders)
-            : base(metadata, validatorProviders)
+        public RequiredMemberModelValidator(IEnumerable<ModelValidatorProvider> validatorProviders)
+            : base(validatorProviders)
         {
         }
 
@@ -18,7 +20,7 @@ namespace System.Web.Http.Validation.Validators
             get { return true; }
         }
 
-        public override IEnumerable<ModelValidationResult> Validate(object container)
+        public override IEnumerable<ModelValidationResult> Validate(ModelMetadata metadata, object container)
         {
             return new ModelValidationResult[0];
         }

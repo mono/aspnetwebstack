@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Web.Http.Metadata.Providers;
 using Xunit;
@@ -8,7 +10,7 @@ namespace System.Web.Http.Validation.Providers
 {
     public class DataMemberModelValidatorProviderTest
     {
-        private static CachedDataAnnotationsModelMetadataProvider _metadataProvider = new CachedDataAnnotationsModelMetadataProvider();
+        private static DataAnnotationsModelMetadataProvider _metadataProvider = new DataAnnotationsModelMetadataProvider();
 
         [Fact]
         public void ClassWithoutAttributes_NoValidator()

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Http.Metadata;
@@ -12,7 +14,7 @@ namespace System.Web.Http.Validation.Validators
 {
     public class DataAnnotationsModelValidatorTest
     {
-        private static CachedDataAnnotationsModelMetadataProvider _metadataProvider = new CachedDataAnnotationsModelMetadataProvider();
+        private static DataAnnotationsModelMetadataProvider _metadataProvider = new DataAnnotationsModelMetadataProvider();
         private static IEnumerable<ModelValidatorProvider> _noValidatorProviders = Enumerable.Empty<ModelValidatorProvider>();
 
         [Fact]
@@ -24,13 +26,10 @@ namespace System.Web.Http.Validation.Validators
 
             // Act & Assert
             Assert.ThrowsArgumentNull(
-                () => new DataAnnotationsModelValidator(null, _noValidatorProviders, attribute),
-                "metadata");
-            Assert.ThrowsArgumentNull(
-                () => new DataAnnotationsModelValidator(metadata, null, attribute),
+                () => new DataAnnotationsModelValidator(null, attribute),
                 "validatorProviders");
             Assert.ThrowsArgumentNull(
-                () => new DataAnnotationsModelValidator(metadata, _noValidatorProviders, null),
+                () => new DataAnnotationsModelValidator(_noValidatorProviders, null),
                 "attribute");
         }
 
@@ -42,11 +41,10 @@ namespace System.Web.Http.Validation.Validators
             var attribute = new RequiredAttribute();
 
             // Act
-            var validator = new DataAnnotationsModelValidator(metadata, _noValidatorProviders, attribute);
+            var validator = new DataAnnotationsModelValidator(_noValidatorProviders, attribute);
 
             // Assert
             Assert.Same(attribute, validator.Attribute);
-            Assert.Equal(attribute.FormatErrorMessage("Length"), validator.ErrorMessage);
         }
 
         [Fact]
@@ -56,10 +54,10 @@ namespace System.Web.Http.Validation.Validators
             ModelMetadata metadata = _metadataProvider.GetMetadataForProperty(() => 15, typeof(string), "Length");
             Mock<ValidationAttribute> attribute = new Mock<ValidationAttribute> { CallBase = true };
             attribute.Setup(a => a.IsValid(metadata.Model)).Returns(true);
-            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(metadata, _noValidatorProviders, attribute.Object);
+            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(_noValidatorProviders, attribute.Object);
 
             // Act
-            IEnumerable<ModelValidationResult> result = validator.Validate(null);
+            IEnumerable<ModelValidationResult> result = validator.Validate(metadata, null);
 
             // Assert
             Assert.Empty(result);
@@ -72,10 +70,10 @@ namespace System.Web.Http.Validation.Validators
             ModelMetadata metadata = _metadataProvider.GetMetadataForProperty(() => 15, typeof(string), "Length");
             Mock<ValidationAttribute> attribute = new Mock<ValidationAttribute> { CallBase = true };
             attribute.Setup(a => a.IsValid(metadata.Model)).Returns(false);
-            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(metadata, _noValidatorProviders, attribute.Object);
+            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(_noValidatorProviders, attribute.Object);
 
             // Act
-            IEnumerable<ModelValidationResult> result = validator.Validate(null);
+            IEnumerable<ModelValidationResult> result = validator.Validate(metadata, null);
 
             // Assert
             var validationResult = result.Single();
@@ -92,10 +90,10 @@ namespace System.Web.Http.Validation.Validators
             attribute.Protected()
                      .Setup<ValidationResult>("IsValid", ItExpr.IsAny<object>(), ItExpr.IsAny<ValidationContext>())
                      .Returns(ValidationResult.Success);
-            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(metadata, _noValidatorProviders, attribute.Object);
+            DataAnnotationsModelValidator validator = new DataAnnotationsModelValidator(_noValidatorProviders, attribute.Object);
 
             // Act
-            IEnumerable<ModelValidationResult> result = validator.Validate(null);
+            IEnumerable<ModelValidationResult> result = validator.Validate(metadata, null);
 
             // Assert
             Assert.Empty(result);
@@ -108,9 +106,9 @@ namespace System.Web.Http.Validation.Validators
             ModelMetadata metadata = _metadataProvider.GetMetadataForProperty(() => 15, typeof(string), "Length");
 
             // Act & Assert
-            Assert.False(new DataAnnotationsModelValidator(metadata, _noValidatorProviders, new RangeAttribute(10, 20)).IsRequired);
-            Assert.True(new DataAnnotationsModelValidator(metadata, _noValidatorProviders, new RequiredAttribute()).IsRequired);
-            Assert.True(new DataAnnotationsModelValidator(metadata, _noValidatorProviders, new DerivedRequiredAttribute()).IsRequired);
+            Assert.False(new DataAnnotationsModelValidator(_noValidatorProviders, new RangeAttribute(10, 20)).IsRequired);
+            Assert.True(new DataAnnotationsModelValidator(_noValidatorProviders, new RequiredAttribute()).IsRequired);
+            Assert.True(new DataAnnotationsModelValidator(_noValidatorProviders, new DerivedRequiredAttribute()).IsRequired);
         }
 
         class DerivedRequiredAttribute : RequiredAttribute

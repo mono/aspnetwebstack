@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Web.Http.Controllers;
@@ -169,7 +171,7 @@ namespace System.Web.Http.Validation
                 {
                     foreach (ModelValidator propertyValidator in propertyMetadata.GetValidators(actionContext.GetValidatorProviders()))
                     {
-                        foreach (ModelValidationResult propertyResult in propertyValidator.Validate(model))
+                        foreach (ModelValidationResult propertyResult in propertyValidator.Validate(propertyMetadata, model))
                         {
                             string thisErrorKey = ModelBindingHelper.CreatePropertyModelName(propertyKeyRoot, propertyResult.MemberName);
                             modelState.AddModelError(thisErrorKey, propertyResult.Message);
@@ -192,7 +194,7 @@ namespace System.Web.Http.Validation
             // to provide a catch-all value-required validation error
             if (parentNode == null && ModelMetadata.Model == null)
             {
-                string trueModelStateKey = ModelBindingHelper.CreatePropertyModelName(ModelStateKey, ModelMetadata.DisplayName);
+                string trueModelStateKey = ModelBindingHelper.CreatePropertyModelName(ModelStateKey, ModelMetadata.GetDisplayName());
                 modelState.AddModelError(trueModelStateKey, SRResources.Validation_ValueNotFound);
                 return;
             }
@@ -205,7 +207,7 @@ namespace System.Web.Http.Validation
             object container = TryConvertContainerToMetadataType(parentNode);
             foreach (ModelValidator validator in _validators)
             {
-                foreach (ModelValidationResult validationResult in validator.Validate(container))
+                foreach (ModelValidationResult validationResult in validator.Validate(ModelMetadata, container))
                 {
                     string trueModelStateKey = ModelBindingHelper.CreatePropertyModelName(ModelStateKey, validationResult.MemberName);
                     modelState.AddModelError(trueModelStateKey, validationResult.Message);

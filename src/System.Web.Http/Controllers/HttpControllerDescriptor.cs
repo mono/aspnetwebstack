@@ -1,4 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -170,27 +172,6 @@ namespace System.Web.Http.Controllers
             // Invoke the controller activator
             IHttpController instance = HttpControllerActivator.Create(request, this, ControllerType);
             return instance;
-        }
-
-        /// <summary>
-        /// Releases an <see cref="IHttpController"/> instance.
-        /// </summary>
-        /// <param name="controllerContext">The controller context.</param>
-        /// <param name="controller">The controller.</param>
-        public virtual void ReleaseController(IHttpController controller, HttpControllerContext controllerContext)
-        {
-            if (controller == null)
-            {
-                throw Error.ArgumentNull("controller");
-            }
-
-            if (controllerContext == null)
-            {
-                throw Error.ArgumentNull("controllerContext");
-            }
-
-            // just delegate the work to the activator
-            HttpControllerActivator.Release(controller, controllerContext);
         }
 
         /// <summary>

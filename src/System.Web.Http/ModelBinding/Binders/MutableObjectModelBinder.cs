@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -227,7 +229,7 @@ namespace System.Web.Http.ModelBinding.Binders
                 {
                     if (requiredValidator != null)
                     {
-                        foreach (ModelValidationResult validationResult in requiredValidator.Validate(bindingContext.Model))
+                        foreach (ModelValidationResult validationResult in requiredValidator.Validate(propertyMetadata, bindingContext.Model))
                         {
                             bindingContext.ModelState.AddModelError(modelStateKey, validationResult.Message);
                         }

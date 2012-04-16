@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Diagnostics;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Tokenizer.Symbols;
@@ -62,33 +64,24 @@ namespace System.Web.Razor.Parser
             int nesting = 1;
             while (nesting > 0 && !EndOfFile)
             {
+                SkipToAndParseCode(sym =>
+                    sym.Type == HtmlSymbolType.Text ||
+                    sym.Type == HtmlSymbolType.OpenAngle);
                 if (At(HtmlSymbolType.Text))
                 {
                     nesting += ProcessTextToken(nestingSequences, nesting);
+                    if (CurrentSymbol != null)
+                    {
+                        AcceptAndMoveNext();
+                    }
+                    else if (nesting > 0)
+                    {
+                        NextToken();
+                    }
                 }
-                else if (At(HtmlSymbolType.Transition))
+                else
                 {
-                    PutCurrentBack();
-                    Output(SpanKind.Markup);
-                    OtherParserBlock();
-                    continue;
-                }
-                else if (At(HtmlSymbolType.RazorCommentTransition))
-                {
-                    RazorComment();
-                }
-                else if (ScanTagInDocumentContext())
-                {
-                    continue;
-                }
-
-                if (CurrentSymbol != null)
-                {
-                    AcceptAndMoveNext();
-                }
-                else if (nesting > 0)
-                {
-                    NextToken();
+                    ScanTagInDocumentContext();
                 }
             }
         }

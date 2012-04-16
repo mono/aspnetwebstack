@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
@@ -31,6 +33,10 @@ namespace System.Web.Http.Validation
                     { null, typeof(Person), new Dictionary<string, string>() },
                     { 14, typeof(int), new Dictionary<string, string>() },
                     { "foo", typeof(string), new Dictionary<string, string>() },
+
+                    // Object Traversal : make sure we can traverse the object graph without throwing
+                    { new ValueType() { Reference = "ref", Value = 256}, typeof(ValueType), new Dictionary<string, string>()},
+                    { new ReferenceType() { Reference = "ref", Value = 256}, typeof(ReferenceType), new Dictionary<string, string>()},
 
                     // Classes
                     { new Person() { Name = "Rick", Profession = "Astronaut" }, typeof(Person), new Dictionary<string, string>() },
@@ -93,7 +99,7 @@ namespace System.Web.Http.Validation
         public void ExpectedValidationErrorsRaised(object model, Type type, Dictionary<string, string> expectedErrors)
         {
             // Arrange
-            ModelMetadataProvider metadataProvider = new CachedDataAnnotationsModelMetadataProvider();
+            ModelMetadataProvider metadataProvider = new DataAnnotationsModelMetadataProvider();
             HttpActionContext actionContext = ContextUtil.CreateActionContext();
 
             // Act
@@ -123,7 +129,7 @@ namespace System.Web.Http.Validation
         public void MultipleValidationErrorsOnSameMemberReported()
         {
             // Arrange
-            ModelMetadataProvider metadataProvider = new CachedDataAnnotationsModelMetadataProvider();
+            ModelMetadataProvider metadataProvider = new DataAnnotationsModelMetadataProvider();
             HttpActionContext actionContext = ContextUtil.CreateActionContext();
             object model = new Address() { Street = "Microsoft Way" };
 
@@ -156,5 +162,18 @@ namespace System.Web.Http.Validation
         [StringLength(5)]
         [RegularExpression("hehehe")]
         public string Street { get; set; }
+    }
+
+    public struct ValueType
+    {
+        public int Value;
+        public string Reference;
+    }
+
+    public class ReferenceType
+    {
+        public static string StaticProperty { get { return "static"; } }
+        public int Value;
+        public string Reference;
     }
 }

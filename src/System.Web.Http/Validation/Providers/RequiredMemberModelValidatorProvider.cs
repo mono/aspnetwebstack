@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Net.Http.Formatting;
 using System.Reflection;
 using System.Web.Http.Metadata;
@@ -24,7 +26,7 @@ namespace System.Web.Http.Validation.Providers
                 PropertyInfo metadataProperty = metadata.ContainerType.GetProperty(propertyName);
                 if (_requiredMemberSelector.IsRequiredMember(metadataProperty))
                 {
-                    return new ModelValidator[] { new RequiredMemberModelValidator(metadata, validatorProviders) };
+                    return new ModelValidator[] { new RequiredMemberModelValidator(validatorProviders) };
                 }
             }
             return new ModelValidator[0];

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.Contracts;
 using System.Globalization;
@@ -84,14 +86,24 @@ namespace System.Web.Http.ModelBinding
                 throw Error.ArgumentNull("formData");
             }
 
-            NameValueCollection nvc = new NameValueCollection();
+            NameValueCollection nvc = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in formData)
             {
+                ThrowIfMaxHttpCollectionKeysExceeded(nvc.Count);
+
                 string key = NormalizeJQueryToMvc(kv.Key);
                 string value = kv.Value ?? String.Empty;                
                 nvc.Add(key, value);
             }
             return nvc;
+        }
+
+        private static void ThrowIfMaxHttpCollectionKeysExceeded(int count)
+        {
+            if (count >= MediaTypeFormatter.MaxHttpCollectionKeys)
+            {
+                throw Error.InvalidOperation(SRResources.MaxHttpCollectionKeyLimitReached, MediaTypeFormatter.MaxHttpCollectionKeys, typeof(MediaTypeFormatter));
+            }
         }
 
         // Create a IValueProvider for the given form, assuming a JQuery syntax.

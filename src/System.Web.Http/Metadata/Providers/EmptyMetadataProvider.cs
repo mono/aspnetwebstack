@@ -1,12 +1,19 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 
 namespace System.Web.Http.Metadata.Providers
 {
-    public class EmptyModelMetadataProvider : AssociatedMetadataProvider
+    public class EmptyModelMetadataProvider : AssociatedMetadataProvider<ModelMetadata>
     {
-        protected override ModelMetadata CreateMetadata(IEnumerable<Attribute> attributes, Type containerType, Func<object> modelAccessor, Type modelType, string propertyName)
+        protected override ModelMetadata CreateMetadataPrototype(IEnumerable<Attribute> attributes, Type containerType, Type modelType, string propertyName)
         {
-            return new ModelMetadata(this, containerType, modelAccessor, modelType, propertyName);
+            return new ModelMetadata(this, containerType, null, modelType, propertyName);
+        }
+
+        protected override ModelMetadata CreateMetadataFromPrototype(ModelMetadata prototype, Func<object> modelAccessor)
+        {
+            return new ModelMetadata(this, prototype.ContainerType, modelAccessor, prototype.ModelType, prototype.PropertyName);
         }
     }
 }

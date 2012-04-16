@@ -1,4 +1,7 @@
-﻿using System.Net.Http;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Properties;
 
@@ -7,10 +10,9 @@ namespace System.Web.Http.Tracing.Tracers
     /// <summary>
     /// Tracer for <see cref=" HttpControllerDescriptor"/>
     /// </summary>
-    public class HttpControllerDescriptorTracer : HttpControllerDescriptor
+    internal class HttpControllerDescriptorTracer : HttpControllerDescriptor
     {
         private const string CreateControllerMethodName = "CreateController";
-        private const string ReleaseControllerMethodName = "ReleaseController";
 
         private readonly HttpControllerDescriptor _innerDescriptor;
         private readonly ITraceWriter _traceWriter;
@@ -22,6 +24,7 @@ namespace System.Web.Http.Tracing.Tracers
             _traceWriter = traceWriter;
         }
 
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "This object is returned back to the caller")]
         public override IHttpController CreateController(HttpRequestMessage request)
         {
             IHttpController controller = null;
@@ -47,31 +50,10 @@ namespace System.Web.Http.Tracing.Tracers
 
             if (controller != null && !(controller is HttpControllerTracer))
             {
-                return new HttpControllerTracer(controller, _traceWriter);
+                return new HttpControllerTracer(request, controller, _traceWriter);
             }
 
             return controller;
-        }
-
-        public override void ReleaseController(IHttpController controller, HttpControllerContext controllerContext)
-        {
-            _traceWriter.TraceBeginEnd(
-                controllerContext.Request,
-                TraceCategories.ControllersCategory,
-                TraceLevel.Info,
-                _innerDescriptor.GetType().Name,
-                ReleaseControllerMethodName,
-                beginTrace: (tr) =>
-                {
-                    tr.Message = HttpControllerTracer.ActualControllerType(controller).FullName;
-                },
-                execute: () =>
-                {
-                    IHttpController actualController = HttpControllerTracer.ActualController(controller);
-                    _innerDescriptor.ReleaseController(actualController, controllerContext);
-                },
-                endTrace: null,
-                errorTrace: null);
         }
     }
 }

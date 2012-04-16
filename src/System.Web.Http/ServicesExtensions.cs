@@ -1,3 +1,5 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -139,11 +141,21 @@ namespace System.Web.Http
         // Runtime code shouldn't call GetService() directly. Instead, have a wrapper (like the ones above) and call through the wrapper.
         private static TService GetService<TService>(this DefaultServices services)
         {
+            if (services == null)
+            {
+                throw Error.ArgumentNull("services");
+            }
+
             return (TService)services.GetService(typeof(TService));
         }
 
         private static IEnumerable<TService> GetServices<TService>(this DefaultServices services)
         {
+            if (services == null)
+            {
+                throw Error.ArgumentNull("services");
+            }
+
             return services.GetServices(typeof(TService)).Cast<TService>();
         }
 
