@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.CodeDom;
 using Microsoft.Internal.Web.Utils;
@@ -11,7 +11,7 @@ namespace System.Web.Razor.Generator
         {
             if (String.IsNullOrEmpty(virtualPath))
             {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("virtualPath");
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "virtualPath");
             }
             if (generatedCode == null)
             {

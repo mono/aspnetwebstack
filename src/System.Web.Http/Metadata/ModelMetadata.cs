@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -66,7 +66,7 @@ namespace System.Web.Http.Metadata
 
         public virtual bool IsComplexType
         {
-            get { return !TypeDescriptor.GetConverter(ModelType).CanConvertFrom(typeof(string)); }
+            get { return !TypeHelper.HasStringConverter(ModelType); }
         }
 
         public bool IsNullableValueType

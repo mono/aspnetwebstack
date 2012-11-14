@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Configuration;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Web.Security;
 using System.Web.WebPages.Razor;
 using System.Web.WebPages.TestUtils;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace WebMatrix.WebData.Test
 {

@@ -1,18 +1,20 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+#if !NETFX_CORE
 using System.Configuration;
+#endif
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
@@ -29,7 +31,7 @@ namespace System.Net.Http.Formatting
         private static ConcurrentDictionary<Type, ConstructorInfo> _delegatingEnumerableConstructorCache = new ConcurrentDictionary<Type, ConstructorInfo>();
         private static Lazy<int> _defaultMaxHttpCollectionKeys = new Lazy<int>(InitializeDefaultCollectionKeySize, true); // Max number of keys is 1000
         private static int _maxHttpCollectionKeys = -1;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MediaTypeFormatter"/> class.
         /// </summary>
@@ -37,7 +39,9 @@ namespace System.Net.Http.Formatting
         {
             SupportedMediaTypes = new MediaTypeHeaderValueCollection();
             SupportedEncodings = new Collection<Encoding>();
+#if !NETFX_CORE
             MediaTypeMappings = new Collection<MediaTypeMapping>();
+#endif
         }
 
         /// <summary>
@@ -45,7 +49,7 @@ namespace System.Net.Http.Formatting
         /// </summary>
         public static int MaxHttpCollectionKeys
         {
-            get 
+            get
             {
                 if (_maxHttpCollectionKeys < 0)
                 {
@@ -58,7 +62,7 @@ namespace System.Net.Http.Formatting
             {
                 if (value < DefaultMinHttpCollectionKeys)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, DefaultMinHttpCollectionKeys));
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, DefaultMinHttpCollectionKeys);
                 }
 
                 _maxHttpCollectionKeys = value;
@@ -78,6 +82,7 @@ namespace System.Net.Http.Formatting
         /// </summary>
         public Collection<Encoding> SupportedEncodings { get; private set; }
 
+#if !NETFX_CORE
         /// <summary>
         /// Gets the mutable collection of <see cref="MediaTypeMapping"/> elements used
         /// by this <see cref="MediaTypeFormatter"/> instance to determine the
@@ -89,64 +94,65 @@ namespace System.Net.Http.Formatting
         /// Gets or sets the <see cref="IRequiredMemberSelector"/> used to determine required members.
         /// </summary>
         public IRequiredMemberSelector RequiredMemberSelector { get; set; }
+#endif
 
         /// <summary>
-        /// Returns a <see cref="Task"/> to deserialize an object of the given <paramref name="type"/> from the given <paramref name="stream"/>
+        /// Returns a <see cref="Task"/> to deserialize an object of the given <paramref name="type"/> from the given <paramref name="readStream"/>
         /// </summary>
         /// <remarks>
         /// <para>This implementation throws a <see cref="NotSupportedException"/>. Derived types should override this method if the formatter
         /// supports reading.</para>
-        /// <para>An implementation of this method should NOT close <paramref name="stream"/> upon completion. The stream will be closed independently when
+        /// <para>An implementation of this method should NOT close <paramref name="readStream"/> upon completion. The stream will be closed independently when
         /// the <see cref="HttpContent"/> instance is disposed.
         /// </para>
         /// </remarks>
         /// <param name="type">The type of the object to deserialize.</param>
-        /// <param name="stream">The <see cref="Stream"/> to read.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> if available. It may be <c>null</c>.</param>
+        /// <param name="readStream">The <see cref="Stream"/> to read.</param>
+        /// <param name="content">The <see cref="HttpContent"/> if available. It may be <c>null</c>.</param>
         /// <param name="formatterLogger">The <see cref="IFormatterLogger"/> to log events to.</param>
         /// <returns>A <see cref="Task"/> whose result will be an object of the given type.</returns>
         /// <exception cref="NotSupportedException">Derived types need to support reading.</exception>
         /// <seealso cref="CanWriteType(Type)"/>
-        public virtual Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public virtual Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            throw new NotSupportedException(
-                RS.Format(Properties.Resources.MediaTypeFormatterCannotRead, GetType().Name));
+            throw Error.NotSupported(Properties.Resources.MediaTypeFormatterCannotRead, GetType().Name);
         }
 
         /// <summary>
         /// Returns a <see cref="Task"/> that serializes the given <paramref name="value"/> of the given <paramref name="type"/>
-        /// to the given <paramref name="stream"/>.
+        /// to the given <paramref name="writeStream"/>.
         /// </summary>
         /// <remarks>
         /// <para>This implementation throws a <see cref="NotSupportedException"/>. Derived types should override this method if the formatter
         /// supports reading.</para>
-        /// <para>An implementation of this method should NOT close <paramref name="stream"/> upon completion. The stream will be closed independently when
+        /// <para>An implementation of this method should NOT close <paramref name="writeStream"/> upon completion. The stream will be closed independently when
         /// the <see cref="HttpContent"/> instance is disposed.
         /// </para>
         /// </remarks>
         /// <param name="type">The type of the object to write.</param>
         /// <param name="value">The object value to write.  It may be <c>null</c>.</param>
-        /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> if available. It may be <c>null</c>.</param>
+        /// <param name="writeStream">The <see cref="Stream"/> to which to write.</param>
+        /// <param name="content">The <see cref="HttpContent"/> if available. It may be <c>null</c>.</param>
         /// <param name="transportContext">The <see cref="TransportContext"/> if available. It may be <c>null</c>.</param>
         /// <returns>A <see cref="Task"/> that will perform the write.</returns>
         /// <exception cref="NotSupportedException">Derived types need to support writing.</exception>
         /// <seealso cref="CanReadType(Type)"/>
-        public virtual Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public virtual Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
-            throw new NotSupportedException(
-                RS.Format(Properties.Resources.MediaTypeFormatterCannotWrite, GetType().Name));
+            throw Error.NotSupported(Properties.Resources.MediaTypeFormatterCannotWrite, GetType().Name);
         }
 
         private static bool TryGetDelegatingType(Type interfaceType, ref Type type)
         {
-            if (type != null
-                && type.IsInterface
-                && type.IsGenericType
-                && (type.GetInterface(interfaceType.FullName) != null || type.GetGenericTypeDefinition().Equals(interfaceType)))
+            if (type != null && type.IsInterface() && type.IsGenericType())
             {
-                type = GetOrAddDelegatingType(type);
-                return true;
+                Type genericType = type.ExtractGenericInterface(interfaceType);
+
+                if (genericType != null)
+                {
+                    type = GetOrAddDelegatingType(type, genericType);
+                    return true;
+                }
             }
 
             return false;
@@ -154,6 +160,9 @@ namespace System.Net.Http.Formatting
 
         private static int InitializeDefaultCollectionKeySize()
         {
+#if NETFX_CORE
+            return Int32.MaxValue;
+#else
             // we first detect if we are running on 4.5, return Max value if we are.
             Type comparerType = Type.GetType(IWellKnownComparerTypeName, throwOnError: false);
 
@@ -173,6 +182,7 @@ namespace System.Net.Http.Formatting
             }
 
             return result;
+#endif
         }
 
         /// <summary>
@@ -180,7 +190,6 @@ namespace System.Net.Http.Formatting
         /// </summary>
         /// <param name="type">The type to potentially be wrapped. If the type is wrapped, it's changed in place.</param>
         /// <returns>Returns <c>true</c> if the type was wrapped; <c>false</c>, otherwise</returns>
-        [SuppressMessage("Microsoft.Design", "CA1045:DoNotPassTypesByReference", MessageId = "0#", Justification = "This API is designed to morph the type parameter appropriately")]
         internal static bool TryGetDelegatingTypeForIEnumerableGenericOrSame(ref Type type)
         {
             return TryGetDelegatingType(FormattingUtilities.EnumerableInterfaceGenericType, ref type);
@@ -191,7 +200,6 @@ namespace System.Net.Http.Formatting
         /// </summary>
         /// <param name="type">The type to potentially be wrapped. If the type is wrapped, it's changed in place.</param>
         /// <returns>Returns <c>true</c> if the type was wrapped; <c>false</c>, otherwise</returns>
-        [SuppressMessage("Microsoft.Design", "CA1045:DoNotPassTypesByReference", MessageId = "0#", Justification = "This API is designed to morph the type parameter appropriately")]
         internal static bool TryGetDelegatingTypeForIQueryableGenericOrSame(ref Type type)
         {
             return TryGetDelegatingType(FormattingUtilities.QueryableInterfaceGenericType, ref type);
@@ -210,7 +218,7 @@ namespace System.Net.Http.Formatting
         /// </summary>
         /// <param name="contentHeaders">The content headers provided as part of the request or response.</param>
         /// <returns>The <see cref="Encoding"/> to use when reading the request or writing the response.</returns>
-        protected Encoding SelectCharacterEncoding(HttpContentHeaders contentHeaders)
+        public Encoding SelectCharacterEncoding(HttpContentHeaders contentHeaders)
         {
             Encoding encoding = null;
             if (contentHeaders != null && contentHeaders.ContentType != null)
@@ -235,233 +243,10 @@ namespace System.Net.Http.Formatting
             if (encoding == null)
             {
                 // No supported encoding was found so there is no way for us to start reading or writing.
-                throw new InvalidOperationException(RS.Format(Properties.Resources.MediaTypeFormatterNoEncoding, GetType().Name));
+                throw Error.InvalidOperation(Properties.Resources.MediaTypeFormatterNoEncoding, GetType().Name);
             }
 
             return encoding;
-        }
-
-        internal bool CanReadAs(Type type, MediaTypeHeaderValue mediaType)
-        {
-            if (type == null)
-            {
-                throw new ArgumentNullException("type");
-            }
-
-            if (mediaType == null)
-            {
-                throw new ArgumentNullException("mediaType");
-            }
-
-            if (!CanReadType(type))
-            {
-                return false;
-            }
-
-            MediaTypeMatch mediaTypeMatch;
-            return TryMatchSupportedMediaType(mediaType, out mediaTypeMatch);
-        }
-
-        internal bool CanWriteAs(Type type, MediaTypeHeaderValue mediaType, out MediaTypeHeaderValue matchedMediaType)
-        {
-            if (type == null)
-            {
-                throw new ArgumentNullException("type");
-            }
-
-            if (mediaType == null)
-            {
-                throw new ArgumentNullException("mediaType");
-            }
-
-            if (!CanWriteType(type))
-            {
-                matchedMediaType = null;
-                return false;
-            }
-
-            MediaTypeMatch mediaTypeMatch;
-            if (TryMatchSupportedMediaType(mediaType, out mediaTypeMatch))
-            {
-                matchedMediaType = mediaTypeMatch.MediaType;
-                return true;
-            }
-
-            matchedMediaType = null;
-            return false;
-        }
-
-        internal ResponseMediaTypeMatch SelectResponseMediaType(Type type, HttpRequestMessage request)
-        {
-            if (type == null)
-            {
-                throw new ArgumentNullException("type");
-            }
-
-            if (request == null)
-            {
-                throw new ArgumentNullException("request");
-            }
-
-            if (!CanWriteType(type))
-            {
-                return null;
-            }
-
-            // Determine the best character encoding if we have any registered encoders.
-            // Note that it is ok for a formatter not to register any encoders in case it doesn't 
-            // do any structured reading or writing.
-            Encoding characterEncodingMatch = SupportedEncodings.Any() ? SelectResponseCharacterEncoding(request) : null;
-
-            // Determine the best media type
-            MediaTypeMatch mediaTypeMatch = null;
-
-            // Match against media type mapping first
-            if (TryMatchMediaTypeMapping(request, out mediaTypeMatch))
-            {
-                mediaTypeMatch.SetEncoding(characterEncodingMatch);
-                return new ResponseMediaTypeMatch(
-                    mediaTypeMatch,
-                    ResponseFormatterSelectionResult.MatchOnRequestWithMediaTypeMapping);
-            }
-
-            // Match against the accept header.
-            if (TryMatchSupportedMediaType(request, out mediaTypeMatch))
-            {
-                mediaTypeMatch.SetEncoding(characterEncodingMatch);
-                return new ResponseMediaTypeMatch(
-                    mediaTypeMatch,
-                    ResponseFormatterSelectionResult.MatchOnRequestAcceptHeader);
-            }
-
-            // Match against request's content type
-            HttpContent requestContent = request.Content;
-            if (requestContent != null)
-            {
-                MediaTypeHeaderValue requestContentType = requestContent.Headers.ContentType;
-                if (requestContentType != null && TryMatchSupportedMediaType(requestContentType, out mediaTypeMatch))
-                {
-                    mediaTypeMatch.SetEncoding(characterEncodingMatch);
-                    return new ResponseMediaTypeMatch(
-                        mediaTypeMatch,
-                        ResponseFormatterSelectionResult.MatchOnRequestContentType);
-                }
-            }
-
-            // No match at all.
-            // Pick the first supported media type and indicate we've matched only on type
-            MediaTypeHeaderValue mediaType = SupportedMediaTypes.FirstOrDefault();
-
-            mediaTypeMatch = new MediaTypeMatch(mediaType);
-            mediaTypeMatch.SetEncoding(characterEncodingMatch);
-            return new ResponseMediaTypeMatch(
-                mediaTypeMatch,
-                ResponseFormatterSelectionResult.MatchOnCanWriteType);
-        }
-
-        /// <summary>
-        /// Determine the best character encoding for writing the response. First we look
-        /// for accept-charset headers and if not found then we try to match
-        /// any charset encoding in the request (in case of PUT, POST, etc.)
-        /// If no encoding is found then we use the default for the formatter.
-        /// </summary>
-        /// <returns>The <see cref="Encoding"/> determined to be the best match.</returns>
-        internal Encoding SelectResponseCharacterEncoding(HttpRequestMessage request)
-        {
-            // Sort accept-charset headers in descending order based on q factor
-            IEnumerable<StringWithQualityHeaderValue> acceptCharsetValues =
-                request.Headers.AcceptCharset.OrderByDescending(m => m, StringWithQualityHeaderValueComparer.QualityComparer);
-
-            // Check for match based on accept-charset headers
-            foreach (StringWithQualityHeaderValue acceptCharset in acceptCharsetValues)
-            {
-                foreach (Encoding encoding in SupportedEncodings)
-                {
-                    if (acceptCharset.Value.Equals(encoding.WebName, StringComparison.OrdinalIgnoreCase) ||
-                        acceptCharset.Value.Equals("*", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return encoding;
-                    }
-                }
-            }
-
-            // Check for match based on any request entity body
-            return SelectCharacterEncoding(request.Content != null ? request.Content.Headers : null);
-        }
-
-        internal bool TryMatchSupportedMediaType(MediaTypeHeaderValue mediaType, out MediaTypeMatch mediaTypeMatch)
-        {
-            Contract.Assert(mediaType != null);
-
-            foreach (MediaTypeHeaderValue supportedMediaType in SupportedMediaTypes)
-            {
-                if (supportedMediaType.IsSubsetOf(mediaType))
-                {
-                    // If the incoming media type had an associated quality factor, propagate it to the match
-                    MediaTypeWithQualityHeaderValue mediaTypeWithQualityHeaderValue = mediaType as MediaTypeWithQualityHeaderValue;
-                    double quality = mediaTypeWithQualityHeaderValue != null && mediaTypeWithQualityHeaderValue.Quality.HasValue
-                                         ? mediaTypeWithQualityHeaderValue.Quality.Value
-                                         : MediaTypeMatch.Match;
-
-                    mediaTypeMatch = new MediaTypeMatch(supportedMediaType, quality);
-                    return true;
-                }
-            }
-
-            mediaTypeMatch = null;
-            return false;
-        }
-
-        internal bool TryMatchSupportedMediaType(HttpRequestMessage request, out MediaTypeMatch mediaTypeMatch)
-        {
-            Contract.Assert(request != null);
-
-            IEnumerable<MediaTypeWithQualityHeaderValue> acceptMediaTypeValues = SortByQFactor(request.Headers.Accept);
-
-            foreach (MediaTypeHeaderValue acceptMediaTypeValue in acceptMediaTypeValues)
-            {
-                if (TryMatchSupportedMediaType(acceptMediaTypeValue, out mediaTypeMatch))
-                {
-                    return true;
-                }
-            }
-
-            mediaTypeMatch = null;
-            return false;
-        }
-
-        private static IEnumerable<MediaTypeWithQualityHeaderValue> SortByQFactor(HttpHeaderValueCollection<MediaTypeWithQualityHeaderValue> acceptHeaders)
-        {
-            if (acceptHeaders.Count > 1)
-            {
-                // Sort accept headers (if more than 1) in descending order based on q factor
-                // Use OrderBy() instead of Array.Sort() as it performs fewer comparisons. In this case the comparisons
-                // are quite expensive so OrderBy() performs better.
-                return acceptHeaders.OrderByDescending(m => m, MediaTypeWithQualityHeaderValueComparer.QualityComparer);
-            }
-            else
-            {
-                return acceptHeaders;
-            }
-        }
-
-        internal bool TryMatchMediaTypeMapping(HttpRequestMessage request, out MediaTypeMatch mediaTypeMatch)
-        {
-            Contract.Assert(request != null, "request cannot be null.");
-
-            foreach (MediaTypeMapping mapping in MediaTypeMappings)
-            {
-                // Collection<T> is not protected against null, so avoid them
-                double quality;
-                if (mapping != null && ((quality = mapping.TryMatchMediaType(request)) > 0.0))
-                {
-                    mediaTypeMatch = new MediaTypeMatch(mapping.MediaType, quality);
-                    return true;
-                }
-            }
-
-            mediaTypeMatch = null;
-            return false;
         }
 
         /// <summary>
@@ -480,21 +265,20 @@ namespace System.Net.Http.Formatting
         /// <param name="type">The type of the object being serialized. See <see cref="ObjectContent"/>.</param>
         /// <param name="headers">The content headers that should be configured.</param>
         /// <param name="mediaType">The authoritative media type. Can be <c>null</c>.</param>
-        public virtual void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, string mediaType)
+        public virtual void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, MediaTypeHeaderValue mediaType)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
             if (headers == null)
             {
-                throw new ArgumentNullException("headers");
+                throw Error.ArgumentNull("headers");
             }
 
-            if (!String.IsNullOrEmpty(mediaType))
+            if (mediaType != null)
             {
-                var parsedMediaType = MediaTypeHeaderValue.Parse(mediaType);
-                headers.ContentType = parsedMediaType;
+                headers.ContentType = mediaType.Clone();
             }
 
             // If content type is not set then set it based on supported media types.
@@ -520,8 +304,7 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Returns a specialized instance of the <see cref="MediaTypeFormatter"/> that can handle formatting a response for the given
-        /// parameters. This method is called by <see cref="DefaultContentNegotiator"/> after a formatter has been selected through content
-        /// negotiation.
+        /// parameters. This method is called after a formatter has been selected through content negotiation.
         /// </summary>
         /// <remarks>
         /// The default implementation returns <c>this</c> instance. Derived classes can choose to return a new instance if
@@ -535,11 +318,11 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
             if (request == null)
             {
-                throw new ArgumentNullException("request");
+                throw Error.ArgumentNull("request");
             }
 
             return this;
@@ -567,7 +350,7 @@ namespace System.Net.Http.Formatting
         /// <returns><c>true</c> if this <see cref="MediaTypeFormatter"/> can serialize an object of that type; otherwise <c>false</c>.</returns>
         public abstract bool CanWriteType(Type type);
 
-        private static Type GetOrAddDelegatingType(Type type)
+        private static Type GetOrAddDelegatingType(Type type, Type genericType)
         {
             return _delegatingEnumerableCache.GetOrAdd(
                 type,
@@ -575,16 +358,7 @@ namespace System.Net.Http.Formatting
                 {
                     // The current method is called by methods that already checked the type for is not null, is generic and is or implements IEnumerable<T>
                     // This retrieves the T type of the IEnumerable<T> interface.
-                    Type elementType;
-                    if (typeToRemap.GetGenericTypeDefinition().Equals(FormattingUtilities.EnumerableInterfaceGenericType))
-                    {
-                        elementType = typeToRemap.GetGenericArguments()[0];
-                    }
-                    else
-                    {
-                        elementType = typeToRemap.GetInterface(FormattingUtilities.EnumerableInterfaceGenericType.FullName).GetGenericArguments()[0];
-                    }
-
+                    Type elementType = genericType.GetGenericArguments()[0];
                     Type delegatingType = FormattingUtilities.DelegatingEnumerableGenericType.MakeGenericType(elementType);
                     ConstructorInfo delegatingConstructor = delegatingType.GetConstructor(new Type[] { FormattingUtilities.EnumerableInterfaceGenericType.MakeGenericType(elementType) });
                     _delegatingEnumerableConstructorCache.TryAdd(delegatingType, delegatingConstructor);
@@ -596,14 +370,14 @@ namespace System.Net.Http.Formatting
         /// <summary>
         /// Gets the default value for the specified type.
         /// </summary>
-        protected internal static object GetDefaultValueForType(Type type)
+        public static object GetDefaultValueForType(Type type)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (type.IsValueType)
+            if (type.IsValueType())
             {
                 return Activator.CreateInstance(type);
             }
@@ -644,15 +418,13 @@ namespace System.Net.Http.Formatting
             {
                 if (item == null)
                 {
-                    throw new ArgumentNullException("item");
+                    throw Error.ArgumentNull("item");
                 }
 
                 ParsedMediaTypeHeaderValue parsedMediaType = new ParsedMediaTypeHeaderValue(item);
-                if (parsedMediaType.IsAllMediaRange || parsedMediaType.IsSubTypeMediaRange)
+                if (parsedMediaType.IsAllMediaRange || parsedMediaType.IsSubtypeMediaRange)
                 {
-                    throw new ArgumentException(
-                        RS.Format(Properties.Resources.CannotUseMediaRangeForSupportedMediaType, _mediaTypeHeaderValueType.Name, item.MediaType),
-                        "item");
+                    throw Error.Argument("item", Properties.Resources.CannotUseMediaRangeForSupportedMediaType, _mediaTypeHeaderValueType.Name, item.MediaType);
                 }
             }
         }

@@ -138,6 +138,9 @@
   <data name="Security_NoUserFound" xml:space="preserve">
     <value>No user found was found that has the name "{0}".</value>
   </data>
+  <data name="SimpleMembership_FailToStoreOAuthToken" xml:space="preserve">
+    <value>Failed to store OAuth token to database.</value>
+  </data>
   <data name="SimpleMembership_PasswordTooLong" xml:space="preserve">
     <value>The membership password is too long. (Maximum length is 128 characters).</value>
   </data>

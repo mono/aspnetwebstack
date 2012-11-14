@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
+using System.Web.Http.Properties;
 using System.Web.Http.Validation;
 
 namespace System.Web.Http.ModelBinding
@@ -17,10 +18,15 @@ namespace System.Web.Http.ModelBinding
     public class FormatterParameterBinding : HttpParameterBinding
     {
         private IEnumerable<MediaTypeFormatter> _formatters;
+        private string _errorMessage;
 
         public FormatterParameterBinding(HttpParameterDescriptor descriptor, IEnumerable<MediaTypeFormatter> formatters, IBodyModelValidator bodyModelValidator)
             : base(descriptor)
         {
+            if (descriptor.IsOptional)
+            {
+                _errorMessage = Error.Format(SRResources.OptionalBodyParameterNotSupported, descriptor.Prefix ?? descriptor.ParameterName, GetType().Name);
+            }
             Formatters = formatters;
             BodyModelValidator = bodyModelValidator;
         }
@@ -28,6 +34,14 @@ namespace System.Web.Http.ModelBinding
         public override bool WillReadBody
         {
             get { return true; }
+        }
+
+        public override string ErrorMessage
+        {
+            get
+            {
+                return _errorMessage;
+            }
         }
 
         public IEnumerable<MediaTypeFormatter> Formatters
@@ -49,15 +63,27 @@ namespace System.Web.Http.ModelBinding
             set;
         }
 
-        protected virtual Task<object> ReadContentAsync(HttpRequestMessage request, Type type, IEnumerable<MediaTypeFormatter> formatters, IFormatterLogger formatterLogger)
+        public virtual Task<object> ReadContentAsync(HttpRequestMessage request, Type type, IEnumerable<MediaTypeFormatter> formatters, IFormatterLogger formatterLogger)
         {
-            return request.Content.ReadAsAsync(type, formatters, formatterLogger);
+            HttpContent content = request.Content;
+            if (content == null)
+            {
+                object defaultValue = MediaTypeFormatter.GetDefaultValueForType(type);
+                if (defaultValue == null)
+                {
+                    return TaskHelpers.NullResult();
+                }
+                else
+                {
+                    return TaskHelpers.FromResult(defaultValue);
+                }
+            }
+            return content.ReadAsAsync(type, formatters, formatterLogger);
         }
 
         public override Task ExecuteBindingAsync(ModelMetadataProvider metadataProvider, HttpActionContext actionContext, CancellationToken cancellationToken)
         {
             HttpParameterDescriptor paramFromBody = this.Descriptor;
-
             Type type = paramFromBody.ParameterType;
             HttpRequestMessage request = actionContext.ControllerContext.Request;
             IFormatterLogger formatterLogger = new ModelStateFormatterLogger(actionContext.ModelState, paramFromBody.ParameterName);
@@ -67,8 +93,7 @@ namespace System.Web.Http.ModelBinding
                 (model) =>
                 {
                     // Put the parameter result into the action context.
-                    string name = paramFromBody.ParameterName;
-                    actionContext.ActionArguments.Add(name, model);
+                    SetValue(actionContext, model);
 
                     // validate the object graph. 
                     // null indicates we want no body parameter validation

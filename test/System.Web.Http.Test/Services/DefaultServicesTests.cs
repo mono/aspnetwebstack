@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +17,8 @@ using System.Web.Http.Validation;
 using System.Web.Http.Validation.Providers;
 using System.Web.Http.ValueProviders;
 using System.Web.Http.ValueProviders.Providers;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Services
 {
@@ -59,6 +58,7 @@ namespace System.Web.Http.Services
             Assert.IsType<DefaultHttpControllerTypeResolver>(defaultServices.GetService(typeof(IHttpControllerTypeResolver)));
             Assert.IsType<TraceManager>(defaultServices.GetService(typeof(ITraceManager)));
             Assert.IsType<DataAnnotationsModelMetadataProvider>(defaultServices.GetService(typeof(ModelMetadataProvider)));
+            Assert.IsType<ModelValidatorCache>(defaultServices.GetService(typeof(IModelValidatorCache)));
 
             object[] filterProviders = defaultServices.GetServices(typeof(IFilterProvider)).ToArray();
             Assert.Equal(2, filterProviders.Length);
@@ -66,24 +66,24 @@ namespace System.Web.Http.Services
             Assert.IsType<ActionDescriptorFilterProvider>(filterProviders[1]);
 
             object[] modelBinderProviders = defaultServices.GetServices(typeof(ModelBinderProvider)).ToArray();
-            Assert.Equal(9, modelBinderProviders.Length);
+            Assert.Equal(8, modelBinderProviders.Length);
             Assert.IsType<TypeConverterModelBinderProvider>(modelBinderProviders[0]);
             Assert.IsType<TypeMatchModelBinderProvider>(modelBinderProviders[1]);
-            Assert.IsType<BinaryDataModelBinderProvider>(modelBinderProviders[2]);
-            Assert.IsType<KeyValuePairModelBinderProvider>(modelBinderProviders[3]);
-            Assert.IsType<ComplexModelDtoModelBinderProvider>(modelBinderProviders[4]);
-            Assert.IsType<ArrayModelBinderProvider>(modelBinderProviders[5]);
-            Assert.IsType<DictionaryModelBinderProvider>(modelBinderProviders[6]);
-            Assert.IsType<CollectionModelBinderProvider>(modelBinderProviders[7]);            
-            Assert.IsType<MutableObjectModelBinderProvider>(modelBinderProviders[8]);
+            Assert.IsType<KeyValuePairModelBinderProvider>(modelBinderProviders[2]);
+            Assert.IsType<ComplexModelDtoModelBinderProvider>(modelBinderProviders[3]);
+            Assert.IsType<ArrayModelBinderProvider>(modelBinderProviders[4]);
+            Assert.IsType<DictionaryModelBinderProvider>(modelBinderProviders[5]);
+            Assert.IsType<CollectionModelBinderProvider>(modelBinderProviders[6]);
+            Assert.IsType<MutableObjectModelBinderProvider>(modelBinderProviders[7]);
 
             object[] validatorProviders = defaultServices.GetServices(typeof(ModelValidatorProvider)).ToArray();
-            Assert.Equal(2, validatorProviders.Length);
+            Assert.Equal(3, validatorProviders.Length);
             Assert.IsType<DataAnnotationsModelValidatorProvider>(validatorProviders[0]);
             Assert.IsType<DataMemberModelValidatorProvider>(validatorProviders[1]);
+            Assert.IsType<InvalidModelValidatorProvider>(validatorProviders[2]);
 
             object[] valueProviderFactories = defaultServices.GetServices(typeof(ValueProviderFactory)).ToArray();
-            Assert.Equal(2, valueProviderFactories.Length);            
+            Assert.Equal(2, valueProviderFactories.Length);
             Assert.IsType<QueryStringValueProviderFactory>(valueProviderFactories[0]);
             Assert.IsType<RouteDataValueProviderFactory>(valueProviderFactories[1]);
         }
@@ -143,9 +143,9 @@ namespace System.Web.Http.Services
                 () => defaultServices.AddRange(typeof(object), new[] { new object() }),
                 "serviceType",
                 "The service type Object is not supported.");
-            Assert.ThrowsArgument(() => defaultServices.AddRange(typeof(IHttpActionInvoker), new[] { new object() }),
+            Assert.ThrowsArgument(() => defaultServices.AddRange(typeof(ValueProviderFactory), new[] { new object() }),
                 "services",
-                "The type Object must derive from IHttpActionInvoker.");
+                "The type Object must derive from ValueProviderFactory.");
         }
 
         [Fact]
@@ -292,30 +292,15 @@ namespace System.Web.Http.Services
         }
 
         [Fact]
-        public void GetService_ReturnsFirstServiceInList()
-        {
-            // Arrange
-            var config = new HttpConfiguration();
-            var defaultServices = new DefaultServices(config);
-            IEnumerable<object> servicesBefore = defaultServices.GetServices(typeof(IFilterProvider));
-
-            // Act
-            object service = defaultServices.GetService(typeof(IFilterProvider));
-
-            // Assert
-            Assert.Same(servicesBefore.First(), service);
-        }
-
-        [Fact]
         public void GetService_ReturnsNullWhenServiceListEmpty()
         {
             // Arrange
             var config = new HttpConfiguration();
             var defaultServices = new DefaultServices(config);
-            defaultServices.Clear(typeof(IFilterProvider));
+            defaultServices.Clear(typeof(IActionValueBinder));
 
             // Act
-            object service = defaultServices.GetService(typeof(IFilterProvider));
+            object service = defaultServices.GetService(typeof(IActionValueBinder));
 
             // Assert
             Assert.Null(service);
@@ -327,13 +312,13 @@ namespace System.Web.Http.Services
             // Arrange
             var config = new HttpConfiguration();
             var defaultServices = new DefaultServices(config);
-            var filterProvider = new Mock<IFilterProvider>().Object;
+            var filterProvider = new Mock<IActionValueBinder>().Object;
             var mockDependencyResolver = new Mock<IDependencyResolver>();
-            mockDependencyResolver.Setup(dr => dr.GetService(typeof(IFilterProvider))).Returns(filterProvider);
+            mockDependencyResolver.Setup(dr => dr.GetService(typeof(IActionValueBinder))).Returns(filterProvider);
             config.DependencyResolver = mockDependencyResolver.Object;
 
             // Act
-            object service = defaultServices.GetService(typeof(IFilterProvider));
+            object service = defaultServices.GetService(typeof(IActionValueBinder));
 
             // Assert
             Assert.Same(filterProvider, service);
@@ -349,11 +334,11 @@ namespace System.Web.Http.Services
             config.DependencyResolver = mockDependencyResolver.Object;
 
             // Act
-            defaultServices.GetService(typeof(IFilterProvider));
-            defaultServices.GetService(typeof(IFilterProvider));
+            defaultServices.GetService(typeof(IActionValueBinder));
+            defaultServices.GetService(typeof(IActionValueBinder));
 
             // Assert
-            mockDependencyResolver.Verify(dr => dr.GetService(typeof(IFilterProvider)), Times.Once());
+            mockDependencyResolver.Verify(dr => dr.GetService(typeof(IActionValueBinder)), Times.Once());
         }
 
         // GetServicesTests
@@ -445,7 +430,7 @@ namespace System.Web.Http.Services
                 "service",
                 "The type Object must derive from IHttpActionInvoker.");
             Assert.ThrowsArgumentOutOfRange(
-                () => defaultServices.Insert(typeof(IHttpActionInvoker), -1, new Mock<IHttpActionInvoker>().Object),
+                () => defaultServices.Insert(typeof(ValueProviderFactory), -1, new Mock<ValueProviderFactory>().Object),
                 "index",
                 "Index must be within the bounds of the List.");
         }
@@ -489,7 +474,7 @@ namespace System.Web.Http.Services
                 "services",
                 "The type Object must derive from IHttpActionInvoker.");
             Assert.ThrowsArgumentOutOfRange(
-                () => defaultServices.InsertRange(typeof(IHttpActionInvoker), -1, new[] { new Mock<IHttpActionInvoker>().Object }),
+                () => defaultServices.InsertRange(typeof(ValueProviderFactory), -1, new[] { new Mock<ValueProviderFactory>().Object }),
                 "index",
                 "Index was out of range. Must be non-negative and less than the size of the collection.");
         }
@@ -657,6 +642,15 @@ namespace System.Web.Http.Services
         }
 
         // Replace tests
+        [Fact]
+        public void Replace_SetsNull()
+        {
+            // Arrange
+            var config = new HttpConfiguration();
+            var defaultServices = new DefaultServices(config);
+
+            defaultServices.Replace(typeof(IActionValueBinder), service: null);
+        }
 
         [Fact]
         public void Replace_GuardClauses()
@@ -667,7 +661,6 @@ namespace System.Web.Http.Services
 
             // Act & assert
             Assert.ThrowsArgumentNull(() => defaultServices.Replace(serviceType: null, service: new object()), "serviceType");
-            Assert.ThrowsArgumentNull(() => defaultServices.Replace(typeof(object), service: null), "service");
             Assert.ThrowsArgument(
                 () => defaultServices.Replace(typeof(object), new object()),
                 "serviceType",
@@ -713,9 +706,9 @@ namespace System.Web.Http.Services
                 "serviceType",
                 "The service type Object is not supported.");
             Assert.ThrowsArgument(
-                () => defaultServices.ReplaceRange(typeof(IHttpActionInvoker), new[] { new object() }),
+                () => defaultServices.ReplaceRange(typeof(ValueProviderFactory), new[] { new object() }),
                 "services",
-                "The type Object must derive from IHttpActionInvoker.");
+                "The type Object must derive from ValueProviderFactory.");
         }
 
         [Fact]

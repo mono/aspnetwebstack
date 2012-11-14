@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace System.Web.Http.ContentNegotiation
 {
@@ -15,7 +15,7 @@ namespace System.Web.Http.ContentNegotiation
         public void Custom_ContentNegotiator_Used_In_Response()
         {
             // Arrange
-            configuration.Formatters.Clear();
+            Configuration.Formatters.Clear();
             MediaTypeWithQualityHeaderValue requestContentType = new MediaTypeWithQualityHeaderValue("application/xml");
             MediaTypeHeaderValue responseContentType = null;
 
@@ -23,12 +23,12 @@ namespace System.Web.Http.ContentNegotiation
             selector.Setup(s => s.Negotiate(It.IsAny<Type>(), It.IsAny<HttpRequestMessage>(), It.IsAny<IEnumerable<MediaTypeFormatter>>()))
                 .Returns(new ContentNegotiationResult(new XmlMediaTypeFormatter(), null));
 
-            configuration.Services.Replace(typeof(IContentNegotiator), selector.Object);
+            Configuration.Services.Replace(typeof(IContentNegotiator), selector.Object);
 
             // Act
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, baseUri);
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, BaseAddress);
             request.Headers.Accept.Add(requestContentType);
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
             response.EnsureSuccessStatusCode();
             responseContentType = response.Content.Headers.ContentType;
 

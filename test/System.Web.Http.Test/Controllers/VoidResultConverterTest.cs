@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net;
 using System.Net.Http;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.Controllers
 {
@@ -26,11 +25,11 @@ namespace System.Web.Http.Controllers
         }
 
         [Fact]
-        public void Convert_ReturnsResponseMessageWithRequestAssigned()
+        public void Convert_ReturnsResponseMessageWithRequestAssignedAndNoContentToReflectVoid()
         {
             var result = _converter.Convert(_context, null);
 
-            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
             Assert.Null(result.Content);
             Assert.Same(_request, result.RequestMessage);
         }

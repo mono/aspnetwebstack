@@ -1,19 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.TestUtil;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace Microsoft.Web.Helpers.Test
 {
-    /// <summary>
-    ///This is a test class for AnalyticsTest and is intended
-    ///to contain all AnalyticsTest Unit Tests
-    ///</summary>
     public class AnalyticsTest
     {
-        /// <summary>
-        ///A test for GetYahooAnalyticsHtml
-        ///</summary>
         [Fact]
         public void GetYahooAnalyticsHtmlTest()
         {
@@ -22,9 +15,6 @@ namespace Microsoft.Web.Helpers.Test
             Assert.True(actual.Contains(".yahoo.com") && actual.Contains("My_yahoo_account"));
         }
 
-        /// <summary>
-        ///A test for GetStatCounterAnalyticsHtml
-        ///</summary>
         [Fact]
         public void GetStatCounterAnalyticsHtmlTest()
         {
@@ -35,9 +25,6 @@ namespace Microsoft.Web.Helpers.Test
                         actual.Contains(project.ToString()) && actual.Contains(security));
         }
 
-        /// <summary>
-        ///A test for GetGoogleAnalyticsHtml
-        ///</summary>
         [Fact]
         public void GetGoogleAnalyticsHtmlTest()
         {

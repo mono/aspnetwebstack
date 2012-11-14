@@ -1,13 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Data;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.TestCommon;
 using Moq;
 using WebMatrix.Data;
-using Xunit;
 
 namespace WebMatrix.WebData.Test
 {

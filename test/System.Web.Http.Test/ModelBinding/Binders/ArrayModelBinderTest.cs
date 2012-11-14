@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -44,6 +44,52 @@ namespace System.Web.Http.ModelBinding.Binders
 
             int[] array = bindingContext.Model as int[];
             Assert.Equal(new[] { 42, 84 }, array);
+        }
+
+        [Fact]
+        public void GetBinder_ValueProviderDoesNotContainPrefix_ReturnsNull()
+        {
+            // Arrange
+            ModelBindingContext bindingContext = new ModelBindingContext
+            {
+                ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(int[])),
+                ModelName = "foo",
+                ValueProvider = new SimpleHttpValueProvider()
+            };
+
+            ArrayModelBinderProvider binderProvider = new ArrayModelBinderProvider();
+
+            // Act
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
+            bool bound = binder.BindModel(null, bindingContext);
+
+            // Assert
+            Assert.False(bound);
+        }
+
+        [Fact]
+        public void GetBinder_ModelMetadataReturnsReadOnly_ReturnsNull()
+        {
+            // Arrange
+            ModelBindingContext bindingContext = new ModelBindingContext
+            {
+                ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(int[])),
+                ModelName = "foo",
+                ValueProvider = new SimpleHttpValueProvider
+                {
+                    { "foo[0]", "42" },
+                }
+            };
+            bindingContext.ModelMetadata.IsReadOnly = true;
+
+            ArrayModelBinderProvider binderProvider = new ArrayModelBinderProvider();
+
+            // Act
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
+            bool bound = binder.BindModel(null, bindingContext);
+
+            // Assert
+            Assert.False(bound);
         }
     }
 }

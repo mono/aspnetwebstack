@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Globalization;
 using System.Web.TestUtil;
-using Xunit;
-using Xunit.Extensions;
+using Microsoft.TestCommon;
 
 namespace System.Web.WebPages.Test
 {
@@ -48,9 +47,9 @@ namespace System.Web.WebPages.Test
         [Fact]
         public void IsDecimalTests()
         {
-            Assert.True("1.3".IsDecimal());
-            Assert.True(".13".IsDecimal());
-            Assert.True("0.0".IsDecimal());
+            Assert.True(1.3m.ToString("0.0").IsDecimal());
+            Assert.True(0.13m.ToString(".00").IsDecimal());
+            Assert.True(0m.ToString("0.0").IsDecimal());
             Assert.True("12345678900123456".IsDecimal());
             Assert.True("0".IsDecimal());
             Assert.True("123456".IsDecimal());
@@ -64,10 +63,10 @@ namespace System.Web.WebPages.Test
         [Fact]
         public void AsDecimalBasicTests()
         {
-            Assert.Equal(-123m, "-123".AsDecimal());
-            Assert.Equal(9.99m, "9.99".AsDecimal());
+            Assert.Equal(-123m, -123m.ToString().AsDecimal());
+            Assert.Equal(9.99m, 9.99m.ToString().AsDecimal());
             Assert.Equal(0m, "0".AsDecimal());
-            Assert.Equal(-1.1111m, "-1.1111".AsDecimal());
+            Assert.Equal(-1.1111m, -1.1111m.ToString().AsDecimal());
         }
 
         [Fact]
@@ -113,9 +112,9 @@ namespace System.Web.WebPages.Test
         [Fact]
         public void IsFloatTests()
         {
-            Assert.True("1.3".IsFloat());
-            Assert.True(".13".IsFloat());
-            Assert.True("0.0".IsFloat());
+            Assert.True(1.3f.ToString("0.0").IsFloat());
+            Assert.True(0.13f.ToString(".00").IsFloat());
+            Assert.True(0f.ToString("0.0").IsFloat());
             Assert.True("12345678900123456".IsFloat());
             Assert.True("0".IsFloat());
             Assert.True("123456".IsFloat());
@@ -130,10 +129,10 @@ namespace System.Web.WebPages.Test
         [Fact]
         public void AsFloatBasicTests()
         {
-            Assert.Equal(-123f, "-123".AsFloat());
-            Assert.Equal(9.99f, "9.99".AsFloat());
+            Assert.Equal(-123f, -123f.ToString().AsFloat());
+            Assert.Equal(9.99f, 9.99f.ToString().AsFloat());
             Assert.Equal(0f, "0".AsFloat());
-            Assert.Equal(-1.1111f, "-1.1111".AsFloat());
+            Assert.Equal(-1.1111f, -1.1111f.ToString().AsFloat());
         }
 
         [Fact]

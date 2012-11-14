@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ComponentModel;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
@@ -9,8 +10,6 @@ namespace System.Net.Http.Formatting
     /// </summary>
     internal static class StringComparisonHelper
     {
-        private static readonly Type _stringComparisonType = typeof(StringComparison);
-
         /// <summary>
         /// Determines whether the specified <paramref name="value"/> is defined by the <see cref="StringComparison"/>
         /// enumeration.
@@ -23,14 +22,16 @@ namespace System.Net.Http.Formatting
         {
             return value == StringComparison.CurrentCulture ||
                    value == StringComparison.CurrentCultureIgnoreCase ||
+#if !NETFX_CORE
                    value == StringComparison.InvariantCulture ||
                    value == StringComparison.InvariantCultureIgnoreCase ||
+#endif
                    value == StringComparison.Ordinal ||
                    value == StringComparison.OrdinalIgnoreCase;
         }
 
         /// <summary>
-        /// Validates the specified <paramref name="value"/> and throws an <see cref="InvalidEnumArgumentException"/>
+        /// Validates the specified <paramref name="value"/> and throws an <see cref="ArgumentException"/>
         /// exception if not valid.
         /// </summary>
         /// <param name="value">The value to validate.</param>
@@ -39,7 +40,7 @@ namespace System.Net.Http.Formatting
         {
             if (!IsDefined(value))
             {
-                throw new InvalidEnumArgumentException(parameterName, (int)value, _stringComparisonType);
+                throw Error.InvalidEnumArgument(parameterName, (int)value, typeof(StringComparison));
             }
         }
     }

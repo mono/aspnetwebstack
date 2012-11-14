@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.ComponentModel;
@@ -8,7 +8,7 @@ using System.Web;
 
 namespace Microsoft.TestCommon
 {
-    public partial class AssertEx
+    public partial class Assert
     {
         /// <summary>
         /// Determines if your thread's current culture and current UI culture is English.
@@ -502,6 +502,7 @@ namespace Microsoft.TestCommon
         }
 
         // Custom ThrowsException so we can filter the stack trace.
+        [Serializable]
         private class ThrowsException : Xunit.Sdk.ThrowsException
         {
             public ThrowsException(Type type) : base(type) { }
@@ -510,7 +511,7 @@ namespace Microsoft.TestCommon
 
             protected override bool ExcludeStackFrame(string stackFrame)
             {
-                if (stackFrame.StartsWith("at Microsoft.TestCommon.AssertEx.", StringComparison.OrdinalIgnoreCase))
+                if (stackFrame.StartsWith("at Microsoft.TestCommon.Assert.", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

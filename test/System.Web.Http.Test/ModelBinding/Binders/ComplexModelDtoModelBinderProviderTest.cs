@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Metadata.Providers;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -15,24 +15,10 @@ namespace System.Web.Http.ModelBinding.Binders
             ModelBindingContext bindingContext = GetBindingContext(typeof(object));
 
             // Act
-            IModelBinder binder = provider.GetBinder(null, bindingContext);
+            IModelBinder binder = provider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);
-        }
-
-        [Fact]
-        public void GetBinder_TypeMatches_ReturnsBinder()
-        {
-            // Arrange
-            ComplexModelDtoModelBinderProvider provider = new ComplexModelDtoModelBinderProvider();
-            ModelBindingContext bindingContext = GetBindingContext(typeof(ComplexModelDto));
-
-            // Act
-            IModelBinder binder = provider.GetBinder(null, bindingContext);
-
-            // Assert
-            Assert.IsType<ComplexModelDtoModelBinder>(binder);
         }
 
         private static ModelBindingContext GetBindingContext(Type modelType)

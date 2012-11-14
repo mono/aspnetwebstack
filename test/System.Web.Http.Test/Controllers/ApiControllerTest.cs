@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,8 +19,6 @@ using System.Web.Http.Routing;
 using System.Web.Http.Services;
 using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http
 {
@@ -50,7 +48,7 @@ namespace System.Web.Http
                     tcs.TrySetResult(new HttpResponseMessage() { Content = new StringContent(responseText) });
                     return tcs.Task;
                 });
-            controllerDescriptor.HttpActionInvoker = mockInvoker.Object;
+            controllerDescriptor.Configuration.Services.Replace(typeof(IHttpActionInvoker), mockInvoker.Object);
 
             // Act
             HttpResponseMessage message = api.ExecuteAsync(
@@ -85,7 +83,7 @@ namespace System.Web.Http
                         MethodInfo = testDelegate.Method
                     };
                 });
-            controllerDescriptor.HttpActionSelector = mockSelector.Object;
+            controllerDescriptor.Configuration.Services.Replace(typeof(IHttpActionSelector), mockSelector.Object);
 
             // Act
             HttpResponseMessage message = api.ExecuteAsync(
@@ -281,6 +279,7 @@ namespace System.Web.Http
             HttpControllerContext controllerContext = ContextUtil.CreateControllerContext(instance: api, routeData: route, request: new HttpRequestMessage() { Method = HttpMethod.Get });
             Type controllerType = typeof(UsersController);
             controllerContext.ControllerDescriptor = new HttpControllerDescriptor(controllerContext.Configuration, controllerType.Name, controllerType);
+            controllerContext.Configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             // Act & Assert
             var exception = Assert.Throws<HttpResponseException>(() =>
@@ -289,9 +288,9 @@ namespace System.Web.Http
              });
 
             Assert.Equal(HttpStatusCode.NotFound, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
             Assert.Equal("No action was found on the controller 'UsersController' that matches the name 'invalidOp'.",
-                content.Value);
+                ((HttpError)content.Value)["MessageDetail"]);
         }
 
         [Fact]
@@ -325,8 +324,8 @@ namespace System.Web.Http
 
             Mock<HttpActionDescriptor> actionDescriptorMock = new Mock<HttpActionDescriptor>();
             actionDescriptorMock.Setup(ad => ad.ActionBinding).Returns(actionBindingMock.Object);
-            actionDescriptorMock.Setup(ad => ad.GetFilterPipeline()).
-                Returns(new Collection<FilterInfo>(new List<FilterInfo>() { new FilterInfo(actionFilterMock.Object, FilterScope.Action), new FilterInfo(authFilterMock.Object, FilterScope.Action) }));
+            actionDescriptorMock.Setup(ad => ad.GetFilterPipeline())
+                .Returns(new Collection<FilterInfo>(new List<FilterInfo>() { new FilterInfo(actionFilterMock.Object, FilterScope.Action), new FilterInfo(authFilterMock.Object, FilterScope.Action) }));
 
             selectorMock.Setup(s => s.SelectAction(controllerContext)).Returns(actionDescriptorMock.Object);
 
@@ -338,9 +337,9 @@ namespace System.Web.Http
                            log.Add("action");
                            return new HttpResponseMessage();
                        }));
-            controllerContext.ControllerDescriptor.HttpActionInvoker = invokerMock.Object;
-            controllerContext.ControllerDescriptor.HttpActionSelector = selectorMock.Object;
-            controllerContext.ControllerDescriptor.ActionValueBinder = binderMock.Object;
+            controllerContext.Configuration.Services.Replace(typeof(IHttpActionInvoker), invokerMock.Object);
+            controllerContext.Configuration.Services.Replace(typeof(IHttpActionSelector), selectorMock.Object);
+            controllerContext.Configuration.Services.Replace(typeof(IActionValueBinder), binderMock.Object);
 
             var task = controller.ExecuteAsync(controllerContext, CancellationToken.None);
 
@@ -671,7 +670,7 @@ namespace System.Web.Http
         public void ApiControllerCannotBeReused()
         {
             // Arrange
-            var config = new HttpConfiguration();
+            var config = new HttpConfiguration() { IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always };
             var singletonController = new Mock<ApiController> { CallBase = true }.Object;
             var mockDescriptor = new Mock<HttpControllerDescriptor>(config, "MyMock", singletonController.GetType()) { CallBase = true };
             mockDescriptor.Setup(d => d.CreateController(It.IsAny<HttpRequestMessage>())).Returns(singletonController);

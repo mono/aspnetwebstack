@@ -1,19 +1,18 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web;
 using System.Web.Helpers;
 using System.Web.Helpers.Test;
 using System.Web.TestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace Microsoft.Web.Helpers.Test
 {
     public class TwitterTest
     {
         /// <summary>
-        ///A test for Profile
-        ///</summary>
+        /// A test for Profile
+        /// </summary>
         [Fact]
         public void Profile_ReturnsValidData()
         {

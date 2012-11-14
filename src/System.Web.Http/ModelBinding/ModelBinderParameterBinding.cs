@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -15,30 +15,26 @@ namespace System.Web.Http.ModelBinding
     /// <summary>
     /// Describes a parameter that gets bound via ModelBinding.  
     /// </summary>
-    public class ModelBinderParameterBinding : HttpParameterBinding
+    public class ModelBinderParameterBinding : HttpParameterBinding, IValueProviderParameterBinding
     {
         private readonly ValueProviderFactory[] _valueProviderFactories;
-        private readonly ModelBinderProvider _modelBinderProvider;
-
-        // Cache information for ModelBindingContext.
-        private ModelMetadata _metadataCache;
-        private ModelValidationNode _validationNodeCache;
+        private readonly IModelBinder _binder;
 
         public ModelBinderParameterBinding(HttpParameterDescriptor descriptor,
-            ModelBinderProvider modelBinderProvider,
+            IModelBinder modelBinder,
             IEnumerable<ValueProviderFactory> valueProviderFactories)
             : base(descriptor)
         {
-            if (modelBinderProvider == null)
+            if (modelBinder == null)
             {
-                throw Error.ArgumentNull("modelBinderProvider");
+                throw Error.ArgumentNull("modelBinder");
             }
             if (valueProviderFactories == null)
             {
                 throw Error.ArgumentNull("valueProviderFactories");
             }
 
-            _modelBinderProvider = modelBinderProvider;
+            _binder = modelBinder;
             _valueProviderFactories = valueProviderFactories.ToArray();
         }
 
@@ -47,22 +43,18 @@ namespace System.Web.Http.ModelBinding
             get { return _valueProviderFactories; }
         }
 
-        public ModelBinderProvider ModelBinderProvider
+        public IModelBinder Binder
         {
-            get { return _modelBinderProvider; }
+            get { return _binder; }
         }
 
         public override Task ExecuteBindingAsync(ModelMetadataProvider metadataProvider, HttpActionContext actionContext, CancellationToken cancellationToken)
         {
-            string name = Descriptor.ParameterName;
-
             ModelBindingContext ctx = GetModelBindingContext(metadataProvider, actionContext);
 
-            IModelBinder binder = this._modelBinderProvider.GetBinder(actionContext, ctx);
-
-            bool haveResult = binder.BindModel(actionContext, ctx);
+            bool haveResult = _binder.BindModel(actionContext, ctx);
             object model = haveResult ? ctx.Model : Descriptor.DefaultValue;
-            actionContext.ActionArguments.Add(name, model);
+            SetValue(actionContext, model);
 
             return TaskHelpers.Completed();
         }
@@ -74,44 +66,18 @@ namespace System.Web.Http.ModelBinding
 
             string prefix = Descriptor.Prefix;
 
-            IValueProvider vp = CreateValueProvider(this._valueProviderFactories, actionContext);
-
-            if (_metadataCache == null)
-            {
-                Interlocked.Exchange(ref _metadataCache, metadataProvider.GetMetadataForType(null, type));
-            }
+            IValueProvider vp = CompositeValueProviderFactory.GetValueProvider(actionContext, _valueProviderFactories);
 
             ModelBindingContext ctx = new ModelBindingContext()
             {
                 ModelName = prefix ?? name,
                 FallbackToEmptyPrefix = prefix == null, // only fall back if prefix not specified
-                ModelMetadata = _metadataCache,
+                ModelMetadata = metadataProvider.GetMetadataForType(null, type),
                 ModelState = actionContext.ModelState,
                 ValueProvider = vp
             };
-            
-            if (_validationNodeCache == null)
-            {
-                Interlocked.Exchange(ref _validationNodeCache, ctx.ValidationNode);
-            }
-            else
-            {
-                ctx.ValidationNode = _validationNodeCache;
-            }
 
             return ctx;
-        }
-
-        // Instantiate the value providers for the given action context.
-        private static IValueProvider CreateValueProvider(ValueProviderFactory[] factories, HttpActionContext actionContext)
-        {
-            if (factories.Length == 1)
-            {
-                return factories[0].GetValueProvider(actionContext);
-            }
-
-            IValueProvider[] providers = Array.ConvertAll(factories, f => f.GetValueProvider(actionContext));            
-            return new CompositeValueProvider(providers);
         }
     }
 }

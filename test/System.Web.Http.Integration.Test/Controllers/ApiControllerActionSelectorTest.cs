@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net;
 using System.Net.Http;
 using System.Web.Http.Controllers;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
+using System.Web.Http.ValueProviders;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http
 {
@@ -19,13 +18,29 @@ namespace System.Web.Http
         [InlineData("GET", "Test/3?name=mario&ssn=123456", "GetUserByNameIdAndSsn")]
         [InlineData("GET", "Test?name=mario&ssn=123456", "GetUserByNameAndSsn")]
         [InlineData("GET", "Test?name=mario&ssn=123456&age=3", "GetUserByNameAgeAndSsn")]
-        [InlineData("GET", "Test/4?name=mario&age=20", "GetUserByNameAndId")]
         [InlineData("GET", "Test/5?random=9", "GetUser")]
         [InlineData("Post", "Test", "PostUser")]
         [InlineData("Post", "Test?name=mario&age=10", "PostUserByNameAndAge")]
-        /// Note: Normally the following would not match DeleteUserByIdAndOptName because it has 'id' and 'age' as parameters while the DeleteUserByIdAndOptName action has 'id' and 'name'. 
-        /// However, because the default value is provided on action parameter 'name', having the 'id' in the request was enough to match the action.
+        // Note: Normally the following would not match DeleteUserByIdAndOptName because it has 'id' and 'age' as parameters while the DeleteUserByIdAndOptName action has 'id' and 'name'. 
+        // However, because the default value is provided on action parameter 'name', having the 'id' in the request was enough to match the action.
         [InlineData("Delete", "Test/6?age=10", "DeleteUserByIdAndOptName")]
+        [InlineData("Delete", "Test", "DeleteUserByOptName")]
+        [InlineData("Delete", "Test?name=user", "DeleteUserByOptName")]
+        [InlineData("Delete", "Test/6?email=user@test.com", "DeleteUserById_Email_OptName_OptPhone")]
+        [InlineData("Delete", "Test/6?email=user@test.com&name=user", "DeleteUserById_Email_OptName_OptPhone")]
+        [InlineData("Delete", "Test/6?email=user@test.com&name=user&phone=123456789", "DeleteUserById_Email_OptName_OptPhone")]
+        [InlineData("Delete", "Test/6?email=user@test.com&height=1.8", "DeleteUserById_Email_Height_OptName_OptPhone")]
+        [InlineData("Delete", "Test/6?email=user@test.com&height=1.8&name=user", "DeleteUserById_Email_Height_OptName_OptPhone")]
+        [InlineData("Delete", "Test/6?email=user@test.com&height=1.8&name=user&phone=12345678", "DeleteUserById_Email_Height_OptName_OptPhone")]
+        [InlineData("Head", "Test/6", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test/6?size=2", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test/6?index=2", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test/6?index=2&size=10", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test/6?index=2&otherParameter=10", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test/6?otherQueryParameter=1234", "Head_Id_OptSize_OptIndex")]
+        [InlineData("Head", "Test", "Head")]
+        [InlineData("Head", "Test?otherParam=2", "Head")]
+        [InlineData("Head", "Test?index=2&size=10", "Head")]
         public void Route_Parameters_Default(string httpMethod, string requestUrl, string expectedActionName)
         {
             string routeUrl = "{controller}/{id}";
@@ -77,12 +92,12 @@ namespace System.Web.Http
 
         [Theory]
         [InlineData("GET", "Test/GetUsers", "GetUsers")]
-        [InlineData("GET", "Test/GetUser", "GetUser")]
+        [InlineData("GET", "Test/GetUser/7", "GetUser")]
         [InlineData("GET", "Test/GetUser?id=3", "GetUser")]
         [InlineData("GET", "Test/GetUser/4?id=3", "GetUser")]
-        [InlineData("GET", "Test/GetUserByNameAgeAndSsn", "GetUserByNameAgeAndSsn")]
-        [InlineData("GET", "Test/GetUserByNameAndSsn", "GetUserByNameAndSsn")]
-        [InlineData("POST", "Test/PostUserByNameAndAddress", "PostUserByNameAndAddress")]
+        [InlineData("GET", "Test/GetUserByNameAgeAndSsn?name=user&age=90&ssn=123456789", "GetUserByNameAgeAndSsn")]
+        [InlineData("GET", "Test/GetUserByNameAndSsn?name=user&ssn=123456789", "GetUserByNameAndSsn")]
+        [InlineData("POST", "Test/PostUserByNameAndAddress?name=user", "PostUserByNameAndAddress")]
         public void Route_Action(string httpMethod, string requestUrl, string expectedActionName)
         {
             string routeUrl = "{controller}/{action}/{id}";
@@ -97,12 +112,12 @@ namespace System.Web.Http
 
         [Theory]
         [InlineData("GET", "Test/getusers", "GetUsers")]
-        [InlineData("GET", "Test/getuseR", "GetUser")]
+        [InlineData("GET", "Test/getuseR/1", "GetUser")]
         [InlineData("GET", "Test/Getuser?iD=3", "GetUser")]
         [InlineData("GET", "Test/GetUser/4?Id=3", "GetUser")]
-        [InlineData("GET", "Test/GetUserByNameAgeandSsn", "GetUserByNameAgeAndSsn")]
-        [InlineData("GET", "Test/getUserByNameAndSsn", "GetUserByNameAndSsn")]
-        [InlineData("POST", "Test/PostUserByNameAndAddress", "PostUserByNameAndAddress")]
+        [InlineData("GET", "Test/GetUserByNameAgeandSsn?name=user&age=90&ssn=123456789", "GetUserByNameAgeAndSsn")]
+        [InlineData("GET", "Test/getUserByNameAndSsn?name=user&ssn=123456789", "GetUserByNameAndSsn")]
+        [InlineData("POST", "Test/PostUserByNameAndAddress?name=user", "PostUserByNameAndAddress")]
         public void Route_Action_Name_Casing(string httpMethod, string requestUrl, string expectedActionName)
         {
             string routeUrl = "{controller}/{action}/{id}";
@@ -152,6 +167,23 @@ namespace System.Web.Http
             Assert.Equal(expectedActionName, descriptor.ActionName);
         }
 
+        [Theory]
+        [InlineData("GET", "notActionParameterValue1/Test", "GetUsers")]
+        [InlineData("GET", "notActionParameterValue2/Test/2", "GetUser")]
+        [InlineData("GET", "notActionParameterValue1/Test?randomQueryVariable=val1", "GetUsers")]
+        [InlineData("GET", "notActionParameterValue2/Test/2?randomQueryVariable=val2", "GetUser")]
+        public void ActionsThatHaveSubsetOfRouteParameters_AreConsideredForSelection(string httpMethod, string requestUrl, string expectedActionName)
+        {
+            string routeUrl = "{notActionParameter}/{controller}/{id}";
+            object routeDefault = new { id = RouteParameter.Optional };
+
+            HttpControllerContext context = ApiControllerHelper.CreateControllerContext(httpMethod, requestUrl, routeUrl, routeDefault);
+            context.ControllerDescriptor = new HttpControllerDescriptor(context.Configuration, "test", typeof(TestController));
+            HttpActionDescriptor descriptor = ApiControllerHelper.SelectAction(context);
+
+            Assert.Equal(expectedActionName, descriptor.ActionName);
+        }
+
         [Fact]
         public void RequestToAmbiguousAction_OnDefaultRoute()
         {
@@ -162,7 +194,7 @@ namespace System.Web.Http
 
             // This would result in ambiguous match because complex parameter is not considered for matching.
             // Therefore, PostUserByNameAndAddress(string name, Address address) would conflicts with PostUserByName(string name)
-            Assert.Throws<HttpResponseException>(() =>
+            Assert.Throws<InvalidOperationException>(() =>
                 {
                     HttpControllerContext context = ApiControllerHelper.CreateControllerContext(httpMethod, requestUrl, routeUrl, routeDefault);
                     context.ControllerDescriptor = new HttpControllerDescriptor(context.Configuration, "test", typeof(TestController));
@@ -186,8 +218,8 @@ namespace System.Web.Http
             });
 
             Assert.Equal(HttpStatusCode.MethodNotAllowed, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
-            Assert.Equal("The requested resource does not support http method 'POST'.", content.Value);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
+            Assert.Equal("The requested resource does not support http method 'POST'.", ((HttpError)content.Value).Message);
         }
 
         [Fact]
@@ -214,8 +246,29 @@ namespace System.Web.Http
             });
 
             Assert.Equal(HttpStatusCode.MethodNotAllowed, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
-            Assert.Equal("The requested resource does not support http method 'PUT'.", content.Value);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
+            Assert.Equal("The requested resource does not support http method 'PUT'.", ((HttpError)content.Value).Message);
+        }
+
+        [Theory]
+        [InlineData("GET", "Test", "GetUsers")]
+        [InlineData("GET", "Test/2", "GetUser")]
+        [InlineData("GET", "Test/3?name=mario", "GetUserByNameAndId")]
+        [InlineData("GET", "Test/3?name=mario&ssn=123456", "GetUserByNameIdAndSsn")]
+        [InlineData("GET", "Test?name=mario&ssn=123456", "GetUserByNameAndSsn")]
+        [InlineData("GET", "Test?name=mario&ssn=123456&age=3", "GetUserByNameAgeAndSsn")]
+        [InlineData("GET", "Test/5?random=9", "GetUser")]
+        public void SelectionBasedOnParameter_IsNotAffectedBy_AddingGlobalValueProvider(string httpMethod, string requestUrl, string expectedActionName)
+        {
+            string routeUrl = "{controller}/{id}";
+            object routeDefault = new { id = RouteParameter.Optional };
+
+            HttpControllerContext context = ApiControllerHelper.CreateControllerContext(httpMethod, requestUrl, routeUrl, routeDefault);
+            context.Configuration.Services.Add(typeof(ValueProviderFactory), new HeaderValueProviderFactory());
+            context.ControllerDescriptor = new HttpControllerDescriptor(context.Configuration, "test", typeof(TestController));
+            HttpActionDescriptor descriptor = ApiControllerHelper.SelectAction(context);
+
+            Assert.Equal(expectedActionName, descriptor.ActionName);
         }
     }
 }

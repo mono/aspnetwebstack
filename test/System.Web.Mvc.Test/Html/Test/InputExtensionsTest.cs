@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ComponentModel.DataAnnotations;
 using System.Data.Linq;
 using System.Web.Mvc.Test;
 using System.Web.Routing;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Html.Test
 {
@@ -425,6 +424,7 @@ namespace System.Web.Mvc.Html.Test
         // Culture tests
 
         [Fact]
+        [ReplaceCulture]
         public void InputHelpersUseCurrentCultureToConvertValueParameter()
         {
             // Arrange
@@ -436,96 +436,93 @@ namespace System.Web.Mvc.Html.Test
                 // Hidden(name)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.Hidden("foo"))
                 },
                 // Hidden(name, value)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.Hidden("foo", dt))
                 },
                 // Hidden(name, value, htmlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.Hidden("foo", dt, null))
                 },
                 // Hidden(name, value, htmlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""hidden"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.Hidden("foo", dt, new RouteValueDictionary()))
                 },
                 // RadioButton(name, value)
                 new
                 {
-                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt))
                 },
                 // RadioButton(name, value, isChecked)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt, false))
                 },
                 // RadioButton(name, value, htmlAttributes)
                 new
                 {
-                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt, null))
                 },
                 // RadioButton(name, value)
                 new
                 {
-                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input checked=""checked"" id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt, new RouteValueDictionary()))
                 },
                 // RadioButton(name, value, isChecked, htmlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt, false, null))
                 },
                 // RadioButton(name, value, isChecked, htmlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""radio"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.RadioButton("foo", dt, false, new RouteValueDictionary()))
                 },
                 // TextBox(name)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("foo"))
                 },
                 // TextBox(name, value)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("foo", dt))
                 },
                 // TextBox(name, value, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("foo", dt, (object)null))
                 },
                 // TextBox(name, value, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""1900/01/01 12:00:00 AM"" />",
+                    Html = @"<input id=""foo"" name=""foo"" type=""text"" value=""01/01/1900 00:00:00"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("foo", dt, new RouteValueDictionary()))
                 }
             };
 
             // Act && Assert
-            using (HtmlHelperTest.ReplaceCulture("en-ZA", "en-US"))
+            foreach (var test in tests)
             {
-                foreach (var test in tests)
-                {
-                    Assert.Equal(test.Html, test.Action().ToHtmlString());
-                }
+                Assert.Equal(test.Html, test.Action().ToHtmlString());
             }
         }
 
@@ -1251,11 +1248,14 @@ namespace System.Web.Mvc.Html.Test
             helper.ViewContext.UnobtrusiveJavaScriptEnabled = true;
             helper.ViewContext.FormContext = new FormContext();
 
-            // Act
-            MvcHtmlString html = helper.PasswordFor(m => m.contained.foo);
+            using (HtmlHelperTest.ReplaceCulture("en-US", "en-US"))
+            {
+                // Act
+                MvcHtmlString html = helper.PasswordFor(m => m.contained.foo);
 
-            // Assert
-            Assert.Equal(@"<input data-val=""true"" data-val-required=""The foo field is required."" id=""contained_foo"" name=""contained.foo"" type=""password"" />", html.ToHtmlString());
+                // Assert
+                Assert.Equal(@"<input data-val=""true"" data-val-required=""The foo field is required."" id=""contained_foo"" name=""contained.foo"" type=""password"" />", html.ToHtmlString());
+            }
         }
 
         [Fact]
@@ -2173,6 +2173,7 @@ namespace System.Web.Mvc.Html.Test
         }
 
         [Fact]
+        [ReplaceCulture]
         public void TextBoxHelpersFormatValue()
         {
             // Arrange
@@ -2187,54 +2188,51 @@ namespace System.Web.Mvc.Html.Test
                 // TextBox(name, value, format)
                 new
                 {
-                    Html = @"<input id=""viewDataDate"" name=""viewDataDate"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""viewDataDate"" name=""viewDataDate"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("viewDataDate", null, "-{0}-"))
                 },
                 // TextBox(name, value, format)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("date", dt, "-{0}-"))
                 },
                 // TextBox(name, value, format, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("date", dt, "-{0}-", (object)null))
                 },
                 // TextBox(name, value, format, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => helper.TextBox("date", dt, "-{0}-", new RouteValueDictionary()))
                 },
                 // TextBoxFor(expression, format)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => dateModelhelper.TextBoxFor(m => m.date, "-{0}-"))
                 },
                 // TextBoxFor(expression, format, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => dateModelhelper.TextBoxFor(m => m.date, "-{0}-", (object)null))
                 },
                 // TextBoxFor(expression, format, hmtlAttributes)
                 new
                 {
-                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-1900/01/01 12:00:00 AM-"" />",
+                    Html = @"<input id=""date"" name=""date"" type=""text"" value=""-01/01/1900 00:00:00-"" />",
                     Action = new Func<MvcHtmlString>(() => dateModelhelper.TextBoxFor(m => m.date, "-{0}-", new RouteValueDictionary()))
                 }
             };
 
             // Act && Assert
-            using (HtmlHelperTest.ReplaceCulture("en-ZA", "en-US"))
+            foreach (var test in tests)
             {
-                foreach (var test in tests)
-                {
-                    Assert.Equal(test.Html, test.Action().ToHtmlString());
-                }
+                Assert.Equal(test.Html, test.Action().ToHtmlString());
             }
         }
 

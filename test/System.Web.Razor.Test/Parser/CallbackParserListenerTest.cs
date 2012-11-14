@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Threading;
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace System.Web.Razor.Test.Parser
 {

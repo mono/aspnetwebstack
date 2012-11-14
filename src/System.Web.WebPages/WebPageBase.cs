@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -345,7 +345,7 @@ namespace System.Web.WebPages
         {
             if (String.IsNullOrEmpty(path))
             {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("path");
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "path");
             }
 
             return new HelperResult(writer =>

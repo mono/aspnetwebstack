@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Web.Http.Controllers;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http
 {
@@ -15,14 +14,14 @@ namespace System.Web.Http
             ApiControllerActionSelector actionSelector = new ApiControllerActionSelector();
             HttpControllerContext GetContext = ContextUtil.CreateControllerContext();
             HttpControllerDescriptor usersControllerDescriptor = new HttpControllerDescriptor(GetContext.Configuration, "Users", typeof(UsersController));
-            usersControllerDescriptor.HttpActionSelector = actionSelector;
+            usersControllerDescriptor.Configuration.Services.Replace(typeof(IHttpActionSelector), actionSelector);
             GetContext.ControllerDescriptor = usersControllerDescriptor;
             GetContext.Request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Get
                 };
             HttpControllerContext PostContext = ContextUtil.CreateControllerContext();
-            usersControllerDescriptor.HttpActionSelector = actionSelector;
+            usersControllerDescriptor.Configuration.Services.Replace(typeof(IHttpActionSelector), actionSelector);
             PostContext.ControllerDescriptor = usersControllerDescriptor;
             PostContext.Request = new HttpRequestMessage
             {

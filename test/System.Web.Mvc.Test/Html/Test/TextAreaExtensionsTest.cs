@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Mvc.Test;
 using System.Web.Routing;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Html.Test
 {
@@ -53,8 +52,10 @@ namespace System.Web.Mvc.Html.Test
             MvcHtmlString html = helper.TextArea("foo", new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""30"">
-</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"30\">" + Environment.NewLine
+              + "</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -71,8 +72,10 @@ namespace System.Web.Mvc.Html.Test
             MvcHtmlString html = helper.TextArea("foo", new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" data-val=""true"" data-val-type=""error"" id=""foo"" name=""foo"" rows=""30"">
-</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" data-val=\"true\" data-val-type=\"error\" id=\"foo\" name=\"foo\" rows=\"30\">" + Environment.NewLine
+              + "</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -85,8 +88,10 @@ namespace System.Web.Mvc.Html.Test
             MvcHtmlString html = helper.TextArea("foo", "bar", 10, 25, new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""25"" id=""foo"" name=""foo"" rows=""10"">
-bar</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"25\" id=\"foo\" name=\"foo\" rows=\"10\">" + Environment.NewLine
+              + "bar</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -99,8 +104,10 @@ bar</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "bar", 10, 25, new { rows = "30", foo_bar = "baz" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""25"" foo-bar=""baz"" id=""foo"" name=""foo"" rows=""10"">
-bar</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"25\" foo-bar=\"baz\" id=\"foo\" name=\"foo\" rows=\"10\">" + Environment.NewLine
+              + "bar</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -125,7 +132,7 @@ bar</textarea>", html.ToHtmlString());
             Assert.ThrowsArgumentOutOfRange(
                 delegate { helper.TextArea("Foo", null /* value */, 0, -1, null /* htmlAttributes */); },
                 "columns",
-                @"The value must be greater than or equal to zero.");
+                "The value must be greater than or equal to zero.");
         }
 
         [Fact]
@@ -138,7 +145,7 @@ bar</textarea>", html.ToHtmlString());
             Assert.ThrowsArgumentOutOfRange(
                 delegate { helper.TextArea("Foo", null /* value */, -1, 0, null /* htmlAttributes */); },
                 "rows",
-                @"The value must be greater than or equal to zero.");
+                "The value must be greater than or equal to zero.");
         }
 
         [Fact]
@@ -151,8 +158,10 @@ bar</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "bar");
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-bar</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "bar</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -165,8 +174,10 @@ bar</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo");
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -179,8 +190,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", null, 0, 0, null);
 
             // Assert
-            Assert.Equal(@"<textarea id=""foo"" name=""foo"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea id=\"foo\" name=\"foo\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -193,8 +206,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo.bar.baz");
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo_bar_baz"" name=""foo.bar.baz"" rows=""2"">
-</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo_bar_baz\" name=\"foo.bar.baz\" rows=\"2\">" + Environment.NewLine
+              + "</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -207,8 +222,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -221,8 +238,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", _textAreaAttributesObjectUnderscoresDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" foo-bar=""baz"" id=""foo"" name=""foo"" rows=""15"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" foo-bar=\"baz\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -235,8 +254,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", _textAreaAttributesDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -249,8 +270,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "Hello World", _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-Hello World</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "Hello World</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -263,8 +286,10 @@ Hello World</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "Hello World", _textAreaAttributesObjectUnderscoresDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" foo-bar=""baz"" id=""foo"" name=""foo"" rows=""15"">
-Hello World</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" foo-bar=\"baz\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "Hello World</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -277,8 +302,10 @@ Hello World</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "<Hello World>", _textAreaAttributesDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-&lt;Hello World&gt;</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "&lt;Hello World&gt;</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -291,8 +318,10 @@ Hello World</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("baz", _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""baz"" name=""baz"" rows=""15"">
-</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"baz\" name=\"baz\" rows=\"15\">" + Environment.NewLine
+              + "</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -305,8 +334,10 @@ Hello World</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", null, null);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-ViewDataFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "ViewDataFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -319,8 +350,10 @@ ViewDataFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea class=""input-validation-error"" cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-AttemptedValueFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea class=\"input-validation-error\" cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "AttemptedValueFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -333,8 +366,10 @@ AttemptedValueFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", new { @class = "foo-class" });
 
             // Assert
-            Assert.Equal(@"<textarea class=""input-validation-error foo-class"" cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-AttemptedValueFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea class=\"input-validation-error foo-class\" cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "AttemptedValueFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -348,8 +383,10 @@ AttemptedValueFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("foo", "bar");
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""MyPrefix_foo"" name=""MyPrefix.foo"" rows=""2"">
-bar</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"MyPrefix_foo\" name=\"MyPrefix.foo\" rows=\"2\">" + Environment.NewLine
+              + "bar</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -363,8 +400,10 @@ bar</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextArea("", "bar");
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""MyPrefix"" name=""MyPrefix"" rows=""2"">
-bar</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"MyPrefix\" name=\"MyPrefix\" rows=\"2\">" + Environment.NewLine
+              + "bar</textarea>",
+                html.ToHtmlString());
         }
 
         // TextAreaFor
@@ -420,8 +459,10 @@ bar</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""30"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"30\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -432,14 +473,22 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             helper.ViewContext.ClientValidationEnabled = true;
             helper.ViewContext.UnobtrusiveJavaScriptEnabled = true;
             helper.ViewContext.FormContext = new FormContext();
-            helper.ClientValidationRuleFactory = (name, metadata) => new[] { new ModelClientValidationRule { ValidationType = "type", ErrorMessage = "error" } };
+            ModelMetadata modelMetadata = null;
+            helper.ClientValidationRuleFactory = (name, metadata) => {
+                modelMetadata = metadata;
+                return new[] { new ModelClientValidationRule { ValidationType = "type", ErrorMessage = "error" } };
+            };
 
             // Act
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" data-val=""true"" data-val-type=""error"" id=""foo"" name=""foo"" rows=""30"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.NotNull(modelMetadata);
+            Assert.Equal("foo", modelMetadata.PropertyName);
+            Assert.Equal(
+                "<textarea cols=\"20\" data-val=\"true\" data-val-type=\"error\" id=\"foo\" name=\"foo\" rows=\"30\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -452,8 +501,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -466,8 +517,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, 0, 0, null);
 
             // Assert
-            Assert.Equal(@"<textarea id=""foo"" name=""foo"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea id=\"foo\" name=\"foo\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -480,8 +533,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -494,8 +549,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, _textAreaAttributesObjectUnderscoresDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" foo-bar=""baz"" id=""foo"" name=""foo"" rows=""15"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" foo-bar=\"baz\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -508,8 +565,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, _textAreaAttributesDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -522,8 +581,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, _textAreaAttributesObjectDictionary);
 
             // Assert
-            Assert.Equal(@"<textarea class=""input-validation-error"" cols=""12"" id=""foo"" name=""foo"" rows=""15"">
-AttemptedValueFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea class=\"input-validation-error\" cols=\"12\" id=\"foo\" name=\"foo\" rows=\"15\">" + Environment.NewLine
+              + "AttemptedValueFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -536,8 +597,10 @@ AttemptedValueFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, new { @class = "foo-class" });
 
             // Assert
-            Assert.Equal(@"<textarea class=""input-validation-error foo-class"" cols=""20"" id=""foo"" name=""foo"" rows=""2"">
-AttemptedValueFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea class=\"input-validation-error foo-class\" cols=\"20\" id=\"foo\" name=\"foo\" rows=\"2\">" + Environment.NewLine
+              + "AttemptedValueFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -551,8 +614,10 @@ AttemptedValueFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""MyPrefix_foo"" name=""MyPrefix.foo"" rows=""2"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"MyPrefix_foo\" name=\"MyPrefix.foo\" rows=\"2\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -566,8 +631,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m);
 
             // Assert
-            Assert.Equal(@"<textarea cols=""20"" id=""MyPrefix"" name=""MyPrefix"" rows=""2"">
-System.Web.Mvc.Html.Test.TextAreaExtensionsTest+TextAreaModel</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"20\" id=\"MyPrefix\" name=\"MyPrefix\" rows=\"2\">" + Environment.NewLine
+              + "System.Web.Mvc.Html.Test.TextAreaExtensionsTest+TextAreaModel</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -580,8 +647,10 @@ System.Web.Mvc.Html.Test.TextAreaExtensionsTest+TextAreaModel</textarea>", html.
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, 10, 25, new { rows = "30" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""25"" id=""foo"" name=""foo"" rows=""10"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"25\" id=\"foo\" name=\"foo\" rows=\"10\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -594,8 +663,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, 10, 25, new { rows = "30", foo_bar = "baz" });
 
             // Assert
-            Assert.Equal(@"<textarea cols=""25"" foo-bar=""baz"" id=""foo"" name=""foo"" rows=""10"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"25\" foo-bar=\"baz\" id=\"foo\" name=\"foo\" rows=\"10\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -608,8 +679,10 @@ ViewItemFoo</textarea>", html.ToHtmlString());
             MvcHtmlString html = helper.TextAreaFor(m => m.foo, 10, 25, new RouteValueDictionary(new { rows = "30" }));
 
             // Assert
-            Assert.Equal(@"<textarea cols=""25"" id=""foo"" name=""foo"" rows=""10"">
-ViewItemFoo</textarea>", html.ToHtmlString());
+            Assert.Equal(
+                "<textarea cols=\"25\" id=\"foo\" name=\"foo\" rows=\"10\">" + Environment.NewLine
+              + "ViewItemFoo</textarea>",
+                html.ToHtmlString());
         }
 
         [Fact]
@@ -625,7 +698,7 @@ ViewItemFoo</textarea>", html.ToHtmlString());
                                                                    htmlAttributes: null, innerHtmlPrefix: "<prefix>");
 
             // Assert
-            Assert.Equal(@"<textarea id=""testEncoding"" name=""testEncoding""><prefix>&lt;model&gt;</textarea>", html.ToHtmlString());
+            Assert.Equal("<textarea id=\"testEncoding\" name=\"testEncoding\"><prefix>&lt;model&gt;</textarea>", html.ToHtmlString());
         }
     }
 }

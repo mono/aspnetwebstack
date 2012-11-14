@@ -1,14 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Reflection;
 using System.Security.Principal;
 using System.Threading;
-using Xunit;
 
 namespace Microsoft.TestCommon
 {
-    public class RestoreThreadPrincipalAttribute : BeforeAfterTestAttribute
+    public class RestoreThreadPrincipalAttribute : Xunit.BeforeAfterTestAttribute
     {
         private IPrincipal _originalPrincipal;
 

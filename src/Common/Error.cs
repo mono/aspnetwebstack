@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,16 +11,17 @@ namespace System.Web.Http
     /// <summary>
     /// Utility class for creating and unwrapping <see cref="Exception"/> instances.
     /// </summary>
-    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Error", Justification = "This usage is okay.")]
     internal static class Error
     {
+        private const string HttpScheme = "http";
+        private const string HttpsScheme = "https";
+
         /// <summary>
         /// Formats the specified resource string using <see cref="M:CultureInfo.CurrentCulture"/>.
         /// </summary>
         /// <param name="format">A composite format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <returns>The formatted string.</returns>
-        [SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", MessageId = "0#", Justification = "Standard String.Format pattern and names.")]
         internal static string Format(string format, params object[] args)
         {
             return String.Format(CultureInfo.CurrentCulture, format, args);
@@ -57,7 +58,7 @@ namespace System.Web.Http
         /// <returns>The logged <see cref="Exception"/>.</returns>
         internal static ArgumentException ArgumentUriNotHttpOrHttpsScheme(string parameterName, Uri actualValue)
         {
-            return new ArgumentException(Error.Format(CommonWebApiResources.ArgumentInvalidHttpUriScheme, actualValue, Uri.UriSchemeHttp, Uri.UriSchemeHttps), parameterName);
+            return new ArgumentException(Error.Format(CommonWebApiResources.ArgumentInvalidHttpUriScheme, actualValue, HttpScheme, HttpsScheme), parameterName);
         }
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace System.Web.Http
         /// <param name="actualValue">The value of the argument that causes this exception.</param>
         /// <param name="minValue">The minimum size of the argument.</param>
         /// <returns>The logged <see cref="Exception"/>.</returns>
-        internal static ArgumentOutOfRangeException ArgumentGreaterThanOrEqualTo(string parameterName, object actualValue, object minValue)
+        internal static ArgumentOutOfRangeException ArgumentMustBeGreaterThanOrEqualTo(string parameterName, object actualValue, object minValue)
         {
             return new ArgumentOutOfRangeException(parameterName, actualValue, Error.Format(CommonWebApiResources.ArgumentMustBeGreaterThanOrEqualTo, minValue));
         }
@@ -215,15 +216,19 @@ namespace System.Web.Http
         }
 
         /// <summary>
-        /// Creates an <see cref="InvalidEnumArgumentException"/>.
+        /// Creates an <see cref="ArgumentException"/> for an invalid enum argument.
         /// </summary>
         /// <param name="parameterName">The name of the parameter that caused the current exception.</param>
         /// <param name="invalidValue">The value of the argument that failed.</param>
         /// <param name="enumClass">A <see cref="Type"/> that represents the enumeration class with the valid values.</param>
         /// <returns>The logged <see cref="Exception"/>.</returns>
-        internal static InvalidEnumArgumentException InvalidEnumArgument(string parameterName, int invalidValue, Type enumClass)
+        internal static ArgumentException InvalidEnumArgument(string parameterName, int invalidValue, Type enumClass)
         {
+#if NETFX_CORE
+            return new ArgumentException(Error.Format(CommonWebApiResources.InvalidEnumArgument, parameterName, invalidValue, enumClass.Name), parameterName);
+#else
             return new InvalidEnumArgumentException(parameterName, invalidValue, enumClass);
+#endif
         }
 
         /// <summary>

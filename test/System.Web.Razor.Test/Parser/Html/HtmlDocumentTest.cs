@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Generator;
 using System.Web.Razor.Parser;
@@ -7,8 +7,7 @@ using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
 using System.Web.WebPages.TestUtils;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.Html
 {
@@ -78,9 +77,9 @@ namespace System.Web.Razor.Test.Parser.Html
         [Fact]
         public void ParseDocumentWithinSectionDoesNotCreateDocumentLevelSpan()
         {
-            ParseDocumentTest(@"@section Foo {
-    <html></html>
-}",
+            ParseDocumentTest("@section Foo {" + Environment.NewLine
+                            + "    <html></html>" + Environment.NewLine
+                            + "}",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new SectionBlock(new SectionCodeGenerator("Foo"),

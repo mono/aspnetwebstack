@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Web.Http.Controllers;
+using System.Web.Http.Internal;
 using System.Web.Http.ValueProviders;
 
 namespace System.Web.Http.ModelBinding.Binders
@@ -19,6 +21,9 @@ namespace System.Web.Http.ModelBinding.Binders
             {
                 return false; // no entry
             }
+
+            // Provider should have verified this before creating
+            Contract.Assert(TypeHelper.HasStringConverter(bindingContext.ModelType));            
 
             object newModel;
             bindingContext.ModelState.SetModelValue(bindingContext.ModelName, valueProviderResult);

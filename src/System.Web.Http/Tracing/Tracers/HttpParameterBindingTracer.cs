@@ -1,11 +1,16 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
+using System.Web.Http.ModelBinding;
 using System.Web.Http.Properties;
+using System.Web.Http.ValueProviders;
 
 namespace System.Web.Http.Tracing.Tracers
 {
@@ -13,12 +18,15 @@ namespace System.Web.Http.Tracing.Tracers
     /// Tracer to wrap an <see cref="HttpParameterBinding"/>.
     /// Its primary purpose is to monitor <see cref="ExecuteBindingAsync"/>.
     /// </summary>
-    internal class HttpParameterBindingTracer : HttpParameterBinding
+    internal class HttpParameterBindingTracer : HttpParameterBinding, IValueProviderParameterBinding
     {
         private const string ExecuteBindingAsyncMethodName = "ExecuteBindingAsync";
 
         public HttpParameterBindingTracer(HttpParameterBinding innerBinding, ITraceWriter traceWriter) : base(innerBinding.Descriptor)
         {
+            Contract.Assert(innerBinding != null);
+            Contract.Assert(traceWriter != null);
+
             InnerBinding = innerBinding;
             TraceWriter = traceWriter;
         }
@@ -40,6 +48,15 @@ namespace System.Web.Http.Tracing.Tracers
             get
             {
                 return InnerBinding.WillReadBody;
+            }
+        }
+
+        public IEnumerable<ValueProviderFactory> ValueProviderFactories
+        {
+            get
+            {
+                IValueProviderParameterBinding valueProviderParameterBinding = InnerBinding as IValueProviderParameterBinding;
+                return valueProviderParameterBinding != null ? valueProviderParameterBinding.ValueProviderFactories : Enumerable.Empty<ValueProviderFactory>();
             }
         }
 

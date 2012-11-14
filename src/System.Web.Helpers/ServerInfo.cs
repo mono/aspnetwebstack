@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -240,7 +240,7 @@ namespace System.Web.Helpers
 
             var configuration = Configuration();
             Debug.Assert((configuration != null) && (configuration.Count > 0));
-            PrintInfoSection(sb, HttpUtility.HtmlEncode(HelpersResources.ServerInfo_ServerConfigTable), configuration);
+            PrintInfoSection(sb, HelpersResources.ServerInfo_ServerConfigTable, configuration);
 
             var serverVariables = ServerVariables();
             Debug.Assert((serverVariables != null));

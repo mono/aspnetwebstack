@@ -1,8 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Net.Http.Headers;
-using Xunit;
 
 namespace Microsoft.TestCommon
 {
@@ -47,7 +46,7 @@ namespace Microsoft.TestCommon
             if (!String.IsNullOrEmpty(expected) || actual != null)
             {
                 Assert.NotNull(expected);
-                MediaTypeHeaderValue expectedMediaType = new MediaTypeHeaderValue(expected); ;
+                MediaTypeHeaderValue expectedMediaType = new MediaTypeHeaderValue(expected);
                 Assert.Equal(0, new MediaTypeHeaderValueComparer().Compare(expectedMediaType, actual));
             }
         }

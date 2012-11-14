@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -10,8 +10,6 @@ using System.Web.TestUtil;
 using System.Web.WebPages;
 using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Helpers.Test
 {
@@ -2214,7 +2212,6 @@ namespace System.Web.Helpers.Test
         {
             // Arrange
             IEnumerable<Person> elements = new NonGenericEnumerable(new[] { new Person { FirstName = "Foo", LastName = "Bar" } });
-            ;
 
             // Act
             Type type = WebGrid.GetElementType(elements);
@@ -2228,7 +2225,6 @@ namespace System.Web.Helpers.Test
         {
             // Arrange
             IEnumerable<Person> elements = new GenericEnumerable<Person>(new[] { new Person { FirstName = "Foo", LastName = "Bar" } });
-            ;
 
             // Act
             Type type = WebGrid.GetElementType(elements);

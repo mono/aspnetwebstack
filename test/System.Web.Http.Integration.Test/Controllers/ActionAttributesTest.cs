@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net;
 using System.Net.Http;
 using System.Web.Http.Controllers;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http
 {
@@ -13,11 +12,11 @@ namespace System.Web.Http
     {
         [Theory]
         [InlineData("GET", "ActionAttributeTest/RetriveUsers", "RetriveUsers")]
-        [InlineData("POST", "ActionAttributeTest/AddUsers", "AddUsers")]
+        [InlineData("POST", "ActionAttributeTest/AddUsers/1", "AddUsers")]
         [InlineData("PUT", "ActionAttributeTest/UpdateUsers", "UpdateUsers")]
         [InlineData("DELETE", "ActionAttributeTest/DeleteUsers", "DeleteUsers")]
-        [InlineData("PATCH", "ActionAttributeTest/Users", "Users")]
-        [InlineData("HEAD", "ActionAttributeTest/Users", "Users")]
+        [InlineData("PATCH", "ActionAttributeTest/Users?key=2", "Users")]
+        [InlineData("HEAD", "ActionAttributeTest/Users?key=3", "Users")]
         public void SelectAction_OnRouteWithActionParameter(string httpMethod, string requestUrl, string expectedActionName)
         {
             string routeUrl = "{controller}/{action}/{id}";
@@ -60,8 +59,8 @@ namespace System.Web.Http
                 });
 
             Assert.Equal(HttpStatusCode.MethodNotAllowed, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
-            Assert.Equal("The requested resource does not support http method '" + httpMethod + "'.", content.Value);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
+            Assert.Equal("The requested resource does not support http method '" + httpMethod + "'.", ((HttpError)content.Value).Message);
         }
 
         [Theory]
@@ -72,6 +71,7 @@ namespace System.Web.Http
             string routeUrl = "{controller}/{action}/{id}";
             object routeDefault = new { id = RouteParameter.Optional };
             HttpControllerContext controllerContext = ApiControllerHelper.CreateControllerContext(httpMethod, requestUrl, routeUrl, routeDefault);
+            controllerContext.Configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
             Type controllerType = typeof(ActionAttributeTestController);
             controllerContext.ControllerDescriptor = new HttpControllerDescriptor(controllerContext.Configuration, controllerType.Name, controllerType);
 
@@ -81,8 +81,8 @@ namespace System.Web.Http
                 });
 
             Assert.Equal(HttpStatusCode.NotFound, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
-            Assert.Equal("No action was found on the controller 'ActionAttributeTestController' that matches the request.", content.Value);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
+            Assert.Equal("No action was found on the controller 'ActionAttributeTestController' that matches the request.", ((HttpError)content.Value)["MessageDetail"]);
         }
 
         [Theory]
@@ -134,8 +134,8 @@ namespace System.Web.Http
                 });
 
             Assert.Equal(HttpStatusCode.MethodNotAllowed, exception.Response.StatusCode);
-            var content = Assert.IsType<ObjectContent<string>>(exception.Response.Content);
-            Assert.Equal("The requested resource does not support http method '" + httpMethod + "'.", content.Value);
+            var content = Assert.IsType<ObjectContent<HttpError>>(exception.Response.Content);
+            Assert.Equal("The requested resource does not support http method '" + httpMethod + "'.", ((HttpError)content.Value).Message);
         }
     }
 }

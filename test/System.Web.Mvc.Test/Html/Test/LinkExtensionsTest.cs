@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Routing;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Html.Test
 {
@@ -50,7 +49,7 @@ namespace System.Web.Mvc.Html.Test
             Assert.Equal(@"<a href=""" + AppPathModifier + @"/app/home/explicitAction"">linktext</a>", html.ToHtmlString());
         }
 
-        [Fact(Skip = "External bug DevDiv 356125 -- does not work correctly on 4.5")]
+        [Fact]
         public void ActionLinkParametersNeedEscaping()
         {
             // Arrange

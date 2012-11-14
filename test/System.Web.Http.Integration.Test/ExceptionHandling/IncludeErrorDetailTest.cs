@@ -1,48 +1,72 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using Microsoft.TestCommon;
 using Newtonsoft.Json.Linq;
-using Xunit;
-using Xunit.Extensions;
 
 namespace System.Web.Http
 {
     public class IncludeErrorDetailTest
     {
-        public static IEnumerable<object[]> Data
+        public static TheoryDataSet ThrowingOnActionIncludesErrorDetailData
         {
             get
             {
-                return new object[][]
+                return new TheoryDataSet<bool, IncludeErrorDetailPolicy, bool?, bool>()
                 {
-                    new object[] { "localhost", null, true },
-                    new object[] { "127.0.0.1", null, true },
-                    new object[] { "www.foo.com", null, false },
-                    new object[] { "localhost", IncludeErrorDetailPolicy.LocalOnly, true },
-                    new object[] { "www.foo.com", IncludeErrorDetailPolicy.LocalOnly, false },
-                    new object[] { "localhost", IncludeErrorDetailPolicy.Always, true },
-                    new object[] { "www.foo.com", IncludeErrorDetailPolicy.Always, true },
-                    new object[] { "localhost", IncludeErrorDetailPolicy.Never, false },
-                    new object[] { "www.foo.com", IncludeErrorDetailPolicy.Never, false }
+                    // isLocal, includeErrorDetail, customErrors, expectErrorDetail
+                    { true, IncludeErrorDetailPolicy.LocalOnly, true, true },
+                    { false, IncludeErrorDetailPolicy.LocalOnly, true, false },
+                    { true, IncludeErrorDetailPolicy.LocalOnly, false, true },
+                    { false, IncludeErrorDetailPolicy.LocalOnly, false, false },
+                    { true, IncludeErrorDetailPolicy.LocalOnly, null, true },
+                    { false, IncludeErrorDetailPolicy.LocalOnly, null, false },
+                    
+                    { true, IncludeErrorDetailPolicy.Always, true, true },
+                    { false, IncludeErrorDetailPolicy.Always, true, true },
+                    { true, IncludeErrorDetailPolicy.Always, false, true },
+                    { false, IncludeErrorDetailPolicy.Always, false, true },
+                    { true, IncludeErrorDetailPolicy.Always, null, true },
+                    { false, IncludeErrorDetailPolicy.Always, null, true },
+                    
+                    { true, IncludeErrorDetailPolicy.Never, true, false },
+                    { false, IncludeErrorDetailPolicy.Never, true, false },
+                    { true, IncludeErrorDetailPolicy.Never, false, false },
+                    { false, IncludeErrorDetailPolicy.Never, false, false },
+                    { true, IncludeErrorDetailPolicy.Never, null, false },
+                    { false, IncludeErrorDetailPolicy.Never, null, false },
+
+                    { true, IncludeErrorDetailPolicy.Default, true, false },
+                    { false, IncludeErrorDetailPolicy.Default, true, false },
+                    { true, IncludeErrorDetailPolicy.Default, false, true },
+                    { false, IncludeErrorDetailPolicy.Default, false, true },
+                    { true, IncludeErrorDetailPolicy.Default, null, true },
+                    { false, IncludeErrorDetailPolicy.Default, null, false }
                 };
             }
         }
 
         [Theory]
-        [PropertyData("Data")]
-        public void ThrowingOnActionIncludesErrorDetail(string hostName, IncludeErrorDetailPolicy? includeErrorDetail, bool shouldIncludeErrorDetail)
+        [PropertyData("ThrowingOnActionIncludesErrorDetailData")]
+        public void ThrowingOnActionIncludesErrorDetail(bool isLocal, IncludeErrorDetailPolicy includeErrorDetail, bool? customErrors, bool expectErrorDetail)
         {
             string controllerName = "Exception";
-            string requestUrl = String.Format("{0}/{1}/{2}", "http://" + hostName, controllerName, "ArgumentNull");
+            string requestUrl = String.Format("{0}/{1}/{2}", "http://www.foo.com", controllerName, "ArgumentNull");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+            request.Properties["MS_IsLocal"] = new Lazy<bool>(() => isLocal);
+            if (customErrors != null)
+            {
+                request.Properties["MS_IncludeErrorDetail"] = new Lazy<bool>(() => !(bool)customErrors);
+            }
+
             ScenarioHelper.RunTest(
                 controllerName,
                 "/{action}",
-                new HttpRequestMessage(HttpMethod.Post, requestUrl),
+                request,
                 (response) =>
                 {
-                    if (shouldIncludeErrorDetail)
+                    if (expectErrorDetail)
                     {
                         AssertResponseIncludesErrorDetail(response);
                     }
@@ -53,10 +77,7 @@ namespace System.Web.Http
                 },
                 (config) =>
                 {
-                    if (includeErrorDetail.HasValue)
-                    {
-                        config.IncludeErrorDetailPolicy = includeErrorDetail.Value;
-                    }
+                    config.IncludeErrorDetailPolicy = includeErrorDetail;
                 }
             );
         }
@@ -72,7 +93,10 @@ namespace System.Web.Http
         private void AssertResponseDoesNotIncludeErrorDetail(HttpResponseMessage response)
         {
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-            Assert.Null(response.Content);
+            JObject json = JToken.Parse(response.Content.ReadAsStringAsync().Result) as JObject;
+            Assert.Equal(1, json.Count);
+            string errorMessage = ((JValue)json["Message"]).ToString();
+            Assert.Equal("An error has occurred.", errorMessage);
         }
     }
 }

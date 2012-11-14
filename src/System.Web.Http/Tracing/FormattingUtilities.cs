@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -26,7 +26,7 @@ namespace System.Web.Http.Tracing
         public static string ActionArgumentsToString(IDictionary<string, object> actionArguments)
         {
             Contract.Assert(actionArguments != null);
-            return string.Join(", ",
+            return String.Join(", ",
                                actionArguments.Keys.Select<string, string>(
                                    (k) => k + "=" + ValueToString(actionArguments[k], CultureInfo.CurrentCulture)));
         }
@@ -35,7 +35,7 @@ namespace System.Web.Http.Tracing
         {
             Contract.Assert(actionDescriptor != null);
 
-            string parameterList = string.Join(", ",
+            string parameterList = String.Join(", ",
                                                actionDescriptor.GetParameters().Select<HttpParameterDescriptor, string>(
                                                    (p) => p.ParameterType.Name + " " + p.ParameterName));
 
@@ -73,7 +73,7 @@ namespace System.Web.Http.Tracing
                 return provider.GetType().Name;
             }
 
-            string modelBinderList = string.Join(", ", composite.Providers.Select<ModelBinderProvider, string>(ModelBinderToString));
+            string modelBinderList = String.Join(", ", composite.Providers.Select<ModelBinderProvider, string>(ModelBinderToString));
 
             return provider.GetType().Name + "(" + modelBinderList + ")";
         }
@@ -128,7 +128,7 @@ namespace System.Web.Http.Tracing
                 return provider.GetType().Name;
             }
 
-            string providerList = string.Join(", ", composite.Select<IValueProvider, string>(ValueProviderToString));
+            string providerList = String.Join(", ", composite.Select<IValueProvider, string>(ValueProviderToString));
             return provider.GetType().Name + "(" + providerList + ")";
         }
 

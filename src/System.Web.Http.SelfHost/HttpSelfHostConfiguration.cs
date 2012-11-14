@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.IdentityModel.Selectors;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -22,19 +23,23 @@ namespace System.Web.Http.SelfHost
         private const int DefaultMaxBufferSize = 64 * 1024;
         private const int DefaultReceivedMessageSize = 64 * 1024;
 
-        private const int PendingContextFactor = 100;
         private const int MinConcurrentRequests = 1;
         private const int MinBufferSize = 1;
         private const int MinReceivedMessageSize = 1;
 
+        private static readonly TimeSpan DefaultReceiveTimeout = new TimeSpan(0, 10, 0);
+        private static readonly TimeSpan DefaultSendTimeout = new TimeSpan(0, 1, 0);
+
         private Uri _baseAddress;
         private int _maxConcurrentRequests;
         private ServiceCredentials _credentials = new ServiceCredentials();
-        private bool _useWindowsAuth;
+        private HttpClientCredentialType _clientCredentialType = HttpClientCredentialType.None;
         private TransferMode _transferMode;
         private int _maxBufferSize = DefaultMaxBufferSize;
         private bool _maxBufferSizeIsInitialized;
         private long _maxReceivedMessageSize = DefaultReceivedMessageSize;
+        private TimeSpan _receiveTimeout = DefaultReceiveTimeout;
+        private TimeSpan _sendTimeout = DefaultSendTimeout;
         private HostNameComparisonMode _hostNameComparisonMode;
 
         /// <summary>
@@ -55,7 +60,7 @@ namespace System.Web.Http.SelfHost
             : base(new HttpRouteCollection(ValidateBaseAddress(baseAddress).AbsolutePath))
         {
             _baseAddress = ValidateBaseAddress(baseAddress);
-            _maxConcurrentRequests = GetDefaultMaxConcurrentRequests();
+            _maxConcurrentRequests = MultiplyByProcessorCount(DefaultMaxConcurrentRequests);
             _maxBufferSize = TransportDefaults.MaxBufferSize;
             _maxReceivedMessageSize = TransportDefaults.MaxReceivedMessageSize;
         }
@@ -86,7 +91,7 @@ namespace System.Web.Http.SelfHost
             {
                 if (value < MinConcurrentRequests)
                 {
-                    throw Error.ArgumentGreaterThanOrEqualTo("value", value, MinConcurrentRequests);
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, MinConcurrentRequests);
                 }
                 _maxConcurrentRequests = value;
             }
@@ -104,7 +109,7 @@ namespace System.Web.Http.SelfHost
 
             set
             {
-                TransferModeHelper.Validate(value);
+                TransferModeHelper.Validate(value, "value");
                 _transferMode = value;
             }
         }
@@ -118,7 +123,7 @@ namespace System.Web.Http.SelfHost
 
             set
             {
-                HostNameComparisonModeHelper.Validate(value);
+                HostNameComparisonModeHelper.Validate(value, "value");
                 _hostNameComparisonMode = value;
             }
         }
@@ -150,7 +155,7 @@ namespace System.Web.Http.SelfHost
             {
                 if (value < MinBufferSize)
                 {
-                    throw Error.ArgumentGreaterThanOrEqualTo("value", value, MinBufferSize);
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, MinBufferSize);
                 }
                 _maxBufferSizeIsInitialized = true;
                 _maxBufferSize = value;
@@ -171,9 +176,51 @@ namespace System.Web.Http.SelfHost
             {
                 if (value < MinReceivedMessageSize)
                 {
-                    throw Error.ArgumentGreaterThanOrEqualTo("value", value, MinReceivedMessageSize);
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, MinReceivedMessageSize);
                 }
                 _maxReceivedMessageSize = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the interval of time that a connection can remain inactive, during which no application messages are received, before it is dropped.
+        /// </summary>
+        /// <value>
+        /// The interval of time that a connection can remain inactive, during which no application messages are received, before it is dropped.
+        /// </value>
+        public TimeSpan ReceiveTimeout
+        {
+            get { return _receiveTimeout; }
+
+            set
+            {
+                if (value < TimeSpan.Zero)
+                {
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, TimeSpan.Zero);
+                }
+
+                _receiveTimeout = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the interval of time provided for a write operation to complete before the transport raises an exception.
+        /// </summary>
+        /// <value>
+        /// The interval of time provided for a write operation to complete before the transport raises an exception.
+        /// </value>
+        public TimeSpan SendTimeout
+        {
+            get { return _sendTimeout; }
+
+            set
+            {
+                if (value < TimeSpan.Zero)
+                {
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, TimeSpan.Zero);
+                }
+
+                _sendTimeout = value;
             }
         }
 
@@ -188,22 +235,53 @@ namespace System.Web.Http.SelfHost
         {
             get { return _credentials.UserNameAuthentication.CustomUserNamePasswordValidator; }
 
-            set { _credentials.UserNameAuthentication.CustomUserNamePasswordValidator = value; }
+            set 
+            {
+                if (value == null)
+                {
+                    throw Error.PropertyNull();
+                }
+
+                _clientCredentialType = HttpClientCredentialType.Basic;
+                _credentials.UserNameAuthentication.CustomUserNamePasswordValidator = value;
+                _credentials.UserNameAuthentication.UserNamePasswordValidationMode = UserNamePasswordValidationMode.Custom;
+            }
         }
 
         /// <summary>
-        /// Use this flag to indicate that you want to use windows authentication. This flag can
-        /// not be used together with UserNamePasswordValidator property since you can either use
-        /// Windows or Username Password as client credential.
+        /// Gets or sets X509CertificateValidator so that it can be used to validate the client certificate
+        /// sent over HTTPS
         /// </summary>
         /// <value>
-        /// set it true if you want to use windows authentication
+        /// The server certificate.
         /// </value>
-        public bool UseWindowsAuthentication
+        public X509CertificateValidator X509CertificateValidator
         {
-            get { return _useWindowsAuth; }
+            get { return _credentials.ClientCertificate.Authentication.CustomCertificateValidator; }
 
-            set { _useWindowsAuth = value; }
+            set
+            {
+                if (value == null)
+                {
+                    throw Error.PropertyNull();
+                }
+
+                _clientCredentialType = HttpClientCredentialType.Certificate;
+                _credentials.ClientCertificate.Authentication.CustomCertificateValidator = value;
+                _credentials.ClientCertificate.Authentication.CertificateValidationMode = X509CertificateValidationMode.Custom;
+            }
+        }
+
+        /// <summary>
+        /// Gets/Sets the ClientCredentialType that server is expecting. 
+        /// </summary>
+        /// <value>
+        /// The default value is HttpClientCredentialType.None.
+        /// </value>
+        public HttpClientCredentialType ClientCredentialType
+        {
+            get { return _clientCredentialType; }
+            set { _clientCredentialType = value; }
         }
 
         /// <summary>
@@ -228,16 +306,24 @@ namespace System.Web.Http.SelfHost
                 throw Error.ArgumentNull("httpBinding");
             }
 
-            if (_useWindowsAuth && _credentials.UserNameAuthentication.CustomUserNamePasswordValidator != null)
+            if (_clientCredentialType != HttpClientCredentialType.Basic && _credentials.UserNameAuthentication.CustomUserNamePasswordValidator != null)
             {
-                throw Error.InvalidOperation(SRResources.CannotUseWindowsAuthWithUserNamePasswordValidator);
+                throw Error.InvalidOperation(SRResources.CannotUseOtherClientCredentialTypeWithUserNamePasswordValidator);
+            }
+
+            if (_clientCredentialType != HttpClientCredentialType.Certificate && _credentials.ClientCertificate.Authentication.CustomCertificateValidator != null)
+            {
+                throw Error.InvalidOperation(SRResources.CannotUseOtherClientCredentialTypeWithX509CertificateValidator);
             }
 
             httpBinding.MaxBufferSize = MaxBufferSize;
             httpBinding.MaxReceivedMessageSize = MaxReceivedMessageSize;
             httpBinding.TransferMode = TransferMode;
             httpBinding.HostNameComparisonMode = HostNameComparisonMode;
+            httpBinding.ReceiveTimeout = ReceiveTimeout;
+            httpBinding.SendTimeout = SendTimeout;
 
+            // Set up binding parameters
             if (_baseAddress.Scheme == Uri.UriSchemeHttps)
             {
                 // we need to use SSL
@@ -246,11 +332,9 @@ namespace System.Web.Http.SelfHost
                     Mode = HttpBindingSecurityMode.Transport,
                 };
             }
-
-            // Set up binding parameters
-            if (_credentials.UserNameAuthentication.CustomUserNamePasswordValidator != null)
-            {
-                _credentials.UserNameAuthentication.UserNamePasswordValidationMode = UserNamePasswordValidationMode.Custom;
+            
+            if (_clientCredentialType != HttpClientCredentialType.None)
+            {       
                 if (httpBinding.Security == null || httpBinding.Security.Mode == HttpBindingSecurityMode.None)
                 {
                     // Basic over HTTP case
@@ -260,29 +344,18 @@ namespace System.Web.Http.SelfHost
                     };
                 }
 
-                // We have validator, so we can set the client credential type to be basic
-                httpBinding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
-
-                return AddCredentialsToBindingParameters();
+                httpBinding.Security.Transport.ClientCredentialType = _clientCredentialType;                
             }
-            else if (_useWindowsAuth)
+
+            if (UserNamePasswordValidator != null || X509CertificateValidator != null)
             {
-                if (httpBinding.Security == null || httpBinding.Security.Mode == HttpBindingSecurityMode.None)
-                {
-                    // Basic over HTTP case, should we even allow this?
-                    httpBinding.Security = new HttpBindingSecurity()
-                    {
-                        Mode = HttpBindingSecurityMode.TransportCredentialOnly,
-                    };
-                }
-
-                // We have validator, so we can set the client credential type to be windows
-                httpBinding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Windows;
-
+                // those are the only two things that affect service credentials
                 return AddCredentialsToBindingParameters();
             }
-
-            return null;
+            else
+            {
+                return null;
+            }
         }
 
         private BindingParameterCollection AddCredentialsToBindingParameters()
@@ -328,15 +401,16 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static int GetDefaultMaxConcurrentRequests()
+        internal static int MultiplyByProcessorCount(int value)
         {
+            Contract.Assert(value > 0);
             try
             {
-                return Math.Max(Environment.ProcessorCount * DefaultMaxConcurrentRequests, DefaultMaxConcurrentRequests);
+                return Math.Max(Environment.ProcessorCount * value, value);
             }
             catch
             {
-                return DefaultMaxConcurrentRequests;
+                return value;
             }
         }
     }

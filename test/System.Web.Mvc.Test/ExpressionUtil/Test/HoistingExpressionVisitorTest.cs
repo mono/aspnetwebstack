@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Mvc.ExpressionUtil.Test
 {
@@ -12,7 +12,7 @@ namespace System.Web.Mvc.ExpressionUtil.Test
         public void Hoist()
         {
             // Arrange
-            Expression<Func<string, int>> expr = s => 2 * s.Length + 1;
+            Expression<Func<string, int>> expr = s => (2 * s.Length) + 1;
 
             // Act
             Expression<Hoisted<string, int>> hoisted = HoistingExpressionVisitor<string, int>.Hoist(expr);

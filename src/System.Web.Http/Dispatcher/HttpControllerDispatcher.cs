@@ -1,6 +1,5 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net;
@@ -19,21 +18,8 @@ namespace System.Web.Http.Dispatcher
     /// </summary>
     public class HttpControllerDispatcher : HttpMessageHandler
     {
-        private const string ControllerKey = "controller";
-
         private IHttpControllerSelector _controllerSelector;
         private readonly HttpConfiguration _configuration;
-        private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HttpControllerDispatcher"/> class using default <see cref="HttpConfiguration"/>.
-        /// </summary>
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
-            Justification = "The configuration object is disposed as part of this class.")]
-        public HttpControllerDispatcher()
-            : this(new HttpConfiguration())
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpControllerDispatcher"/> class.
@@ -70,24 +56,6 @@ namespace System.Web.Http.Dispatcher
         }
 
         /// <summary>
-        /// Releases unmanaged and - optionally - managed resources
-        /// </summary>
-        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged SRResources.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-                if (disposing)
-                {
-                    _configuration.Dispose();
-                }
-            }
-
-            base.Dispose(disposing);
-        }
-
-        /// <summary>
         /// Dispatches an incoming <see cref="HttpRequestMessage"/> to an <see cref="IHttpController"/>.
         /// </summary>
         /// <param name="request">The request to dispatch</param>
@@ -100,11 +68,11 @@ namespace System.Web.Http.Dispatcher
             try
             {
                 return SendAsyncInternal(request, cancellationToken)
-                      .Catch(info => info.Handled(HandleException(request, info.Exception, _configuration)));
+                      .Catch(info => info.Handled(HandleException(request, info.Exception)));
             }
             catch (Exception exception)
             {
-                return TaskHelpers.FromResult(HandleException(request, exception, _configuration));
+                return TaskHelpers.FromResult(HandleException(request, exception));
             }
         }
 
@@ -116,46 +84,42 @@ namespace System.Web.Http.Dispatcher
                 throw Error.ArgumentNull("request");
             }
 
-            if (_disposed)
-            {
-                throw Error.ObjectDisposed(SRResources.HttpMessageHandlerDisposed, typeof(HttpControllerDispatcher).Name);
-            }
-
-            // Lookup route data, or if not found as a request property then we look it up in the route table
-            IHttpRouteData routeData;
-            if (!request.Properties.TryGetValue(HttpPropertyKeys.HttpRouteDataKey, out routeData))
-            {
-                routeData = _configuration.Routes.GetRouteData(request);
-                if (routeData != null)
-                {
-                    request.Properties.Add(HttpPropertyKeys.HttpRouteDataKey, routeData);
-                }
-                else
-                {
-                    // TODO, 328927, add an error message in the response body
-                    return TaskHelpers.FromResult(request.CreateResponse(HttpStatusCode.NotFound));
-                }
-            }
-
-            RemoveOptionalRoutingParameters(routeData.Values);
-
+            IHttpRouteData routeData = request.GetRouteData();
+            Contract.Assert(routeData != null);
             HttpControllerDescriptor httpControllerDescriptor = ControllerSelector.SelectController(request);
             if (httpControllerDescriptor == null)
             {
-                // TODO, 328927, add an error message in the response body
-                return TaskHelpers.FromResult(request.CreateResponse(HttpStatusCode.NotFound));
+                return TaskHelpers.FromResult(request.CreateErrorResponse(
+                    HttpStatusCode.NotFound,
+                    Error.Format(SRResources.ResourceNotFound, request.RequestUri),
+                    SRResources.NoControllerSelected));
             }
 
             IHttpController httpController = httpControllerDescriptor.CreateController(request);
-
             if (httpController == null)
             {
-                // TODO, 328927, add an error message in the response body
-                return TaskHelpers.FromResult(request.CreateResponse(HttpStatusCode.NotFound));
+                return TaskHelpers.FromResult(request.CreateErrorResponse(
+                    HttpStatusCode.NotFound,
+                    Error.Format(SRResources.ResourceNotFound, request.RequestUri),
+                    SRResources.NoControllerCreated));
+            }
+
+            // Set the controller configuration on the request properties
+            HttpConfiguration requestConfig = request.GetConfiguration();
+            if (requestConfig == null)
+            {
+                request.Properties.Add(HttpPropertyKeys.HttpConfigurationKey, httpControllerDescriptor.Configuration);
+            }
+            else
+            {
+                if (requestConfig != httpControllerDescriptor.Configuration)
+                {
+                    request.Properties[HttpPropertyKeys.HttpConfigurationKey] = httpControllerDescriptor.Configuration;
+                }
             }
 
             // Create context
-            HttpControllerContext controllerContext = new HttpControllerContext(_configuration, routeData, request);
+            HttpControllerContext controllerContext = new HttpControllerContext(httpControllerDescriptor.Configuration, routeData, request);
             controllerContext.Controller = httpController;
             controllerContext.ControllerDescriptor = httpControllerDescriptor;
 
@@ -163,7 +127,7 @@ namespace System.Web.Http.Dispatcher
         }
 
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller owns HttpResponseMessage instance.")]
-        private static HttpResponseMessage HandleException(HttpRequestMessage request, Exception exception, HttpConfiguration configuration)
+        private static HttpResponseMessage HandleException(HttpRequestMessage request, Exception exception)
         {
             Exception unwrappedException = exception.GetBaseException();
             HttpResponseException httpResponseException = unwrappedException as HttpResponseException;
@@ -173,37 +137,7 @@ namespace System.Web.Http.Dispatcher
                 return httpResponseException.Response;
             }
 
-            if (configuration.ShouldIncludeErrorDetail(request))
-            {
-                return request.CreateResponse<ExceptionSurrogate>(HttpStatusCode.InternalServerError, new ExceptionSurrogate(unwrappedException));
-            }
-
-            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
-        }
-
-        private static void RemoveOptionalRoutingParameters(IDictionary<string, object> routeValueDictionary)
-        {
-            Contract.Assert(routeValueDictionary != null);
-
-            // Get all keys for which the corresponding value is 'Optional'.
-            // Having a separate array is necessary so that we don't manipulate the dictionary while enumerating.
-            // This is on a hot-path and linq expressions are showing up on the profile, so do array manipulation.
-            int max = routeValueDictionary.Count;
-            int i = 0;
-            string[] matching = new string[max];
-            foreach (KeyValuePair<string, object> kv in routeValueDictionary)
-            {
-                if (kv.Value == RouteParameter.Optional)
-                {
-                    matching[i] = kv.Key;
-                    i++;
-                }
-            }
-            for (int j = 0; j < i; j++)
-            {
-                string key = matching[j];
-                routeValueDictionary.Remove(key);
-            }
+            return request.CreateErrorResponse(HttpStatusCode.InternalServerError, unwrappedException);
         }
     }
 }

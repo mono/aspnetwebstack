@@ -1,30 +1,26 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.ServiceModel;
 using System.Web.Http.SelfHost;
-using Xunit;
-using Xunit.Extensions;
+using System.Web.Http.Util;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ContentNegotiation
 {
-    public class HttpResponseReturnTests : IDisposable
+    public class HttpResponseReturnTests
     {
-        private HttpSelfHostServer server = null;
+        private HttpServer server = null;
         private string baseAddress = null;
         private HttpClient httpClient = null;
 
         public HttpResponseReturnTests()
         {
             this.SetupHost();
-        }
-
-        public void Dispose()
-        {
-            this.CleanupHost();
         }
 
         [Theory]
@@ -76,29 +72,20 @@ namespace System.Web.Http.ContentNegotiation
             HttpResponseMessage response = httpClient.SendAsync(request).Result;
             response.EnsureSuccessStatusCode();
             IEnumerable<string> list;
-            Assert.True(response.Headers.TryGetValues("Set-Cookie",  out list));
-            Assert.Equal("cookie1,cookie2", ((string[]) list)[0]);
+            Assert.True(response.Headers.TryGetValues("Set-Cookie", out list));
+            Assert.Equal(new[] { "cookie1", "cookie2" }, list);
         }
 
         public void SetupHost()
         {
-            httpClient = new HttpClient();
-
-            baseAddress = String.Format("http://{0}/", Environment.MachineName);
+            baseAddress = "http://localhost/";
 
             HttpSelfHostConfiguration config = new HttpSelfHostConfiguration(baseAddress);
             config.Routes.MapHttpRoute("Default", "{controller}/{action}", new { controller = "HttpResponseReturn" });
+            config.MessageHandlers.Add(new ConvertToStreamMessageHandler());
 
-            server = new HttpSelfHostServer(config);
-            server.OpenAsync().Wait();
-        }
-
-        public void CleanupHost()
-        {
-            if (server != null)
-            {
-                server.CloseAsync().Wait();
-            }
+            server = new HttpServer(config);
+            httpClient = new HttpClient(server);
         }
     }
 
@@ -138,7 +125,7 @@ namespace System.Web.Http.ContentNegotiation
             HttpResponseMessage resp = new HttpResponseMessage(HttpStatusCode.OK);
             resp.Headers.Add("Set-Cookie", "cookie1");
             resp.Headers.Add("Set-Cookie", "cookie2");
-            return resp; 
+            return resp;
         }
     }
 }

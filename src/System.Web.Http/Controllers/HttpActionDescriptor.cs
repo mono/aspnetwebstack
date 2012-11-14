@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using System.Web.Http.Internal;
@@ -40,7 +41,7 @@ namespace System.Web.Http.Controllers
         {
             if (controllerDescriptor == null)
             {
-                throw Error.ArgumentNull("controllerDesriptor");
+                throw Error.ArgumentNull("controllerDescriptor");
             }
 
             _controllerDescriptor = controllerDescriptor;
@@ -68,7 +69,8 @@ namespace System.Web.Http.Controllers
             {
                 if (_actionBinding == null)
                 {
-                    IActionValueBinder actionValueBinder = _controllerDescriptor.ActionValueBinder;
+                    ServicesContainer controllerServices = _controllerDescriptor.Configuration.Services;
+                    IActionValueBinder actionValueBinder = controllerServices.GetActionValueBinder();
                     HttpActionBinding actionBinding = actionValueBinder.GetBinding(this);
                     _actionBinding = actionBinding;
                 }
@@ -103,13 +105,13 @@ namespace System.Web.Http.Controllers
         /// </summary>
         /// <remarks>
         /// This property should describe the type of the value contained by the result of executing the action
-        /// via the <see cref="ExecuteAsync(HttpControllerContext, IDictionary{string, object})"/>.
+        /// via the <see cref="ExecuteAsync(HttpControllerContext, IDictionary{string, object}, CancellationToken)"/>.
         /// </remarks>
         public abstract Type ReturnType { get; }
 
         /// <summary>
         /// Gets the converter for correctly transforming the result of calling
-        /// <see cref="ExecuteAsync(HttpControllerContext, IDictionary{string, object})"/> into an instance of
+        /// <see cref="ExecuteAsync(HttpControllerContext, IDictionary{string, object}, CancellationToken)"/> into an instance of
         /// <see cref="HttpResponseMessage"/>. 
         /// </summary>
         /// <remarks>
@@ -138,7 +140,7 @@ namespace System.Web.Http.Controllers
         /// <summary>
         /// Gets the properties associated with this instance.
         /// </summary>
-        public ConcurrentDictionary<object, object> Properties
+        public virtual ConcurrentDictionary<object, object> Properties
         {
             get { return _properties; }
         }
@@ -187,8 +189,9 @@ namespace System.Web.Http.Controllers
         /// </summary>
         /// <param name="controllerContext">The context.</param>
         /// <param name="arguments">The arguments.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task{T}"/> that once completed will contain the return value of the action.</returns>
-        public abstract Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments);
+        public abstract Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns the filters for the given configuration and action. The filter collection is ordered

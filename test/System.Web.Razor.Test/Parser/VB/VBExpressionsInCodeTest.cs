@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
-using Xunit;
-using Xunit.Extensions;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.VB
 {
@@ -14,9 +13,9 @@ namespace System.Web.Razor.Test.Parser.VB
         [Fact]
         public void InnerImplicitExpressionWithOnlySingleAtAcceptsSingleSpaceOrNewlineAtDesignTime()
         {
-            ParseBlockTest(@"Code
-    @
-End Code",
+            ParseBlockTest("Code" + Environment.NewLine
+                         + "    @" + Environment.NewLine
+                         + "End Code",
                 new StatementBlock(
                     Factory.MetaCode("Code").Accepts(AcceptedCharacters.None),
                     Factory.Code("\r\n    ").AsStatement(),
@@ -37,9 +36,9 @@ End Code",
         [Fact]
         public void InnerImplicitExpressionDoesNotAcceptDotAfterAt()
         {
-            ParseBlockTest(@"Code
-    @.
-End Code",
+            ParseBlockTest("Code" + Environment.NewLine
+                         + "    @." + Environment.NewLine
+                         + "End Code",
                 new StatementBlock(
                     Factory.MetaCode("Code").Accepts(AcceptedCharacters.None),
                     Factory.Code("\r\n    ").AsStatement(),
@@ -97,15 +96,15 @@ End Code",
             string code;
             if (isImplicit)
             {
-                code = @"If foo IsNot Nothing Then
-    @" + expression + @"
-End If";
+                code = "If foo IsNot Nothing Then" + Environment.NewLine
+                     + "    @" + expression + Environment.NewLine
+                     + "End If";
             }
             else
             {
-                code = @"If foo IsNot Nothing Then
-    @(" + expression + @")
-End If";
+                code = "If foo IsNot Nothing Then" + Environment.NewLine
+                     + "    @(" + expression + ")" + Environment.NewLine
+                     + "End If";
             }
 
             ParseBlockTest(code,

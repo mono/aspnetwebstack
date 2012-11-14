@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -6,11 +6,12 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.ValueProviders;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -21,7 +22,7 @@ namespace System.Web.Http.ModelBinding
             return value;
         }
 
-        public string GetStringFromRoute(string controller, string action)
+        public string GetStringFromRoute(string controller = null, string action = null)
         {
             return controller + ":" + action;
         }
@@ -31,7 +32,17 @@ namespace System.Web.Http.ModelBinding
             return value;
         }
 
+        public int? GetOptionalNullableInt(int? value = null)
+        {
+            return value;
+        }
+
         public int GetIntWithDefault(int value = -1)
+        {
+            return value;
+        }
+
+        public string GetStringWithDefault(string value = null)
         {
             return value;
         }
@@ -158,6 +169,11 @@ namespace System.Web.Http.ModelBinding
             return item;
         }
 
+        public ComplexTypeWithNestedCollection PostComplexTypeFromUriWithNestedCollection([FromUri] ComplexTypeWithNestedCollection value)
+        {
+            return value;
+        }
+
         public ModelBindOrder PostComplexTypeFromBody([FromBody] ModelBindOrder item)
         {
             return item;
@@ -168,17 +184,31 @@ namespace System.Web.Http.ModelBinding
         {
             return Int32.Parse(order.ItemName) + order.Quantity;
         }
+
+        public string PostWithOptionalBodyParameter([FromBody] string value = "default")
+        {
+            return value;
+        }
+
+        public string PostWithOptionalBodyParameterAndUriParameter([FromUri]int id, [FromBody] string value = "default")
+        {
+            return value;
+        }
     }
 
+    [DataContract]
     public class CustomerNameMax6
     {
         [Required]
         [StringLength(6)]
+        [DataMember]
         public string Name { get; set; }
 
+        [DataMember]
         public int Id { get; set; }
 
         [Required]
+        [DataMember(IsRequired = true)]
         public int RequiredValue { get; set; }
     }
 
@@ -192,6 +222,11 @@ namespace System.Web.Http.ModelBinding
         public string ItemName { get; set; }
         public int Quantity { get; set; }
         public ModelBindCustomer Customer { get; set; }
+    }
+
+    public class ComplexTypeWithNestedCollection
+    {
+        public IEnumerable<int> Numbers { get; set; }
     }
 
     public class ModelBindOrderEqualityComparer : IEqualityComparer<ModelBindOrder>

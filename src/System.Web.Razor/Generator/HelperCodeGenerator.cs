@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.CodeDom;
 using System.Globalization;
@@ -105,6 +105,7 @@ namespace System.Web.Razor.Generator
                 _writer.WriteLinePragma(pragma);
             }
             _writer.WriteSnippet(statement);
+            _writer.InnerWriter.WriteLine(); // CodeDOM normally inserts an extra line so we need to do so here.
             if (pragma != null)
             {
                 _writer.WriteLinePragma();

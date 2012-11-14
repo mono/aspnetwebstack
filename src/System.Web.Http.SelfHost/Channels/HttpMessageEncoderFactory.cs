@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -81,7 +81,7 @@ namespace System.Web.Http.SelfHost.Channels
                 request.Content = new ByteArrayBufferManagerContent(bufferManager, buffer.Array, buffer.Offset, buffer.Count);
                 if (!String.IsNullOrEmpty(contentType))
                 {
-                    request.Content.Headers.Add(ContentTypeHeaderName, contentType);
+                    request.Content.Headers.TryAddWithoutValidation(ContentTypeHeaderName, contentType);
                 }
 
                 Message message = request.ToMessage();
@@ -102,7 +102,7 @@ namespace System.Web.Http.SelfHost.Channels
                 request.Content = new StreamContent(stream);
                 if (!String.IsNullOrEmpty(contentType))
                 {
-                    request.Content.Headers.Add(ContentTypeHeaderName, contentType);
+                    request.Content.Headers.TryAddWithoutValidation(ContentTypeHeaderName, contentType);
                 }
 
                 Message message = request.ToMessage();
@@ -159,7 +159,7 @@ namespace System.Web.Http.SelfHost.Channels
                 }
             }
 
-            [SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "The WriteMessage() API is synchronous, and Wait() won't deadlock in self-host.")]
+            [SuppressMessage("Microsoft.Web.FxCop", "MW1201:DoNotCallProblematicMethodsOnTask", Justification = "The WriteMessage() API is synchronous, and Wait() won't deadlock in self-host.")]
             public override void WriteMessage(Message message, Stream stream)
             {
                 if (message == null)

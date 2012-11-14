@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Globalization;
@@ -25,7 +25,7 @@ namespace Microsoft.Web.WebPages.OAuth
                     "provider");
             }
 
-            if (string.IsNullOrEmpty(providerUserId))
+            if (String.IsNullOrEmpty(providerUserId))
             {
                 throw new ArgumentException(
                     String.Format(CultureInfo.CurrentCulture, WebResources.Argument_Cannot_Be_Null_Or_Empty, "providerUserId"),

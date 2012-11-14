@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Net.Http.Headers;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
@@ -86,7 +87,7 @@ namespace System.Net.Http.Formatting
         {
             if (request == null)
             {
-                throw new ArgumentNullException("request");
+                throw Error.ArgumentNull("request");
             }
 
             return MatchHeaderValue(request, HeaderName, HeaderValue, HeaderValueComparison, IsValueSubstring);
@@ -107,32 +108,32 @@ namespace System.Net.Http.Formatting
                     {
                         if (value.IndexOf(headerValue, valueComparison) != -1)
                         {
-                            return MediaTypeMatch.Match;
+                            return FormattingUtilities.Match;
                         }
                     }
                     else
                     {
                         if (value.Equals(headerValue, valueComparison))
                         {
-                            return MediaTypeMatch.Match;
+                            return FormattingUtilities.Match;
                         }
                     }
                 }
             }
 
-            return MediaTypeMatch.NoMatch;
+            return FormattingUtilities.NoMatch;
         }
 
         private void Initialize(string headerName, string headerValue, StringComparison valueComparison, bool isValueSubstring)
         {
             if (String.IsNullOrWhiteSpace(headerName))
             {
-                throw new ArgumentNullException("headerName");
+                throw Error.ArgumentNull("headerName");
             }
 
             if (String.IsNullOrWhiteSpace(headerValue))
             {
-                throw new ArgumentNullException("headerValue");
+                throw Error.ArgumentNull("headerValue");
             }
 
             StringComparisonHelper.Validate(valueComparison, "valueComparison");

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
+using Microsoft.TestCommon;
 using Microsoft.Web.Http.Data.EntityFramework;
 using Microsoft.Web.Http.Data.EntityFramework.Metadata;
 using Microsoft.Web.Http.Data.Test.Models;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace Microsoft.Web.Http.Data.Test
 {

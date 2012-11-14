@@ -1,16 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.IdentityModel.Claims;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Security;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http.Hosting;
 using System.Web.Http.SelfHost.Channels;
 using System.Web.Http.SelfHost.Properties;
 using System.Web.Http.SelfHost.ServiceModel.Channels;
@@ -22,17 +25,28 @@ namespace System.Web.Http.SelfHost
     /// </summary>
     public sealed class HttpSelfHostServer : HttpServer
     {
-        private static readonly AsyncCallback _onOpenListenerComplete = new AsyncCallback(OnOpenListenerComplete);
-        private static readonly AsyncCallback _onAcceptChannelComplete = new AsyncCallback(OnAcceptChannelComplete);
-        private static readonly AsyncCallback _onOpenChannelComplete = new AsyncCallback(OnOpenChannelComplete);
-        private static readonly AsyncCallback _onReceiveRequestContextComplete = new AsyncCallback(OnReceiveRequestContextComplete);
-        private static readonly AsyncCallback _onReplyComplete = new AsyncCallback(OnReplyComplete);
-
         private static readonly AsyncCallback _onCloseListenerComplete = new AsyncCallback(OnCloseListenerComplete);
         private static readonly AsyncCallback _onCloseChannelComplete = new AsyncCallback(OnCloseChannelComplete);
 
         private static readonly TimeSpan _acceptTimeout = TimeSpan.MaxValue;
         private static readonly TimeSpan _receiveTimeout = TimeSpan.MaxValue;
+
+        private static readonly Func<HttpRequestMessage, X509Certificate2> _retrieveClientCertificate = new Func<HttpRequestMessage, X509Certificate2>(RetrieveClientCertificate);
+
+        // Window size gets increased if the ratio of outstanding requests to the window size is greater than IncreaseWindowSizeRatio
+        // Window size gets decreased if the ratio of outstanding requests to the window size is less than DecreaseWindowsSizeRatio
+        private const double IncreaseWindowSizeRatio = .8;
+        private const double DecreaseWindowSizeRatio = .2;
+        private const int InitialWindowSizeMultiplier = 8;
+        private const int MinimumWindowSizeMultiplier = 1;
+        private static readonly int InitialWindowSize = HttpSelfHostConfiguration.MultiplyByProcessorCount(InitialWindowSizeMultiplier);
+        private static readonly int MinimumWindowSize = HttpSelfHostConfiguration.MultiplyByProcessorCount(MinimumWindowSizeMultiplier);
+
+        private AsyncCallback _onOpenListenerComplete;
+        private AsyncCallback _onAcceptChannelComplete;
+        private AsyncCallback _onOpenChannelComplete;
+        private AsyncCallback _onReceiveRequestContextComplete;
+        private AsyncCallback _onReplyComplete;
 
         private ConcurrentBag<IReplyChannel> _channels = new ConcurrentBag<IReplyChannel>();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -45,6 +59,10 @@ namespace System.Web.Http.SelfHost
 
         // State: 0 = new, 1 = open, 2 = closed
         private int _state;
+
+        private int _requestsOutstanding;
+        private int _windowSize;
+        private readonly object _windowSizeLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpSelfHostServer"/> class.
@@ -59,6 +77,7 @@ namespace System.Web.Http.SelfHost
             }
 
             _configuration = configuration;
+            InitializeCallbacks();
         }
 
         /// <summary>
@@ -75,6 +94,19 @@ namespace System.Web.Http.SelfHost
             }
 
             _configuration = configuration;
+            InitializeCallbacks();
+        }
+
+        /// <summary>
+        /// Initialize async callbacks.
+        /// </summary>
+        private void InitializeCallbacks()
+        {
+            _onOpenListenerComplete = new AsyncCallback(OnOpenListenerComplete);
+            _onAcceptChannelComplete = new AsyncCallback(OnAcceptChannelComplete);
+            _onOpenChannelComplete = new AsyncCallback(OnOpenChannelComplete);
+            _onReceiveRequestContextComplete = new AsyncCallback(OnReceiveRequestContextComplete);
+            _onReplyComplete = new AsyncCallback(OnReplyComplete);
         }
 
         /// <summary>
@@ -134,19 +166,81 @@ namespace System.Web.Http.SelfHost
 
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "ReplyContext and HttpResponseMessage are disposed later.")]
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void ProcessRequestContext(ChannelContext channelContext, System.ServiceModel.Channels.RequestContext requestContext)
+        [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "This method is a coordinator, so this coupling is expected.")]
+        private void ProcessRequestContext(ChannelContext channelContext, System.ServiceModel.Channels.RequestContext requestContext)
         {
             Contract.Assert(channelContext != null);
             Contract.Assert(requestContext != null);
 
-            // Get the HTTP request from the WCF Message
-            HttpRequestMessage request = requestContext.RequestMessage.ToHttpRequestMessage();
-            if (request == null)
+            HttpRequestMessage request = null;
+            try
             {
-                throw Error.InvalidOperation(SRResources.HttpMessageHandlerInvalidMessage, requestContext.RequestMessage.GetType());
-            }
+                // Get the HTTP request from the WCF Message
+                request = requestContext.RequestMessage.ToHttpRequestMessage();
+                if (request == null)
+                {
+                    throw Error.InvalidOperation(SRResources.HttpMessageHandlerInvalidMessage, requestContext.RequestMessage.GetType());
+                }
 
-            // create principal information and add it the request for the windows auth case
+                // create principal information and add it the request for the windows auth case
+                SetCurrentPrincipal(request);
+
+                // Add the retrieve client certificate delegate to the property bag to enable lookup later on
+                request.Properties.Add(HttpPropertyKeys.RetrieveClientCertificateDelegateKey, _retrieveClientCertificate);
+
+                // Add information about whether the request is local or not
+                request.Properties.Add(HttpPropertyKeys.IsLocalKey, new Lazy<bool>(() => IsLocal(requestContext.RequestMessage)));
+
+                // Submit request up the stack
+                HttpResponseMessage responseMessage = null;
+
+                channelContext.Server.SendAsync(request, channelContext.Server._cancellationTokenSource.Token)
+                    .Then(response =>
+                    {
+                        responseMessage = response ?? request.CreateResponse(HttpStatusCode.InternalServerError);
+                    })
+                    .Catch(info =>
+                    {
+                        responseMessage = request.CreateErrorResponse(HttpStatusCode.InternalServerError, info.Exception);
+                        return info.Handled();
+                    })
+                    .Finally(() =>
+                    {
+                        if (responseMessage == null) // No Then or Catch, must've been canceled
+                        {
+                            responseMessage = request.CreateErrorResponse(HttpStatusCode.ServiceUnavailable, SRResources.RequestCancelled);
+                        }
+
+                        Message reply = responseMessage.ToMessage();
+                        BeginReply(new ReplyContext(channelContext, requestContext, reply));
+                    });
+            }
+            catch (Exception e)
+            {
+                HttpResponseMessage response = request != null ?
+                    request.CreateErrorResponse(HttpStatusCode.InternalServerError, e) :
+                    new HttpResponseMessage(HttpStatusCode.BadRequest);
+                Message reply = response.ToMessage();
+                BeginReply(new ReplyContext(channelContext, requestContext, reply));
+            }
+        }
+
+        private static bool IsLocal(Message message)
+        {
+            RemoteEndpointMessageProperty remoteEndpointProperty;
+            if (message.Properties.TryGetValue(RemoteEndpointMessageProperty.Name, out remoteEndpointProperty))
+            {
+                IPAddress remoteAddress;
+                if (IPAddress.TryParse(remoteEndpointProperty.Address, out remoteAddress))
+                {
+                    return IPAddress.IsLoopback(remoteAddress);
+                }
+            }
+            return false;
+        }
+
+        private static void SetCurrentPrincipal(HttpRequestMessage request)
+        {
             SecurityMessageProperty property = request.GetSecurityMessageProperty();
             if (property != null)
             {
@@ -161,41 +255,34 @@ namespace System.Web.Http.SelfHost
                     }
                 }
             }
+        }
 
-            // Submit request up the stack
-            try
+        private static X509Certificate2 RetrieveClientCertificate(HttpRequestMessage request)
+        {
+            if (request == null)
             {
-                HttpResponseMessage responseMessage = null;
-
-                channelContext.Server.SendAsync(request, channelContext.Server._cancellationTokenSource.Token)
-                    .Then(response =>
-                    {
-                        responseMessage = response ?? request.CreateResponse(HttpStatusCode.OK);
-                    })
-                    .Catch(info =>
-                    {
-                        // REVIEW: Shouldn't the response contain the exception so it can be serialized?
-                        responseMessage = request.CreateResponse(HttpStatusCode.InternalServerError);
-                        return info.Handled();
-                    })
-                    .Finally(() =>
-                    {
-                        if (responseMessage == null) // No Then or Catch, must've been canceled
-                        {
-                            responseMessage = request.CreateResponse(HttpStatusCode.ServiceUnavailable);
-                        }
-
-                        Message reply = responseMessage.ToMessage();
-                        BeginReply(new ReplyContext(channelContext, requestContext, reply));
-                    });
+                throw Error.ArgumentNull("request");
             }
-            catch
+
+            SecurityMessageProperty property = request.GetSecurityMessageProperty();
+            X509Certificate2 result = null;
+
+            if (property != null && property.ServiceSecurityContext != null && property.ServiceSecurityContext.AuthorizationContext != null)
             {
-                // REVIEW: Shouldn't the response contain the exception so it can be serialized?
-                HttpResponseMessage response = request.CreateResponse(HttpStatusCode.InternalServerError);
-                Message reply = response.ToMessage();
-                BeginReply(new ReplyContext(channelContext, requestContext, reply));
+                X509CertificateClaimSet certClaimSet = null;
+                foreach (ClaimSet claimSet in property.ServiceSecurityContext.AuthorizationContext.ClaimSets)
+                {
+                    certClaimSet = claimSet as X509CertificateClaimSet;
+
+                    if (certClaimSet != null)
+                    {
+                        result = certClaimSet.X509Certificate;
+                        break;
+                    }
+                }
             }
+
+            return result;
         }
 
         private static void CancelTask(TaskCompletionSource<bool> taskCompletionSource)
@@ -217,7 +304,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void BeginOpenListener(HttpSelfHostServer server)
+        private void BeginOpenListener(HttpSelfHostServer server)
         {
             Contract.Assert(server != null);
 
@@ -252,7 +339,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void OnOpenListenerComplete(IAsyncResult result)
+        private void OnOpenListenerComplete(IAsyncResult result)
         {
             Contract.Assert(result != null);
 
@@ -265,7 +352,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void OpenListenerComplete(IAsyncResult result)
+        private void OpenListenerComplete(IAsyncResult result)
         {
             HttpSelfHostServer server = (HttpSelfHostServer)result.AsyncState;
             Contract.Assert(server != null);
@@ -284,7 +371,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void BeginAcceptChannel(HttpSelfHostServer server)
+        private void BeginAcceptChannel(HttpSelfHostServer server)
         {
             Contract.Assert(server != null);
             Contract.Assert(server._listener != null);
@@ -296,7 +383,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void OnAcceptChannelComplete(IAsyncResult result)
+        private void OnAcceptChannelComplete(IAsyncResult result)
         {
             if (result.CompletedSynchronously)
             {
@@ -306,7 +393,7 @@ namespace System.Web.Http.SelfHost
             AcceptChannelComplete(result);
         }
 
-        private static void AcceptChannelComplete(IAsyncResult result)
+        private void AcceptChannelComplete(IAsyncResult result)
         {
             Contract.Assert(result != null);
 
@@ -418,7 +505,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void BeginOpenChannel(ChannelContext channelContext)
+        private void BeginOpenChannel(ChannelContext channelContext)
         {
             Contract.Assert(channelContext != null);
             Contract.Assert(channelContext.Channel != null);
@@ -437,7 +524,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void OnOpenChannelComplete(IAsyncResult result)
+        private void OnOpenChannelComplete(IAsyncResult result)
         {
             Contract.Assert(result != null);
 
@@ -450,7 +537,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void OpenChannelComplete(IAsyncResult result)
+        private void OpenChannelComplete(IAsyncResult result)
         {
             ChannelContext channelContext = (ChannelContext)result.AsyncState;
             Contract.Assert(channelContext != null);
@@ -464,7 +551,9 @@ namespace System.Web.Http.SelfHost
                 CompleteTask(channelContext.Server._openTaskCompletionSource);
 
                 // Start pumping messages
-                for (int index = 0; index < channelContext.Server._configuration.MaxConcurrentRequests; index++)
+                int initialWindowSize = Math.Min(InitialWindowSize, _configuration.MaxConcurrentRequests);
+                Interlocked.Add(ref _windowSize, initialWindowSize);
+                for (int index = 0; index < initialWindowSize; index++)
                 {
                     BeginReceiveRequestContext(channelContext);
                 }
@@ -478,7 +567,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void BeginReceiveRequestContext(ChannelContext context)
+        private void BeginReceiveRequestContext(ChannelContext context)
         {
             Contract.Assert(context != null);
 
@@ -494,7 +583,7 @@ namespace System.Web.Http.SelfHost
             }
         }
 
-        private static void OnReceiveRequestContextComplete(IAsyncResult result)
+        private void OnReceiveRequestContextComplete(IAsyncResult result)
         {
             if (result.CompletedSynchronously)
             {
@@ -504,7 +593,7 @@ namespace System.Web.Http.SelfHost
             ReceiveRequestContextComplete(result);
         }
 
-        private static void ReceiveRequestContextComplete(IAsyncResult result)
+        private void ReceiveRequestContextComplete(IAsyncResult result)
         {
             Contract.Assert(result != null);
 
@@ -516,6 +605,12 @@ namespace System.Web.Http.SelfHost
             {
                 if (requestContext != null)
                 {
+                    Interlocked.Increment(ref _requestsOutstanding);
+                    if (TryIncreaseWindowSize())
+                    {
+                        // Spin off an additional BeginReceiveRequest to increase the window size by 1
+                        BeginReceiveRequestContext(channelContext);
+                    }
                     ProcessRequestContext(channelContext, requestContext);
                 }
             }
@@ -601,7 +696,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void BeginReply(ReplyContext replyContext)
+        private void BeginReply(ReplyContext replyContext)
         {
             Contract.Assert(replyContext != null);
 
@@ -615,12 +710,13 @@ namespace System.Web.Http.SelfHost
             }
             catch
             {
-                BeginReceiveRequestContext(replyContext.ChannelContext);
+                Interlocked.Decrement(ref _requestsOutstanding);
+                BeginNextRequest(replyContext.ChannelContext);
                 replyContext.Dispose();
             }
         }
 
-        private static void OnReplyComplete(IAsyncResult result)
+        private void OnReplyComplete(IAsyncResult result)
         {
             Contract.Assert(result != null);
 
@@ -633,7 +729,7 @@ namespace System.Web.Http.SelfHost
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
-        private static void ReplyComplete(IAsyncResult result)
+        private void ReplyComplete(IAsyncResult result)
         {
             ReplyContext replyContext = (ReplyContext)result.AsyncState;
             Contract.Assert(replyContext != null);
@@ -647,9 +743,86 @@ namespace System.Web.Http.SelfHost
             }
             finally
             {
-                BeginReceiveRequestContext(replyContext.ChannelContext);
+                Interlocked.Decrement(ref _requestsOutstanding);
+                BeginNextRequest(replyContext.ChannelContext);
                 replyContext.Dispose();
             }
+        }
+
+        private void BeginNextRequest(ChannelContext context)
+        {
+            if (TryDecreaseWindowSize())
+            {
+                // Decrease the window size by 1 by avoiding calling BeginReceiveRequest
+                return;
+            }
+
+            BeginReceiveRequestContext(context);
+        }
+
+        private bool TryIncreaseWindowSize()
+        {
+            if (ShouldIncreaseWindowSize())
+            {
+                // If we can't get the lock, just keep the window size the same
+                // It's better to keep the window size the same than risk affecting performance by waiting on a lock
+                // And if the lock is taken, some other thread is already updating the window size to a better value
+                if (Monitor.TryEnter(_windowSizeLock))
+                {
+                    try
+                    {
+                        // Recheck that we should increase the window size to guard for changes between the time we take the lock and the time we increase the window size
+                        if (ShouldIncreaseWindowSize())
+                        {
+                            // Increase Window Size
+                            _windowSize++;
+                            return true;
+                        }
+                    }
+                    finally
+                    {
+                        Monitor.Exit(_windowSizeLock);
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool TryDecreaseWindowSize()
+        {
+            if (ShouldDecreaseWindowSize())
+            {
+                // If we can't get the lock, just keep the window size the same
+                // It's better to keep the window size the same than risk affecting performance by waiting on a lock
+                // And if the lock is taken, some other thread is already updating the window size to a better value
+                if (Monitor.TryEnter(_windowSizeLock))
+                {
+                    try
+                    {
+                        // Recheck that we should decrease the window size to guard for changes between the time we take the lock and the time we increase the window size
+                        if (ShouldDecreaseWindowSize())
+                        {
+                            _windowSize--;
+                            return true;
+                        }
+                    }
+                    finally
+                    {
+                        Monitor.Exit(_windowSizeLock);
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool ShouldIncreaseWindowSize()
+        {
+            return _windowSize < _configuration.MaxConcurrentRequests && _requestsOutstanding > _windowSize * IncreaseWindowSizeRatio;
+        }
+
+        private bool ShouldDecreaseWindowSize()
+        {
+            return _windowSize > MinimumWindowSize && _requestsOutstanding < _windowSize * DecreaseWindowSizeRatio;
         }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
@@ -868,14 +1041,32 @@ namespace System.Web.Http.SelfHost
             /// Releases unmanaged and - optionally - managed resources
             /// </summary>
             /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged SRResources.</param>
+            [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail here so we have to catch all exceptions.")]
             protected virtual void Dispose(bool disposing)
             {
                 if (!_disposed)
                 {
                     if (disposing)
                     {
-                        RequestContext.Close();
-                        Reply.Close();
+                        // RequestContext.Close can throw if the client disconnects before it finishes receiving the response
+                        // Catch here to avoid throwing in a Dispose method
+                        try
+                        {
+                            RequestContext.Close();
+                        }
+                        catch
+                        {
+                        }
+
+                        // HttpMessage.Close can throw if the request message throws in its Dispose implementation
+                        // Catch here to avoid throwing in a Dispose method
+                        try
+                        {
+                            Reply.Close();
+                        }
+                        catch
+                        {
+                        }
                     }
 
                     _disposed = true;

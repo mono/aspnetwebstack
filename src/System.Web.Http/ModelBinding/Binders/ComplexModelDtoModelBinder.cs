@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
+using System.Web.Http.ValueProviders;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -21,18 +22,11 @@ namespace System.Web.Http.ModelBinding.Binders
                 };
 
                 // bind and propagate the values
-                IModelBinder propertyBinder;
-                if (actionContext.TryGetBinder(propertyBindingContext, out propertyBinder))
+                // If we can't bind, then leave the result missing (don't add a null).
+                if (actionContext.Bind(propertyBindingContext))                
                 {
-                    if (propertyBinder.BindModel(actionContext, propertyBindingContext))
-                    {
-                        dto.Results[propertyMetadata] = new ComplexModelDtoResult(propertyBindingContext.Model, propertyBindingContext.ValidationNode);
-                    }
-                    else
-                    {
-                        dto.Results[propertyMetadata] = null;
-                    }
-                }
+                    dto.Results[propertyMetadata] = new ComplexModelDtoResult(propertyBindingContext.Model, propertyBindingContext.ValidationNode);
+                }                
             }
 
             return true;

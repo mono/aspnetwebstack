@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 namespace System.Web.Http
 {
@@ -8,9 +8,15 @@ namespace System.Web.Http
     public enum IncludeErrorDetailPolicy
     {
         /// <summary>
+        /// Default to the host specific behavior. This looks at the CustomErrors setting on webhost and
+        /// defaults to LocalOnly in selfhost.
+        /// </summary>
+        Default = 0,
+
+        /// <summary>
         /// Only include error details when responding to a local request.
         /// </summary>
-        LocalOnly = 0,
+        LocalOnly,
 
         /// <summary>
         /// Always include error details.

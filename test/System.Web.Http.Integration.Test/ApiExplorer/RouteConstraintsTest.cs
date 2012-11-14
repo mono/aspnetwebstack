@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Web.Http.Description;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Routing;
-using Xunit.Extensions;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ApiExplorer
 {

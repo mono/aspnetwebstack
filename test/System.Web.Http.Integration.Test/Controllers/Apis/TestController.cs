@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 
@@ -23,7 +23,12 @@ namespace System.Web.Http
         public User PostUserByNameAndAge(string name, int age) { return null; }
         public User PostUserByName(string name) { return null; }
         public User PostUserByNameAndAddress(string name, UserAddress address) { return null; }
+        public User DeleteUserByOptName(string name = null) { return null; }
         public User DeleteUserByIdAndOptName(int id, string name = "DefaultName") { return null; }
         public User DeleteUserByIdNameAndAge(int id, string name, int age) { return null; }
+        public User DeleteUserById_Email_OptName_OptPhone(int id, string email, string name = null, int phone = 0) { return null; }
+        public User DeleteUserById_Email_Height_OptName_OptPhone(int id, string email, double height, string name = "DefaultName", int? phone = null) { return null; }
+        public void Head_Id_OptSize_OptIndex(int id, int size = 10, int index = 0) { }
+        public void Head() { }
     }
 }

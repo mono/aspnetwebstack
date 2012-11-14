@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -157,6 +157,11 @@ namespace WebMatrix.WebData
             get { return "webpages_OAuthMembership"; }
         }
 
+        internal static string OAuthTokenTableName 
+        {
+            get { return "webpages_OAuthToken"; }
+        }
+
         private string SafeUserTableName
         {
             get { return "[" + UserTableName + "]"; }
@@ -255,7 +260,7 @@ namespace WebMatrix.WebData
 
                 if (!CheckTableExists(db, OAuthMembershipTableName))
                 {
-                    db.Execute(@"CREATE TABLE " + OAuthMembershipTableName + "(Provider nvarchar(30) NOT NULL, ProviderUserId nvarchar(100) NOT NULL, UserId int NOT NULL, Primary Key (Provider, ProviderUserId))");
+                    db.Execute(@"CREATE TABLE " + OAuthMembershipTableName + " (Provider nvarchar(30) NOT NULL, ProviderUserId nvarchar(100) NOT NULL, UserId int NOT NULL, PRIMARY KEY (Provider, ProviderUserId))");
                 }
 
                 if (!CheckTableExists(db, MembershipTableName))
@@ -275,6 +280,14 @@ namespace WebMatrix.WebData
                     // TODO: Do we want to add FK constraint to user table too?
                     //                        CONSTRAINT fk_UserId FOREIGN KEY (UserId) REFERENCES "+UserTableName+"("+UserIdColumn+"))");
                 }
+            }
+        }
+
+        private static void CreateOAuthTokenTableIfNeeded(IDatabase db)
+        {
+            if (!CheckTableExists(db, OAuthTokenTableName))
+            {
+                db.Execute(@"CREATE TABLE " + OAuthTokenTableName + " (Token nvarchar(100) NOT NULL, Secret nvarchar(100) NOT NULL, PRIMARY KEY (Token))");
             }
         }
 
@@ -1109,6 +1122,97 @@ namespace WebMatrix.WebData
             }
         }
 
+        public override string GetOAuthTokenSecret(string token)
+        {
+            VerifyInitialized();
+
+            using (var db = ConnectToDatabase())
+            {
+                CreateOAuthTokenTableIfNeeded(db);
+
+                // Note that token is case-sensitive
+                dynamic secret = db.QueryValue(@"SELECT Secret FROM [" + OAuthTokenTableName + "] WHERE Token=@0", token);
+                return (string)secret;
+            }
+        }
+
+        public override void StoreOAuthRequestToken(string requestToken, string requestTokenSecret)
+        {
+            VerifyInitialized();
+
+            string existingSecret = GetOAuthTokenSecret(requestToken);
+            if (existingSecret != null)
+            {
+                if (existingSecret == requestTokenSecret)
+                {
+                    // the record already exists
+                    return;
+                }
+
+                using (var db = ConnectToDatabase())
+                {
+                    CreateOAuthTokenTableIfNeeded(db);
+
+                    // the token exists with old secret, update it to new secret
+                    db.Execute(@"UPDATE [" + OAuthTokenTableName + "] SET Secret = @1 WHERE Token = @0", requestToken, requestTokenSecret);
+                }
+            }
+            else
+            {
+                using (var db = ConnectToDatabase())
+                {
+                    CreateOAuthTokenTableIfNeeded(db);
+
+                    // insert new record
+                    int insert = db.Execute(@"INSERT INTO [" + OAuthTokenTableName + "] (Token, Secret) VALUES(@0, @1)", requestToken, requestTokenSecret);
+                    if (insert != 1)
+                    {
+                        throw new ProviderException(WebDataResources.SimpleMembership_FailToStoreOAuthToken);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Replaces the request token with access token and secret.
+        /// </summary>
+        /// <param name="requestToken">The request token.</param>
+        /// <param name="accessToken">The access token.</param>
+        /// <param name="accessTokenSecret">The access token secret.</param>
+        public override void ReplaceOAuthRequestTokenWithAccessToken(string requestToken, string accessToken, string accessTokenSecret)
+        {
+            VerifyInitialized();
+
+            using (var db = ConnectToDatabase())
+            {
+                CreateOAuthTokenTableIfNeeded(db);
+
+                // insert new record
+                db.Execute(@"DELETE FROM [" + OAuthTokenTableName + "] WHERE Token = @0", requestToken);
+
+                // Although there are two different types of tokens, request token and access token,
+                // we treat them the same in database records.
+                StoreOAuthRequestToken(accessToken, accessTokenSecret);
+            }
+        }
+
+        /// <summary>
+        /// Deletes the OAuth token from the backing store from the database.
+        /// </summary>
+        /// <param name="token">The token to be deleted.</param>
+        public override void DeleteOAuthToken(string token)
+        {
+            VerifyInitialized();
+
+            using (var db = ConnectToDatabase())
+            {
+                CreateOAuthTokenTableIfNeeded(db);
+
+                // Note that token is case-sensitive
+                db.Execute(@"DELETE FROM [" + OAuthTokenTableName + "] WHERE Token=@0", token);
+            }
+        }
+
         public override ICollection<OAuthAccountData> GetAccountsForUser(string userName)
         {
             VerifyInitialized();
@@ -1132,6 +1236,24 @@ namespace WebMatrix.WebData
             }
 
             return new OAuthAccountData[0];
+        }
+
+        /// <summary>
+        /// Determines whether there exists a local account (as opposed to OAuth account) with the specified userId.
+        /// </summary>
+        /// <param name="userId">The user id to check for local account.</param>
+        /// <returns>
+        ///   <c>true</c> if there is a local account with the specified user id]; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool HasLocalAccount(int userId)
+        {
+            VerifyInitialized();
+
+            using (var db = ConnectToDatabase())
+            {
+                dynamic id = db.QueryValue(@"SELECT UserId FROM [" + MembershipTableName + "] WHERE UserId=@0", userId);
+                return id != null;
+            }           
         }
     }
 }

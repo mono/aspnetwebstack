@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http
 {
@@ -17,6 +18,7 @@ namespace System.Net.Http
     public class HttpMessageContent : HttpContent
     {
         private const string SP = " ";
+        private const string ColonSP = ": ";
         private const string CRLF = "\r\n";
         private const string CommaSeparator = ", ";
 
@@ -30,16 +32,23 @@ namespace System.Net.Http
 
         private const string DefaultRequestMediaType = DefaultMediaType + "; " + MsgTypeParameter + "=" + DefaultRequestMsgType;
         private const string DefaultResponseMediaType = DefaultMediaType + "; " + MsgTypeParameter + "=" + DefaultResponseMsgType;
-        private static readonly Task<HttpContent> _nullContentTask = TaskHelpers.FromResult<HttpContent>(null);
-        private static readonly AsyncCallback _onWriteComplete = new AsyncCallback(OnWriteComplete);
 
-        /// <summary>
-        /// Set of header fields that only support single values such as Set-Cookie.
-        /// </summary>
+#if !NETFX_CORE
+        private static readonly AsyncCallback _onWriteComplete = new AsyncCallback(OnWriteComplete);
+#endif
+
+        // Set of header fields that only support single values such as Set-Cookie.
         private static readonly HashSet<string> _singleValueHeaderFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
+            "Cookie",
             "Set-Cookie",
             "X-Powered-By",
+        };
+
+        // Set of header fields that should get serialized as space-separated values such as User-Agent.
+        private static readonly HashSet<string> _spaceSeparatedValueHeaderFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "User-Agent",
         };
 
         private bool _contentConsumed;
@@ -54,7 +63,7 @@ namespace System.Net.Http
         {
             if (httpRequest == null)
             {
-                throw new ArgumentNullException("httpRequest");
+                throw Error.ArgumentNull("httpRequest");
             }
 
             HttpRequestMessage = httpRequest;
@@ -73,7 +82,7 @@ namespace System.Net.Http
         {
             if (httpResponse == null)
             {
-                throw new ArgumentNullException("httpResponse");
+                throw Error.ArgumentNull("httpResponse");
             }
 
             HttpResponseMessage = httpResponse;
@@ -114,7 +123,7 @@ namespace System.Net.Http
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
 
             MediaTypeHeaderValue contentType = content.Headers.ContentType;
@@ -124,10 +133,8 @@ namespace System.Net.Http
                 {
                     if (throwOnError)
                     {
-                        throw new ArgumentException(
-                            RS.Format(Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name,
-                                      isRequest ? DefaultRequestMediaType : DefaultResponseMediaType),
-                            "content");
+                        throw Error.Argument("content", Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name,
+                                      isRequest ? DefaultRequestMediaType : DefaultResponseMediaType);
                     }
                     else
                     {
@@ -144,9 +151,7 @@ namespace System.Net.Http
                         {
                             if (throwOnError)
                             {
-                                throw new ArgumentException(
-                                    RS.Format(Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name, isRequest ? DefaultRequestMediaType : DefaultResponseMediaType),
-                                    "content");
+                                throw Error.Argument("content", Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name, isRequest ? DefaultRequestMediaType : DefaultResponseMediaType);
                             }
                             else
                             {
@@ -161,9 +166,7 @@ namespace System.Net.Http
 
             if (throwOnError)
             {
-                throw new ArgumentException(
-                    RS.Format(Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name, isRequest ? DefaultRequestMediaType : DefaultResponseMediaType),
-                    "content");
+                throw Error.Argument("content", Properties.Resources.HttpMessageInvalidMediaType, FormattingUtilities.HttpContentType.Name, isRequest ? DefaultRequestMediaType : DefaultResponseMediaType);
             }
             else
             {
@@ -177,6 +180,25 @@ namespace System.Net.Http
         /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
         /// <param name="context">The associated <see cref="TransportContext"/>.</param>
         /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
+#if NETFX_CORE
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        {
+            if (stream == null)
+            {
+                throw Error.ArgumentNull("stream");
+            }
+
+            byte[] header = SerializeHeader();
+            await stream.WriteAsync(header, 0, header.Length);
+
+            if (Content != null)
+            {
+                Stream readStream = await _streamTask.Value;
+                ValidateStreamForReading(readStream);
+                await Content.CopyToAsync(stream);
+            }
+        }
+#else
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is propagated.")]
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
@@ -204,6 +226,7 @@ namespace System.Net.Http
 
             return writeTask.Task;
         }
+#endif
 
         /// <summary>
         /// Computes the length of the stream if possible.
@@ -281,6 +304,7 @@ namespace System.Net.Http
             base.Dispose(disposing);
         }
 
+#if !NETFX_CORE
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is propagated.")]
         private static void OnWriteComplete(IAsyncResult result)
         {
@@ -332,6 +356,7 @@ namespace System.Net.Http
                 }
             });
         }
+#endif
 
         /// <summary>
         /// Serializes the HTTP request line.
@@ -348,7 +373,7 @@ namespace System.Net.Http
             // Only insert host header if not already present.
             if (httpRequest.Headers.Host == null)
             {
-                message.Append(FormattingUtilities.HttpHostHeader + ":" + SP + httpRequest.RequestUri.Authority + CRLF);
+                message.Append(FormattingUtilities.HttpHostHeader + ColonSP + httpRequest.RequestUri.Authority + CRLF);
             }
         }
 
@@ -381,51 +406,36 @@ namespace System.Net.Http
                     {
                         foreach (string value in header.Value)
                         {
-                            message.Append(header.Key + ":" + SP + value + CRLF);
+                            message.Append(header.Key + ColonSP + value + CRLF);
                         }
+                    }
+                    else if (_spaceSeparatedValueHeaderFields.Contains(header.Key))
+                    {
+                        message.Append(header.Key + ColonSP + String.Join(SP, header.Value) + CRLF);
                     }
                     else
                     {
-                        message.Append(header.Key + ":" + SP + String.Join(CommaSeparator, header.Value) + CRLF);
+                        message.Append(header.Key + ColonSP + String.Join(CommaSeparator, header.Value) + CRLF);
                     }
                 }
             }
         }
 
+#if !NETFX_CORE
         private Task<HttpContent> PrepareContentAsync()
         {
             if (Content == null)
             {
-                return _nullContentTask;
+                return TaskHelpers.FromResult<HttpContent>(null);
             }
 
             return _streamTask.Value.Then(readStream =>
             {
-                // If the content needs to be written to a target stream a 2nd time, then the stream must support
-                // seeking (e.g. a FileStream), otherwise the stream can't be copied a second time to a target 
-                // stream (e.g. a NetworkStream).
-                if (_contentConsumed)
-                {
-                    if (readStream != null && readStream.CanRead)
-                    {
-                        readStream.Position = 0;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException(
-                            RS.Format(Properties.Resources.HttpMessageContentAlreadyRead,
-                                      FormattingUtilities.HttpContentType.Name,
-                                      HttpRequestMessage != null
-                                          ? FormattingUtilities.HttpRequestMessageType.Name
-                                          : FormattingUtilities.HttpResponseMessageType.Name));
-                    }
-
-                    _contentConsumed = true;
-                }
-
+                ValidateStreamForReading(readStream);
                 return Content;
-            });
+            }, runSynchronously: true);
         }
+#endif
 
         private byte[] SerializeHeader()
         {
@@ -453,6 +463,30 @@ namespace System.Net.Http
 
             message.Append(CRLF);
             return Encoding.UTF8.GetBytes(message.ToString());
+        }
+
+        private void ValidateStreamForReading(Stream stream)
+        {
+            // If the content needs to be written to a target stream a 2nd time, then the stream must support
+            // seeking (e.g. a FileStream), otherwise the stream can't be copied a second time to a target 
+            // stream (e.g. a NetworkStream).
+            if (_contentConsumed)
+            {
+                if (stream != null && stream.CanRead)
+                {
+                    stream.Position = 0;
+                }
+                else
+                {
+                    throw Error.InvalidOperation(Properties.Resources.HttpMessageContentAlreadyRead,
+                                  FormattingUtilities.HttpContentType.Name,
+                                  HttpRequestMessage != null
+                                      ? FormattingUtilities.HttpRequestMessageType.Name
+                                      : FormattingUtilities.HttpResponseMessageType.Name);
+                }
+            }
+
+            _contentConsumed = true;
         }
     }
 }

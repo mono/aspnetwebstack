@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Globalization;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.TestUtil;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace Microsoft.Web.Mvc.ModelBinding.Test
 {

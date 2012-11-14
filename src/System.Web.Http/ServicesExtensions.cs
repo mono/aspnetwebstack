@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,10 +9,10 @@ using System.Web.Http.Controllers;
 using System.Web.Http.Description;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Filters;
+using System.Web.Http.Hosting;
 using System.Web.Http.Metadata;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.Properties;
-using System.Web.Http.Services;
 using System.Web.Http.Tracing;
 using System.Web.Http.Validation;
 using System.Web.Http.ValueProviders;
@@ -36,20 +36,29 @@ namespace System.Web.Http
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class ServicesExtensions
     {
-        /// <summary>
-        /// Get ValueProviderFactories. The order of returned providers is the priority order that we search the factories.
-        /// </summary>
-        public static IEnumerable<ValueProviderFactory> GetValueProviderFactories(this DefaultServices services)
+        public static IEnumerable<ModelBinderProvider> GetModelBinderProviders(this ServicesContainer services)
         {
-            return services.GetServices<ValueProviderFactory>();
+            return services.GetServices<ModelBinderProvider>();
         }
 
-        /// <summary>
-        /// Get a controller selector, which selects an <see cref="HttpControllerDescriptor"/> given an <see cref="HttpRequestMessage"/>.
-        /// </summary>
-        public static IHttpControllerSelector GetHttpControllerSelector(this DefaultServices services)
+        public static ModelMetadataProvider GetModelMetadataProvider(this ServicesContainer services)
         {
-            return services.GetServiceOrThrow<IHttpControllerSelector>();
+            return services.GetServiceOrThrow<ModelMetadataProvider>();
+        }
+
+        public static IEnumerable<ModelValidatorProvider> GetModelValidatorProviders(this ServicesContainer services)
+        {
+            return services.GetServices<ModelValidatorProvider>();
+        }
+
+        internal static IModelValidatorCache GetModelValidatorCache(this ServicesContainer services)
+        {
+            return services.GetService<IModelValidatorCache>();
+        }
+
+        public static IContentNegotiator GetContentNegotiator(this ServicesContainer services)
+        {
+            return services.GetService<IContentNegotiator>();
         }
 
         /// <summary>
@@ -58,88 +67,89 @@ namespace System.Web.Http
         /// <returns>
         /// An <see cref="IHttpControllerActivator"/> instance or null if none are registered.
         /// </returns>
-        public static IHttpControllerActivator GetHttpControllerActivator(this DefaultServices services)
+        public static IHttpControllerActivator GetHttpControllerActivator(this ServicesContainer services)
         {
             return services.GetServiceOrThrow<IHttpControllerActivator>();
         }
 
-        public static IAssembliesResolver GetAssembliesResolver(this DefaultServices services)
-        {
-            return services.GetServiceOrThrow<IAssembliesResolver>();
-        }
-
-        public static IHttpControllerTypeResolver GetHttpControllerTypeResolver(this DefaultServices services)
-        {
-            return services.GetServiceOrThrow<IHttpControllerTypeResolver>();
-        }
-
-        public static IHttpActionSelector GetActionSelector(this DefaultServices services)
+        public static IHttpActionSelector GetActionSelector(this ServicesContainer services)
         {
             return services.GetServiceOrThrow<IHttpActionSelector>();
         }
 
-        public static IHttpActionInvoker GetActionInvoker(this DefaultServices services)
+        public static IHttpActionInvoker GetActionInvoker(this ServicesContainer services)
         {
             return services.GetServiceOrThrow<IHttpActionInvoker>();
         }
 
-        public static IApiExplorer GetApiExplorer(this DefaultServices services)
-        {
-            return services.GetServiceOrThrow<IApiExplorer>();
-        }
-
-        public static IDocumentationProvider GetDocumentationProvider(this DefaultServices services)
-        {
-            return services.GetService<IDocumentationProvider>();
-        }
-
-        public static IEnumerable<IFilterProvider> GetFilterProviders(this DefaultServices services)
-        {
-            return services.GetServices<IFilterProvider>();
-        }
-
-        public static ModelMetadataProvider GetModelMetadataProvider(this DefaultServices services)
-        {
-            return services.GetServiceOrThrow<ModelMetadataProvider>();
-        }
-
-        public static IEnumerable<ModelBinderProvider> GetModelBinderProviders(this DefaultServices services)
-        {
-            return services.GetServices<ModelBinderProvider>();
-        }
-
-        public static IEnumerable<ModelValidatorProvider> GetModelValidatorProviders(this DefaultServices services)
-        {
-            return services.GetServices<ModelValidatorProvider>();
-        }
-
-        public static IContentNegotiator GetContentNegotiator(this DefaultServices services)
-        {
-            return services.GetService<IContentNegotiator>();
-        }
-
-        public static IActionValueBinder GetActionValueBinder(this DefaultServices services)
+        public static IActionValueBinder GetActionValueBinder(this ServicesContainer services)
         {
             return services.GetService<IActionValueBinder>();
         }
 
-        public static ITraceManager GetTraceManager(this DefaultServices services)
+        /// <summary>
+        /// Get ValueProviderFactories. The order of returned providers is the priority order that we search the factories.
+        /// </summary>
+        public static IEnumerable<ValueProviderFactory> GetValueProviderFactories(this ServicesContainer services)
         {
-            return services.GetService<ITraceManager>();
+            return services.GetServices<ValueProviderFactory>();
         }
 
-        public static ITraceWriter GetTraceWriter(this DefaultServices services)
-        {
-            return services.GetService<ITraceWriter>();
-        }
-
-        public static IBodyModelValidator GetBodyModelValidator(this DefaultServices services)
+        public static IBodyModelValidator GetBodyModelValidator(this ServicesContainer services)
         {
             return services.GetService<IBodyModelValidator>();
         }
 
+        public static IHostBufferPolicySelector GetHostBufferPolicySelector(this ServicesContainer services)
+        {
+            return services.GetService<IHostBufferPolicySelector>();
+        }
+
+        /// <summary>
+        /// Get a controller selector, which selects an <see cref="HttpControllerDescriptor"/> given an <see cref="HttpRequestMessage"/>.
+        /// </summary>
+        public static IHttpControllerSelector GetHttpControllerSelector(this ServicesContainer services)
+        {
+            return services.GetServiceOrThrow<IHttpControllerSelector>();
+        }
+
+        public static IAssembliesResolver GetAssembliesResolver(this ServicesContainer services)
+        {
+            return services.GetServiceOrThrow<IAssembliesResolver>();
+        }
+
+        public static IHttpControllerTypeResolver GetHttpControllerTypeResolver(this ServicesContainer services)
+        {
+            return services.GetServiceOrThrow<IHttpControllerTypeResolver>();
+        }
+
+        public static IApiExplorer GetApiExplorer(this ServicesContainer services)
+        {
+            return services.GetServiceOrThrow<IApiExplorer>();
+        }
+
+        public static IDocumentationProvider GetDocumentationProvider(this ServicesContainer services)
+        {
+            return services.GetService<IDocumentationProvider>();
+        }
+
+        public static IEnumerable<IFilterProvider> GetFilterProviders(this ServicesContainer services)
+        {
+            return services.GetServices<IFilterProvider>();
+        }
+
+        public static ITraceManager GetTraceManager(this ServicesContainer services)
+        {
+            return services.GetService<ITraceManager>();
+        }
+
+        public static ITraceWriter GetTraceWriter(this ServicesContainer services)
+        {
+            return services.GetService<ITraceWriter>();
+        }
+
         // Runtime code shouldn't call GetService() directly. Instead, have a wrapper (like the ones above) and call through the wrapper.
-        private static TService GetService<TService>(this DefaultServices services)
+        private static TService GetService<TService>(this ServicesContainer services)
         {
             if (services == null)
             {
@@ -149,7 +159,7 @@ namespace System.Web.Http
             return (TService)services.GetService(typeof(TService));
         }
 
-        private static IEnumerable<TService> GetServices<TService>(this DefaultServices services)
+        private static IEnumerable<TService> GetServices<TService>(this ServicesContainer services)
         {
             if (services == null)
             {
@@ -159,7 +169,7 @@ namespace System.Web.Http
             return services.GetServices(typeof(TService)).Cast<TService>();
         }
 
-        private static T GetServiceOrThrow<T>(this DefaultServices services)
+        private static T GetServiceOrThrow<T>(this ServicesContainer services)
         {
             T result = services.GetService<T>();
             if (result == null)

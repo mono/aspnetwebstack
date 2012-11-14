@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,39 @@ namespace System.Web.Http.ValueProviders.Providers
 
         public override IValueProvider GetValueProvider(HttpActionContext actionContext)
         {
-            List<IValueProvider> providers = _factories.Select<ValueProviderFactory, IValueProvider>((f) => f.GetValueProvider(actionContext)).Where((vp) => vp != null).ToList();
+            return GetValueProvider(actionContext, _factories);
+        }
+
+        // Get a single ValueProvider from a collection of factories. 
+        // This will never return null.
+        internal static IValueProvider GetValueProvider(HttpActionContext actionContext, ValueProviderFactory[] factories)
+        {
+            // Fast-path the case of just one factory
+            if (factories.Length == 1)
+            {
+                IValueProvider provider = factories[0].GetValueProvider(actionContext);
+                if (provider != null)
+                {
+                    return provider;
+                }
+            }
+
+            List<IValueProvider> providers = new List<IValueProvider>();
+            foreach (ValueProviderFactory factory in factories)
+            {
+                IValueProvider vp = factory.GetValueProvider(actionContext);
+                if (vp != null)
+                {
+                    providers.Add(vp);
+                }
+            }
+
+            // Fast-path the case of just one provider
+            if (providers.Count == 1)
+            {
+                return providers[0];
+            }
+            
             return new CompositeValueProvider(providers);
         }
     }

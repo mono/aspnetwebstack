@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Async.Test
 {
@@ -129,9 +128,9 @@ namespace System.Web.Mvc.Async.Test
             // Act & veriy
             Assert.Throws<AmbiguousMatchException>(
                 delegate { selector.FindAction(null, "TwoMatch"); },
-                @"The current request for action 'TwoMatch' on controller type 'SelectionAttributeController' is ambiguous between the following action methods:
-Void TwoMatch2() on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+SelectionAttributeController
-Void TwoMatch() on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+SelectionAttributeController");
+                "The current request for action 'TwoMatch' on controller type 'SelectionAttributeController' is ambiguous between the following action methods:" + Environment.NewLine
+              + "Void TwoMatch2() on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+SelectionAttributeController" + Environment.NewLine
+              + "Void TwoMatch() on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+SelectionAttributeController");
         }
 
         [Fact]
@@ -208,9 +207,9 @@ Void TwoMatch() on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+
             // Act & assert
             Assert.Throws<AmbiguousMatchException>(
                 delegate { ActionDescriptorCreator creator = selector.FindAction(null, "EventPatternAmbiguous"); },
-                @"Lookup for method 'EventPatternAmbiguousCompleted' on controller type 'MethodLocatorController' failed because of an ambiguity between the following methods:
-Void EventPatternAmbiguousCompleted(Int32) on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+MethodLocatorController
-Void EventPatternAmbiguousCompleted(System.String) on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+MethodLocatorController");
+                "Lookup for method 'EventPatternAmbiguousCompleted' on controller type 'MethodLocatorController' failed because of an ambiguity between the following methods:" + Environment.NewLine
+              + "Void EventPatternAmbiguousCompleted(Int32) on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+MethodLocatorController" + Environment.NewLine
+              + "Void EventPatternAmbiguousCompleted(System.String) on type System.Web.Mvc.Async.Test.AsyncActionMethodSelectorTest+MethodLocatorController");
         }
 
         [Fact]

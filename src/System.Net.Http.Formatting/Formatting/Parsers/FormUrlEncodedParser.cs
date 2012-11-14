@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Net.Http.Internal;
 using System.Text;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting.Parsers
 {
@@ -20,7 +20,7 @@ namespace System.Net.Http.Formatting.Parsers
 
         private NameValueState _nameValueState;
         private ICollection<KeyValuePair<string, string>> _nameValuePairs;
-        private CurrentNameValuePair _currentNameValuePair;
+        private readonly CurrentNameValuePair _currentNameValuePair;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FormUrlEncodedParser"/> class.
@@ -32,12 +32,12 @@ namespace System.Net.Http.Formatting.Parsers
             // The minimum length which would be an empty buffer
             if (maxMessageSize < MinMessageSize)
             {
-                throw new ArgumentOutOfRangeException("maxMessageSize", maxMessageSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MinMessageSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxMessageSize", maxMessageSize, MinMessageSize);
             }
 
             if (nameValuePairs == null)
             {
-                throw new ArgumentNullException("nameValuePairs");
+                throw Error.ArgumentNull("nameValuePairs");
             }
 
             _nameValuePairs = nameValuePairs;
@@ -70,7 +70,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("buffer");
+                throw Error.ArgumentNull("buffer");
             }
 
             ParserState parseStatus = ParserState.NeedMoreData;

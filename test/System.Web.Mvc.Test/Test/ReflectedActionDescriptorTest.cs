@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Test
 {
@@ -85,8 +84,8 @@ namespace System.Web.Mvc.Test
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { new ReflectedActionDescriptor(methodInfo, "someName", new Mock<ControllerDescriptor>().Object); },
-                @"Cannot call action method 'Void MethodHasRefParameter(Int32 ByRef)' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the parameter 'Int32& i' is passed by reference.
-Parameter name: methodInfo");
+                "Cannot call action method 'Void MethodHasRefParameter(Int32 ByRef)' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the parameter 'Int32& i' is passed by reference." + Environment.NewLine
+              + "Parameter name: methodInfo");
         }
 
         [Fact]
@@ -98,8 +97,8 @@ Parameter name: methodInfo");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { new ReflectedActionDescriptor(methodInfo, "someName", new Mock<ControllerDescriptor>().Object); },
-                @"Cannot call action method 'Void MethodHasOutParameter(Int32 ByRef)' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the parameter 'Int32& i' is passed by reference.
-Parameter name: methodInfo");
+                "Cannot call action method 'Void MethodHasOutParameter(Int32 ByRef)' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the parameter 'Int32& i' is passed by reference." + Environment.NewLine
+              + "Parameter name: methodInfo");
         }
 
         [Fact]
@@ -111,8 +110,8 @@ Parameter name: methodInfo");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { new ReflectedActionDescriptor(methodInfo, "someName", new Mock<ControllerDescriptor>().Object); },
-                @"Cannot create a descriptor for instance method 'System.Object Clone()' on type 'System.String' because the type does not derive from ControllerBase.
-Parameter name: methodInfo");
+                "Cannot create a descriptor for instance method 'System.Object Clone()' on type 'System.String' because the type does not derive from ControllerBase." + Environment.NewLine
+              + "Parameter name: methodInfo");
         }
 
         [Fact]
@@ -124,8 +123,8 @@ Parameter name: methodInfo");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { new ReflectedActionDescriptor(methodInfo, "someName", new Mock<ControllerDescriptor>().Object); },
-                @"Cannot call action method 'Void StaticMethod()' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the action method is a static method.
-Parameter name: methodInfo");
+                "Cannot call action method 'Void StaticMethod()' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the action method is a static method." + Environment.NewLine
+              + "Parameter name: methodInfo");
         }
 
         [Fact]
@@ -145,8 +144,8 @@ Parameter name: methodInfo");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { new ReflectedActionDescriptor(methodInfo, "someName", new Mock<ControllerDescriptor>().Object); },
-                @"Cannot call action method 'Void OpenGenericMethod[T]()' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the action method is a generic method.
-Parameter name: methodInfo");
+                "Cannot call action method 'Void OpenGenericMethod[T]()' on controller 'System.Web.Mvc.Test.ReflectedActionDescriptorTest+MyController' because the action method is a generic method." + Environment.NewLine
+              + "Parameter name: methodInfo");
         }
 
         [Fact]
@@ -191,8 +190,8 @@ Parameter name: methodInfo");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { ad.Execute(new Mock<ControllerContext>().Object, parameters); },
-                @"The parameters dictionary contains a null entry for parameter 'obj' of non-nullable type 'System.Int32' for method 'Boolean Equals(Int32)' in 'System.Int32'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
-Parameter name: parameters");
+                "The parameters dictionary contains a null entry for parameter 'obj' of non-nullable type 'System.Int32' for method 'Boolean Equals(Int32)' in 'System.Int32'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter." + Environment.NewLine
+              + "Parameter name: parameters");
         }
 
         [Fact]
@@ -205,8 +204,8 @@ Parameter name: parameters");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { ad.Execute(new Mock<ControllerContext>().Object, parameters); },
-                @"The parameters dictionary contains an invalid entry for parameter 'obj' for method 'Boolean Equals(Int32)' in 'System.Int32'. The dictionary contains a value of type 'System.String', but the parameter requires a value of type 'System.Int32'.
-Parameter name: parameters");
+                "The parameters dictionary contains an invalid entry for parameter 'obj' for method 'Boolean Equals(Int32)' in 'System.Int32'. The dictionary contains a value of type 'System.String', but the parameter requires a value of type 'System.Int32'." + Environment.NewLine
+              + "Parameter name: parameters");
         }
 
         [Fact]
@@ -219,8 +218,8 @@ Parameter name: parameters");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { ad.Execute(new Mock<ControllerContext>().Object, parameters); },
-                @"The parameters dictionary does not contain an entry for parameter 'obj' of type 'System.Int32' for method 'Boolean Equals(Int32)' in 'System.Int32'. The dictionary must contain an entry for each parameter, including parameters that have null values.
-Parameter name: parameters");
+                "The parameters dictionary does not contain an entry for parameter 'obj' of type 'System.Int32' for method 'Boolean Equals(Int32)' in 'System.Int32'. The dictionary must contain an entry for each parameter, including parameters that have null values." + Environment.NewLine
+              + "Parameter name: parameters");
         }
 
         [Fact]

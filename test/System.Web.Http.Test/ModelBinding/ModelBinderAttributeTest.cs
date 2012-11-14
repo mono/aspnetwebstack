@@ -1,13 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http.Controllers;
 using System.Web.Http.Dependencies;
 using System.Web.Http.ValueProviders;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -30,11 +29,12 @@ namespace System.Web.Http.ModelBinding
         {
             // Given an illegal type.
             // Constructor shouldn't throw. But trying to instantiate the model binder provider will throw.
+            HttpConfiguration config = new HttpConfiguration();
             ModelBinderAttribute attr = new ModelBinderAttribute(typeof(object));
 
             Assert.Equal(typeof(object), attr.BinderType); // can still lookup illegal type
             Assert.Throws<InvalidOperationException>(
-                () => attr.GetModelBinderProvider(new HttpConfiguration())
+                () => attr.GetModelBinderProvider(config)
             );
         }
 
@@ -73,6 +73,7 @@ namespace System.Web.Http.ModelBinding
             SecondCustomModelBinderProvider provider = new SecondCustomModelBinderProvider();
             mockDependencyResolver.Setup(r => r.GetService(typeof(CustomModelBinderProvider))).Returns(provider);
             config.DependencyResolver = mockDependencyResolver.Object;
+
             ModelBinderAttribute attr = new ModelBinderAttribute(typeof(CustomModelBinderProvider));
             attr.GetModelBinderProvider(config);
 
@@ -95,17 +96,71 @@ namespace System.Web.Http.ModelBinding
             Assert.IsType<CustomValueProviderFactory>(vpfs.First());
         }
 
+        [Fact]
+        public void Get_ModelBinder_From_Empty_Attribute()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            config.Services.Replace(typeof(ModelBinderProvider), new CustomModelBinderProvider());
+
+            // binder = null, so pulls default from config. But attribute still has value by specifying the value providers.
+            ModelBinderAttribute attr = new ValueProviderAttribute(typeof(CustomValueProviderFactory));
+
+            // Act
+            IModelBinder binder = attr.GetModelBinder(config, null);
+
+            // Assert
+            Assert.Null(attr.BinderType); // using the default 
+            Assert.NotNull(binder);
+            Assert.IsType<CustomModelBinder>(binder);
+        }
+
+        [Fact]
+        public void Get_ModelBinder_From_Binder()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            ModelBinderAttribute attr = new ModelBinderAttribute { BinderType = typeof(CustomModelBinder) };
+
+            // Act
+            IModelBinder binder = attr.GetModelBinder(config, null);
+
+            // Assert
+            Assert.NotNull(binder);
+            Assert.IsType<CustomModelBinder>(binder);
+        }
+
+        [Fact]
+        public void Get_ModelBinder_From_BinderProvider()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            ModelBinderAttribute attr = new ModelBinderAttribute { BinderType = typeof(CustomModelBinderProvider) };
+
+            // Act
+            IModelBinder binder = attr.GetModelBinder(config, null);
+
+            // Assert
+            Assert.NotNull(binder);
+            Assert.IsType<CustomModelBinder>(binder);
+        }
+
         private class CustomModelBinderProvider : ModelBinderProvider
         {
-            public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+            public override IModelBinder GetBinder(HttpConfiguration config, Type modelType)
             {
-                throw new NotImplementedException();
+                return new CustomModelBinder();
+            }
+        }
+
+        private class CustomModelBinder : IModelBinder
+        {
+            public bool BindModel(HttpActionContext actionContext, ModelBindingContext bindingContext)
+            {
+                return true;
             }
         }
 
         private class SecondCustomModelBinderProvider : ModelBinderProvider
         {
-            public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+            public override IModelBinder GetBinder(HttpConfiguration config, Type modelType)
             {
                 throw new NotImplementedException();
             }

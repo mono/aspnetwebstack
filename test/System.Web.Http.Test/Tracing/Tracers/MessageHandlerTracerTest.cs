@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.Tracing.Tracers
 {
@@ -32,12 +31,12 @@ namespace System.Web.Http.Tracing.Tracers
                 new TraceRecord(request, TraceCategories.MessageHandlersCategory, TraceLevel.Info) { Kind = TraceKind.End, Operation = "SendAsync" }
             };
 
-            MethodInfo method = typeof (DelegatingHandler).GetMethod("SendAsync",
+            MethodInfo method = typeof(DelegatingHandler).GetMethod("SendAsync",
                                                                      BindingFlags.Public | BindingFlags.NonPublic |
                                                                      BindingFlags.Instance);
 
             // Act
-            Task<HttpResponseMessage> task = method.Invoke(tracer, new object[] {request, CancellationToken.None}) as Task<HttpResponseMessage>;
+            Task<HttpResponseMessage> task = method.Invoke(tracer, new object[] { request, CancellationToken.None }) as Task<HttpResponseMessage>;
             HttpResponseMessage actualResponse = task.Result;
 
             // Assert
@@ -74,7 +73,7 @@ namespace System.Web.Http.Tracing.Tracers
             // Act
             Exception thrown =
                 Assert.Throws<TargetInvocationException>(
-                    () => method.Invoke(tracer, new object[] {request, CancellationToken.None}));
+                    () => method.Invoke(tracer, new object[] { request, CancellationToken.None }));
 
             // Assert
             Assert.Equal<TraceRecord>(expectedTraces, traceWriter.Traces, new TraceRecordComparer());
@@ -112,7 +111,7 @@ namespace System.Web.Http.Tracing.Tracers
 
             // Act
             Task<HttpResponseMessage> task =
-                method.Invoke(tracer, new object[] {request, CancellationToken.None}) as Task<HttpResponseMessage>;
+                method.Invoke(tracer, new object[] { request, CancellationToken.None }) as Task<HttpResponseMessage>;
 
             // Assert
             Exception thrown = Assert.Throws<InvalidOperationException>(() => task.Wait());
@@ -127,7 +126,8 @@ namespace System.Web.Http.Tracing.Tracers
         {
             private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _callback;
 
-            public MockDelegatingHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback) : base()
+            public MockDelegatingHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+                : base()
             {
                 _callback = callback;
             }

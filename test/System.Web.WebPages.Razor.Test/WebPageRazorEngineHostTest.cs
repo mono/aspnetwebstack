@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -8,8 +8,7 @@ using System.Text;
 using System.Web.Razor;
 using System.Web.Razor.Generator;
 using Microsoft.CSharp;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.WebPages.Razor.Test
 {
@@ -61,13 +60,13 @@ namespace System.Web.WebPages.Razor.Test
         [Fact]
         public void PostProcessGeneratedCodeAddsApplicationInstanceProperty()
         {
-            const string expectedPropertyCode = @"
-protected Foo.Bar ApplicationInstance {
-    get {
-        return ((Foo.Bar)(Context.ApplicationInstance));
-    }
-}
-";
+            string expectedPropertyCode =
+                Environment.NewLine
+              + "protected Foo.Bar ApplicationInstance {" + Environment.NewLine
+              + "    get {" + Environment.NewLine
+              + "        return ((Foo.Bar)(Context.ApplicationInstance));" + Environment.NewLine
+              + "    }" + Environment.NewLine
+              + "}" + Environment.NewLine;
 
             // Arrange
             WebPageRazorHost host = new WebPageRazorHost("Foo.cshtml")

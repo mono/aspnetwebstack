@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
+using System.Text;
+using Microsoft.TestCommon;
+using Moq;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -126,6 +126,37 @@ namespace System.Web.Http.ModelBinding
             Assert.Equal(4, result.Y);
         }
 
+        public class Nest
+        {
+            public Nest A { get; set; }
+        }
+
+        [Fact]
+        public void ReadDeeplyNestedFormUrlThrows()
+        {
+            StringBuilder sb = new StringBuilder("A");
+            for (int i = 0; i < 10000; i++)
+            {
+                sb.Append("[A]");
+            }
+            sb.Append("=1");
+
+            Assert.Throws<InsufficientExecutionStackException>(() => ParseJQuery<Nest>(sb.ToString()));
+        }
+
+        [Fact]
+        public void ReadDeeplyNestedMvcThrows()
+        {
+            StringBuilder sb = new StringBuilder("A");
+            for (int i = 0; i < 10000; i++)
+            {
+                sb.Append(".A");
+            }
+            sb.Append("=1");
+
+            Assert.Throws<InsufficientExecutionStackException>(() => ParseJQuery<Nest>(sb.ToString()));
+        }
+
         public class ClassWithPointArray
         {
             public Point[] Data { get; set; }
@@ -219,6 +250,31 @@ namespace System.Web.Http.ModelBinding
             Assert.Equal(3, fd.ReadAs<int>("X", requiredMemberSelector: null, formatterLogger: null));
             Assert.Equal("3", fd.ReadAs<string>("X", requiredMemberSelector: null, formatterLogger: null));
             Assert.Equal(4, fd.ReadAs<int>("Y", requiredMemberSelector: null, formatterLogger: null));            
+        }
+
+        [Fact]
+        public void ReadInvalidInt_ReturnsDefaultValue()
+        {
+            int result = ParseJQuery<int>("xyz");
+            Assert.Equal(0, result);
+        }
+
+        class ThrowingSetterType
+        {
+            public static Exception Exception = new Exception("This setter throws");
+            public string Throws { get { return null; } set { throw Exception; } }
+        }
+
+        [Fact]
+        public void ReadForThrowingSetterTypeRecordsCorrectModelError()
+        {
+            HttpContent content = FormContent("Throws=text");
+            FormDataCollection fd = content.ReadAsAsync<FormDataCollection>().Result;
+            Mock<IFormatterLogger> mockLogger = new Mock<IFormatterLogger>();
+
+            fd.ReadAs<ThrowingSetterType>(String.Empty, requiredMemberSelector: null, formatterLogger: mockLogger.Object);
+            
+            mockLogger.Verify(mock => mock.LogError("Throws", ThrowingSetterType.Exception));
         }
     }
 }

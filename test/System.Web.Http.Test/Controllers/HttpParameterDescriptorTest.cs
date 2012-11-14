@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http.Controllers;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http
 {
@@ -20,10 +19,11 @@ namespace System.Web.Http
             Assert.Null(parameterDescriptor.ParameterType);
             Assert.Null(parameterDescriptor.Configuration);
             Assert.Null(parameterDescriptor.Prefix);
-            Assert.Null(parameterDescriptor.ModelBinderAttribute);
+            Assert.Null(parameterDescriptor.ParameterBinderAttribute);
             Assert.Null(parameterDescriptor.ActionDescriptor);
             Assert.Null(parameterDescriptor.DefaultValue);
             Assert.NotNull(parameterDescriptor.Properties);
+            Assert.False(parameterDescriptor.IsOptional);
         }
 
         [Fact]

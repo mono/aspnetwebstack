@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Generator;
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.VB
 {
@@ -47,8 +47,8 @@ namespace System.Web.Razor.Test.Parser.VB
         [Fact]
         public void InheritsBlockOutputsErrorIfInheritsNotFollowedByTypeButAcceptsEntireLineAsCode()
         {
-            ParseBlockTest(@"inherits                
-foo",
+            ParseBlockTest("inherits                " + Environment.NewLine
+                         + "foo",
                 new DirectiveBlock(
                     Factory.MetaCode("inherits                ").Accepts(AcceptedCharacters.None),
                     Factory.Code("\r\n").AsBaseType(String.Empty)),
@@ -71,8 +71,8 @@ foo",
         [Fact]
         public void ParseBlockShowsErrorIfNamespaceNotOnSameLineAsImportsKeyword()
         {
-            ParseBlockTest(@"Imports
-Foo",
+            ParseBlockTest("Imports" + Environment.NewLine
+                         + "Foo",
                 new DirectiveBlock(
                     Factory.MetaCode("Imports\r\n")
                            .With(new AddImportCodeGenerator(
@@ -86,8 +86,8 @@ Foo",
         [Fact]
         public void ParseBlockShowsErrorIfTypeBeingAliasedNotOnSameLineAsImportsKeyword()
         {
-            ParseBlockTest(@"Imports Foo =
-System.Bar",
+            ParseBlockTest("Imports Foo =" + Environment.NewLine
+                         + "System.Bar",
                 new DirectiveBlock(
                     Factory.MetaCode("Imports Foo =\r\n")
                            .With(new AddImportCodeGenerator(

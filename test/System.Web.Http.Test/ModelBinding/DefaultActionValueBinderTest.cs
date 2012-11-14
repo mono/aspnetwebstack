@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ComponentModel;
 using System.Linq;
@@ -7,8 +7,8 @@ using System.Reflection;
 using System.Threading;
 using System.Web.Http.Controllers;
 using System.Web.Http.ValueProviders;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
+using Moq;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -20,7 +20,7 @@ namespace System.Web.Http.ModelBinding
         {
             // Arrange
             HttpActionDescriptor actionDescriptor = new ReflectedHttpActionDescriptor { MethodInfo = (MethodInfo)MethodInfo.GetCurrentMethod() };
-            
+
             // Act and Assert
             Assert.ThrowsArgumentNull(
                 () => new DefaultActionValueBinder().GetBinding(null),
@@ -38,6 +38,20 @@ namespace System.Web.Http.ModelBinding
 
             Assert.Equal(1, binding.ParameterBindings.Length);
             AssertIsModelBound(binding, 0);
+        }
+
+        [Fact]
+        public void Check_Config_Override_Use_Formatters()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            config.ParameterBindingRules.Add(param => param.BindWithFormatter()); // overrides
+
+            DefaultActionValueBinder binder = new DefaultActionValueBinder();
+
+            var binding = binder.GetBinding(GetAction("Action_Int", config));
+
+            Assert.Equal(1, binding.ParameterBindings.Length);
+            AssertIsBody(binding, 0);
         }
 
         private void Action_Int_FromUri([FromUri] int id) { }
@@ -64,10 +78,10 @@ namespace System.Web.Http.ModelBinding
 
             var binding = binder.GetBinding(GetAction("Action_SimpleTypes"));
 
-            for(int i = 0; i < binding.ParameterBindings.Length; i++)
+            for (int i = 0; i < binding.ParameterBindings.Length; i++)
             {
                 AssertIsModelBound(binding, 0);
-            }        
+            }
         }
 
         private void Action_ComplexTypeWithStringConverter(ComplexTypeWithStringConverter x) { }
@@ -80,7 +94,7 @@ namespace System.Web.Http.ModelBinding
             var binding = binder.GetBinding(GetAction("Action_ComplexTypeWithStringConverter"));
 
             Assert.Equal(1, binding.ParameterBindings.Length);
-            AssertIsModelBound(binding, 0);            
+            AssertIsModelBound(binding, 0);
         }
 
         private void Action_ComplexTypeWithStringConverter_Body_Override([FromBody] ComplexTypeWithStringConverter x) { }
@@ -115,7 +129,7 @@ namespace System.Web.Http.ModelBinding
         public void Check_Nullable_ValueType_Is_FromBody()
         {
             DefaultActionValueBinder binder = new DefaultActionValueBinder();
-                        
+
             var binding = binder.GetBinding(GetAction("Action_Nullable_ValueType"));
 
             Assert.Equal(1, binding.ParameterBindings.Length);
@@ -160,7 +174,7 @@ namespace System.Web.Http.ModelBinding
             var binding = binder.GetBinding(GetAction("Action_Empty"));
 
             Assert.NotNull(binding.ParameterBindings);
-            Assert.Equal(0, binding.ParameterBindings.Length);            
+            Assert.Equal(0, binding.ParameterBindings.Length);
         }
 
         private void Action_String_String(string s1, string s2) { }
@@ -187,8 +201,22 @@ namespace System.Web.Http.ModelBinding
             var binding = binder.GetBinding(GetAction("Action_Complex_Type"));
 
             Assert.Equal(1, binding.ParameterBindings.Length);
-            AssertIsBody(binding, 0);            
+            AssertIsBody(binding, 0);
         }
+
+        [Fact]
+        public void Check_Config_Override_Use_ModelBinding()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            config.ParameterBindingRules.Add(param => param.BindWithModelBinding());
+            DefaultActionValueBinder binder = new DefaultActionValueBinder();
+
+            var binding = binder.GetBinding(GetAction("Action_Complex_Type", config));
+
+            Assert.Equal(1, binding.ParameterBindings.Length);
+            AssertIsModelBound(binding, 0);
+        }
+
 
         private void Action_Complex_ValueType(ComplexValueType complex) { }
 
@@ -242,7 +270,7 @@ namespace System.Web.Http.ModelBinding
             // It's illegal to have multiple parameters from the body. 
             // But we should still be able to get a binding for it. We just can't execute it. 
             var binding = binder.GetBinding(GetAction("Action_Two_Complex_Types"));
-                        
+
             Assert.Equal(2, binding.ParameterBindings.Length);
             AssertIsError(binding, 0);
             AssertIsError(binding, 1);
@@ -292,8 +320,8 @@ namespace System.Web.Http.ModelBinding
             Assert.Equal(1, binding.ParameterBindings.Length);
             AssertIsModelBound(binding, 0);
 
-            ModelBinderParameterBinding p = (ModelBinderParameterBinding) binding.ParameterBindings[0];
-            Assert.IsType<CustomModelBinderProvider>(p.ModelBinderProvider);
+            ModelBinderParameterBinding p = (ModelBinderParameterBinding)binding.ParameterBindings[0];
+            Assert.IsType<CustomModelBinder>(p.Binder);
 
             // Since the ModelBinderAttribute didn't specify the valueproviders, we should pull those from config.
             Assert.Equal(1, p.ValueProviderFactories.Count());
@@ -328,6 +356,24 @@ namespace System.Web.Http.ModelBinding
             AssertIsError(binding, 0);
         }
 
+        [FromBody]
+        class Widget
+        {
+        }
+        private void Action_Closest_Attribute_Wins([FromUri] Widget i) { }
+
+        [Fact]
+        public void Check_Closest_Attribute_Wins()
+        {
+            DefaultActionValueBinder binder = new DefaultActionValueBinder();
+
+            var binding = binder.GetBinding(GetAction("Action_Closest_Attribute_Wins"));
+
+            // Have 2 attributes that conflict with each other. Still get the contract, but it has an error in it. 
+            Assert.Equal(1, binding.ParameterBindings.Length);
+            AssertIsModelBound(binding, 0);
+        }
+
         private void Action_HttpContent_Parameter(HttpContent c) { }
 
         [Fact]
@@ -336,7 +382,7 @@ namespace System.Web.Http.ModelBinding
             DefaultActionValueBinder binder = new DefaultActionValueBinder();
 
             var binding = binder.GetBinding(GetAction("Action_HttpContent_Parameter"));
-                        
+
             Assert.Equal(1, binding.ParameterBindings.Length);
             AssertIsError(binding, 0);
         }
@@ -366,7 +412,44 @@ namespace System.Web.Http.ModelBinding
             Assert.Equal(1, binding.ParameterBindings.Length);
             AssertIsCustomBinder<HttpRequestParameterBinding>(binding, 0);
         }
-        
+
+
+        private void Action_CustomBindingAttribute([CustomBindingAttribute] int x) { }
+
+        [Fact]
+        public void Check_CustomBindingAttribute()
+        {
+            DefaultActionValueBinder binder = new DefaultActionValueBinder();
+
+            var binding = binder.GetBinding(GetAction("Action_CustomBindingAttribute"));
+
+            Assert.Equal(1, binding.ParameterBindings.Length);
+            Assert.Same(CustomBindingAttribute.MockBinding, binding.ParameterBindings[0]);
+        }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Parameter, Inherited = true, AllowMultiple = false)]
+        private class CustomBindingAttribute : ParameterBindingAttribute
+        {
+            public static HttpParameterBinding MockBinding = new CustomBinding();
+
+            public override HttpParameterBinding GetBinding(HttpParameterDescriptor parameter)
+            {
+                return MockBinding;
+            }
+
+            private class CustomBinding : HttpParameterBinding
+            {
+                public CustomBinding()
+                    : base(new Mock<HttpParameterDescriptor>().Object)
+                {
+                }
+                public override Threading.Tasks.Task ExecuteBindingAsync(Metadata.ModelMetadataProvider metadataProvider, HttpActionContext actionContext, CancellationToken cancellationToken)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
 
 
         // Assert that the binding contract says the given parameter comes from the body
@@ -375,7 +458,7 @@ namespace System.Web.Http.ModelBinding
             HttpParameterBinding p = binding.ParameterBindings[paramIdx];
             Assert.NotNull(p);
             Assert.True(p.IsValid);
-            Assert.True(p.WillReadBody);            
+            Assert.True(p.WillReadBody);
         }
 
         // Assert that the binding contract says the given parameter is not from the body (will be handled by model binding)
@@ -385,13 +468,13 @@ namespace System.Web.Http.ModelBinding
             Assert.NotNull(p);
             Assert.IsType<ModelBinderParameterBinding>(p);
             Assert.True(p.IsValid);
-            Assert.False(p.WillReadBody);   
+            Assert.False(p.WillReadBody);
         }
 
         // Assert that the binding contract says the given parameter will be bound to the cancellation token. 
         private void AssertIsCancellationToken(HttpActionBinding binding, int paramIdx)
         {
-            AssertIsCustomBinder<CancellationTokenParameterBinding>(binding, paramIdx);            
+            AssertIsCustomBinder<CancellationTokenParameterBinding>(binding, paramIdx);
         }
 
         private void AssertIsError(HttpActionBinding binding, int paramIdx)
@@ -399,16 +482,16 @@ namespace System.Web.Http.ModelBinding
             HttpParameterBinding p = binding.ParameterBindings[paramIdx];
             Assert.NotNull(p);
             Assert.False(p.IsValid);
-            Assert.False(p.WillReadBody);   
+            Assert.False(p.WillReadBody);
         }
 
         private void AssertIsCustomBinder<T>(HttpActionBinding binding, int paramIdx)
-        {           
+        {
             HttpParameterBinding p = binding.ParameterBindings[paramIdx];
             Assert.NotNull(p);
             Assert.IsType<T>(p);
             Assert.True(p.IsValid);
-            Assert.False(p.WillReadBody);   
+            Assert.False(p.WillReadBody);
         }
 
 
@@ -422,7 +505,13 @@ namespace System.Web.Http.ModelBinding
         {
             MethodInfo method = this.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             Assert.NotNull(method);
-            return new ReflectedHttpActionDescriptor { MethodInfo = method, Configuration = config };
+            return new ReflectedHttpActionDescriptor { MethodInfo = method, Configuration = config, ControllerDescriptor = GetControllerDescriptor(config) };
+        }
+
+        // Get a controller descriptor that's sufficiently initialized to use with parameter binding
+        private HttpControllerDescriptor GetControllerDescriptor(HttpConfiguration config)
+        {
+            return new HttpControllerDescriptor(config);
         }
 
         // Complex type to use with tests
@@ -476,11 +565,20 @@ namespace System.Web.Http.ModelBinding
 
         class CustomModelBinderProvider : ModelBinderProvider
         {
-            public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+            public override IModelBinder GetBinder(HttpConfiguration config, Type modelType)
+            {
+                return new CustomModelBinder();
+            }
+        }
+
+        class CustomModelBinder : IModelBinder
+        {
+            public bool BindModel(HttpActionContext actionContext, ModelBindingContext bindingContext)
             {
                 throw new NotImplementedException();
             }
         }
+
         class CustomValueProviderFactory : ValueProviderFactory
         {
             public override IValueProvider GetValueProvider(HttpActionContext actionContext)
@@ -488,5 +586,5 @@ namespace System.Web.Http.ModelBinding
                 throw new NotImplementedException();
             }
         }
-    }   
+    }
 }

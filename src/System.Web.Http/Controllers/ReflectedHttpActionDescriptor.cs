@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using System.Web.Http.Internal;
@@ -101,15 +102,7 @@ namespace System.Web.Http.Controllers
             }
         }
 
-        /// <summary>
-        /// The return type of the method or <c>null</c> if the method does not return a value (e.g. a method returning
-        /// <c>void</c>).
-        /// </summary>
-        /// <remarks>
-        /// This implementation returns the exact value of <see cref="System.Reflection.MethodInfo.ReturnType"/> for 
-        /// synchronous methods and an unwrapped value for asynchronous methods (e.g. the <c>T</c> of <see cref="Task{T}"/>.
-        /// This returns <c>null</c> for methods returning <c>void</c> or <see cref="Task"/>.
-        /// </remarks>
+        /// <inheritdoc/>
         public override Type ReturnType
         {
             get { return _returnType; }
@@ -122,14 +115,8 @@ namespace System.Web.Http.Controllers
             return new Collection<T>(TypeHelper.OfType<T>(_attrCached));
         }
 
-        /// <summary>
-        /// Executes the described action and returns a <see cref="Task{T}"/> that once completed will
-        /// contain the return value of the action.
-        /// </summary>
-        /// <param name="controllerContext">The context.</param>
-        /// <param name="arguments">The arguments.</param>
-        /// <returns>A <see cref="Task{T}"/> that once completed will contain the return value of the action.</returns>
-        public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments)
+        /// <inheritdoc/>
+        public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, CancellationToken cancellationToken)
         {
             if (controllerContext == null)
             {
@@ -145,7 +132,7 @@ namespace System.Web.Http.Controllers
             {
                 object[] argumentValues = PrepareParameters(arguments, controllerContext);
                 return _actionExecutor.Value.Execute(controllerContext.Controller, argumentValues);
-            });
+            }, cancellationToken);
         }
 
         public override Collection<IFilter> GetFilters()
@@ -201,10 +188,13 @@ namespace System.Web.Http.Controllers
             }
 
             ParameterInfo[] parameterInfos = MethodInfo.GetParameters();
-            var rawParameterValues = from parameterInfo in parameterInfos
-                                     select ExtractParameterFromDictionary(parameterInfo, parameters, controllerContext);
-            object[] parametersArray = rawParameterValues.ToArray();
-            return parametersArray;
+            int parameterCount = parameterInfos.Length;
+            object[] parameterValues = new object[parameterCount];
+            for (int parameterIndex = 0; parameterIndex < parameterCount; parameterIndex++)
+            {
+                parameterValues[parameterIndex] = ExtractParameterFromDictionary(parameterInfos[parameterIndex], parameters, controllerContext);
+            }
+            return parameterValues;
         }
 
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller is responsible for disposing of response instance.")]
@@ -215,8 +205,9 @@ namespace System.Web.Http.Controllers
             if (!parameters.TryGetValue(parameterInfo.Name, out value))
             {
                 // the key should always be present, even if the parameter value is null
-                throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                     HttpStatusCode.BadRequest,
+                    SRResources.BadRequest,
                     Error.Format(SRResources.ReflectedActionDescriptor_ParameterNotInDictionary,
                                  parameterInfo.Name, parameterInfo.ParameterType, MethodInfo, MethodInfo.DeclaringType)));
             }
@@ -224,8 +215,9 @@ namespace System.Web.Http.Controllers
             if (value == null && !TypeHelper.TypeAllowsNullValue(parameterInfo.ParameterType))
             {
                 // tried to pass a null value for a non-nullable parameter type
-                throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                     HttpStatusCode.BadRequest,
+                    SRResources.BadRequest,
                     Error.Format(SRResources.ReflectedActionDescriptor_ParameterCannotBeNull,
                                     parameterInfo.Name, parameterInfo.ParameterType, MethodInfo, MethodInfo.DeclaringType)));
             }
@@ -233,8 +225,9 @@ namespace System.Web.Http.Controllers
             if (value != null && !parameterInfo.ParameterType.IsInstanceOfType(value))
             {
                 // value was supplied but is not of the proper type
-                throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                     HttpStatusCode.BadRequest,
+                    SRResources.BadRequest,
                     Error.Format(SRResources.ReflectedActionDescriptor_ParameterValueHasWrongType,
                                     parameterInfo.Name, MethodInfo, MethodInfo.DeclaringType, value.GetType(), parameterInfo.ParameterType)));
             }
@@ -300,7 +293,6 @@ namespace System.Web.Http.Controllers
 
         private sealed class ActionExecutor
         {
-            private static readonly Task<object> _completedTaskReturningNull = TaskHelpers.FromResult<object>(null);
             private readonly Func<object, object[], Task<object>> _executor;
             private static MethodInfo _convertOfTMethod = typeof(ActionExecutor).GetMethod("Convert", BindingFlags.Static | BindingFlags.NonPublic);
 
@@ -319,7 +311,7 @@ namespace System.Web.Http.Controllers
             private static Task<object> Convert<T>(object taskAsObject)
             {
                 Task<T> task = (Task<T>)taskAsObject;
-                return task.Then(r => (object)r);
+                return task.CastToObject<T>();
             }
 
             // Do not inline or optimize this method to avoid stack-related reflection demand issues when
@@ -365,7 +357,7 @@ namespace System.Web.Http.Controllers
                     return (instance, methodParameters) =>
                     {
                         voidExecutor(instance, methodParameters);
-                        return _completedTaskReturningNull;
+                        return TaskHelpers.NullResult();
                     };
                 }
                 else
@@ -381,7 +373,7 @@ namespace System.Web.Http.Controllers
                         {
                             Task r = (Task)compiled(instance, methodParameters);
                             ThrowIfWrappedTaskInstance(methodInfo, r.GetType());
-                            return r.Then(() => (object)null);
+                            return r.CastToObject();
                         };
                     }
                     else if (typeof(Task).IsAssignableFrom(methodCall.Type))

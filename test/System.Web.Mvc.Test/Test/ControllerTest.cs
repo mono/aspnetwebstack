@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -12,11 +12,10 @@ using System.Web.Mvc.Async;
 using System.Web.Profile;
 using System.Web.Routing;
 using System.Web.TestUtil;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
 using Moq;
 using Moq.Protected;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Test
 {

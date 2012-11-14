@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,8 +8,8 @@ using System.Web.Http.Metadata.Providers;
 using System.Web.Http.ModelBinding.Binders;
 using System.Web.Http.Util;
 using System.Web.Http.Validation;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -181,28 +181,6 @@ namespace System.Web.Http.ModelBinding
 
             // Assert
             Assert.Null(boundCollection);
-        }
-
-        [Fact(Skip = "is this test checking a valid invariant?")]
-        public void BindSimpleCollection_SubBinderDoesNotExist()
-        {
-            // Arrange
-            CultureInfo culture = CultureInfo.GetCultureInfo("fr-FR");
-            ModelBindingContext bindingContext = new ModelBindingContext
-            {
-                ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(int)),
-                ModelName = "someName",
-                ValueProvider = new SimpleHttpValueProvider()
-            };
-            HttpActionContext context = ContextUtil.CreateActionContext();
-            context.ControllerContext.Configuration.Services.Replace(typeof(ModelBinderProvider), null); // completely remove from resolution?
-
-            // Act
-            List<int> boundCollection = CollectionModelBinder<int>.BindSimpleCollection(context, bindingContext, new int[1], culture);
-
-            // Assert
-            Assert.Equal(new[] { 0 }, boundCollection.ToArray());
-            Assert.Empty(bindingContext.ValidationNode.ChildNodes);
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -10,6 +10,12 @@ namespace System.Web.Mvc
 {
     public class UrlHelper
     {
+        /// <summary>
+        /// Key used to signify that a route URL generation request should include HTTP routes (e.g. Web API).
+        /// If this key is not specified then no HTTP routes will match.
+        /// </summary>
+        private const string HttpRouteKey = "httproute";
+
         public UrlHelper(RequestContext requestContext)
             : this(requestContext, RouteTable.Routes)
         {
@@ -32,6 +38,11 @@ namespace System.Web.Mvc
         public RequestContext RequestContext { get; private set; }
 
         public RouteCollection RouteCollection { get; private set; }
+
+        public string Action()
+        {
+            return RequestContext.HttpContext.Request.RawUrl;
+        }
 
         public string Action(string actionName)
         {
@@ -219,6 +230,45 @@ namespace System.Web.Mvc
         public string RouteUrl(string routeName, RouteValueDictionary routeValues, string protocol, string hostName)
         {
             return GenerateUrl(routeName, null /* actionName */, null /* controllerName */, protocol, hostName, null /* fragment */, routeValues, RouteCollection, RequestContext, false /* includeImplicitMvcValues */);
+        }
+
+        [SuppressMessage("Microsoft.Design", "CA1055:UriReturnValuesShouldNotBeStrings", Justification = "As the return value will used only for rendering, string return value is more appropriate.")]
+        public string HttpRouteUrl(string routeName, object routeValues)
+        {
+            return HttpRouteUrl(routeName, new RouteValueDictionary(routeValues));
+        }
+
+        [SuppressMessage("Microsoft.Design", "CA1055:UriReturnValuesShouldNotBeStrings", Justification = "As the return value will used only for rendering, string return value is more appropriate.")]
+        public string HttpRouteUrl(string routeName, RouteValueDictionary routeValues)
+        {
+            if (routeValues == null)
+            {
+                // If no route values were passed in at all we have to create a new dictionary
+                // so that we can add the extra "httproute" key.
+                routeValues = new RouteValueDictionary();
+                routeValues.Add(HttpRouteKey, true);
+            }
+            else
+            {
+                // Copy the dictionary to add the extra "httproute" key used by all Web API routes to
+                // disambiguate them from other MVC routes.
+                routeValues = new RouteValueDictionary(routeValues);
+                if (!routeValues.ContainsKey(HttpRouteKey))
+                {
+                    routeValues.Add(HttpRouteKey, true);
+                }
+            }
+
+            return GenerateUrl(routeName,
+                actionName: null,
+                controllerName: null,
+                protocol: null,
+                hostName: null,
+                fragment: null,
+                routeValues: routeValues,
+                routeCollection: RouteCollection,
+                requestContext: RequestContext,
+                includeImplicitMvcValues: false);
         }
     }
 }

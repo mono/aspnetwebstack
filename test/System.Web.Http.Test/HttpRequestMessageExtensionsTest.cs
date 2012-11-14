@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http.Formatting;
@@ -9,9 +9,8 @@ using System.Web.Http;
 using System.Web.Http.Hosting;
 using System.Web.Http.Routing;
 using System.Web.Http.Services;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Net.Http
 {
@@ -185,6 +184,36 @@ namespace System.Net.Http
             Assert.Same(formatter, objectContent.Formatter);
         }
 
+        //[Fact]
+        //public void CreateResponse_Uses_Per_Controller_Services()
+        //{
+        //    // Arrange
+        //    XmlMediaTypeFormatter formatter = new XmlMediaTypeFormatter();
+
+        //    HttpConfiguration config = new HttpConfiguration();
+        //    HttpControllerDescriptor cd = new HttpControllerDescriptor(config);
+
+        //    cd.Configuration.Formatters.Clear();
+        //    cd.Configuration.Formatters.Add(formatter);
+
+        //    var negotiatorMock = new Mock<IContentNegotiator>();
+        //    negotiatorMock.Setup(r => r.Negotiate(typeof(string), _request, cd.Configuration.Formatters))
+        //                .Returns(new ContentNegotiationResult(formatter, null));
+
+        //    cd.Configuration.Services.Replace(typeof(IContentNegotiator), negotiatorMock.Object);
+
+        //    // Act. Default call uses the controller services if it can find it in the property bag.
+        //    _request.Properties[HttpPropertyKeys.HttpControllerDescriptorKey] = cd;
+        //    var response = _request.CreateResponse<string>(HttpStatusCode.NoContent, "42");
+
+        //    // Assert
+        //    Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        //    Assert.Same(_request, response.RequestMessage);
+        //    var objectContent = Assert.IsType<ObjectContent<string>>(response.Content);
+        //    Assert.Equal("42", objectContent.Value);
+        //    Assert.Same(formatter, objectContent.Formatter); // if this failed, then we didn't puck up the formatter from the controller.
+        //}
+
         [Fact]
         public void CreateResponse_MatchingMediaType_WhenRequestIsNull_Throws()
         {
@@ -204,7 +233,7 @@ namespace System.Net.Http
         [Fact]
         public void CreateResponse_MatchingMediaType_WhenMediaTypeStringIsNull_Throws()
         {
-            Assert.Throws<ArgumentException>(() => _request.CreateResponse(HttpStatusCode.OK, _value, (string)null), "The value cannot be null or empty.\r\nParameter name: mediaType");
+            Assert.ThrowsArgument(() => _request.CreateResponse(HttpStatusCode.OK, _value, (string)null), "mediaType");
         }
 
         [Fact]
@@ -411,6 +440,26 @@ namespace System.Net.Http
             throwingDisposableMock.Verify(d => d.Dispose());
             _disposableMock.Verify(d => d.Dispose());
             Assert.Empty(list);
+        }
+
+        [Fact]
+        public void GetUrlHelper_WhenRequestParameterIsNull_Throws()
+        {
+            HttpRequestMessage request = null;
+            Assert.ThrowsArgumentNull(() => request.GetUrlHelper(), "request");
+        }
+
+        [Fact]
+        public void GetUrlHelper_ReturnsUrlHelper()
+        {
+            HttpRequestMessage request = new HttpRequestMessage();
+            request.Properties[HttpPropertyKeys.HttpConfigurationKey] = new HttpConfiguration();
+            request.Properties[HttpPropertyKeys.HttpRouteDataKey] = new HttpRouteData(new HttpRoute());
+
+            UrlHelper urlHelper = request.GetUrlHelper();
+
+            Assert.NotNull(urlHelper);
+            Assert.Same(request, urlHelper.Request);
         }
     }
 }

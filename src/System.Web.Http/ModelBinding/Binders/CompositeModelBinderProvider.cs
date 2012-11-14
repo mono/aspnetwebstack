@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -29,19 +29,16 @@ namespace System.Web.Http.ModelBinding.Binders
             get { return _providers; }
         }
 
-        public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+        public override IModelBinder GetBinder(HttpConfiguration configuration, Type modelType)
         {
-            // Fast-path the case where we already have the providers. 
-            if (_providers != null)
-            {
-                return new CompositeModelBinder(_providers);
-            }
+            IEnumerable<ModelBinderProvider> providers = _providers ?? configuration.Services.GetModelBinderProviders();
 
-            // Extract all providers from the resolver except the the type of the executing one (else would cause recursion),
-            // or use the set of providers we were given.            
-            IEnumerable<ModelBinderProvider> providers = actionContext.ControllerContext.Configuration.Services.GetModelBinderProviders().Where(p => !(p is CompositeModelBinderProvider));
-
-            return new CompositeModelBinder(providers);
+            // Pre-filter out any binders that we know can't match. 
+            IEnumerable<IModelBinder> binders = from provider in providers 
+                                                let binder = provider.GetBinder(configuration, modelType) 
+                                                where binder != null 
+                                                select binder;
+            return new CompositeModelBinder(binders);
         }
     }
 }

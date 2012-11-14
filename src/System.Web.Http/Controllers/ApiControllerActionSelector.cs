@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -86,7 +86,7 @@ namespace System.Web.Http.Controllers
 
             private readonly ReflectedHttpActionDescriptor[] _actionDescriptors;
 
-            private readonly IDictionary<ReflectedHttpActionDescriptor, IEnumerable<string>> _actionParameterNames = new Dictionary<ReflectedHttpActionDescriptor, IEnumerable<string>>();
+            private readonly IDictionary<ReflectedHttpActionDescriptor, string[]> _actionParameterNames = new Dictionary<ReflectedHttpActionDescriptor, string[]>();
 
             private readonly ILookup<string, ReflectedHttpActionDescriptor> _actionNameMapping;
 
@@ -116,14 +116,14 @@ namespace System.Web.Http.Controllers
                     MethodInfo method = validMethods[i];
                     ReflectedHttpActionDescriptor actionDescriptor = new ReflectedHttpActionDescriptor(_controllerDescriptor, method);
                     _actionDescriptors[i] = actionDescriptor;
-                    HttpActionBinding actionBinding = controllerDescriptor.ActionValueBinder.GetBinding(actionDescriptor);
+                    HttpActionBinding actionBinding = actionDescriptor.ActionBinding;
 
-                    // Build action parameter name mapping, only consider parameters that are simple types, do not have default values and come from URI
+                    // Building an action parameter name mapping to compare against the URI parameters coming from the request. Here we only take into account required parameters that are simple types and come from URI.
                     _actionParameterNames.Add(
                         actionDescriptor,
                         actionBinding.ParameterBindings
-                            .Where(binding => TypeHelper.IsSimpleUnderlyingType(binding.Descriptor.ParameterType) && !binding.HasDefaultValue() && binding.WillReadUri())
-                            .Select(binding => binding.Descriptor.Prefix ?? binding.Descriptor.ParameterName));
+                            .Where(binding => !binding.Descriptor.IsOptional && TypeHelper.IsSimpleUnderlyingType(binding.Descriptor.ParameterType) && binding.WillReadUri())
+                            .Select(binding => binding.Descriptor.Prefix ?? binding.Descriptor.ParameterName).ToArray());
                 }
 
                 _actionNameMapping = _actionDescriptors.ToLookup(actionDesc => actionDesc.ActionName, StringComparer.OrdinalIgnoreCase);
@@ -161,8 +161,9 @@ namespace System.Web.Http.Controllers
                     // Throws HttpResponseException with NotFound status because no action matches the Name
                     if (actionsFoundByName.Length == 0)
                     {
-                        throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                        throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                             HttpStatusCode.NotFound,
+                            Error.Format(SRResources.ResourceNotFound, controllerContext.Request.RequestUri),
                             Error.Format(SRResources.ApiControllerActionSelector_ActionNameNotFound, _controllerDescriptor.ControllerName, actionName)));
                     }
 
@@ -178,35 +179,32 @@ namespace System.Web.Http.Controllers
                 // Throws HttpResponseException with MethodNotAllowed status because no action matches the Http Method
                 if (actionsFoundByHttpMethods.Length == 0)
                 {
-                    throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                    throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                         HttpStatusCode.MethodNotAllowed,
                         Error.Format(SRResources.ApiControllerActionSelector_HttpMethodNotSupported, incomingMethod)));
                 }
 
-                // If there are multiple candidates, then apply overload resolution logic.
-                if (actionsFoundByHttpMethods.Length > 1)
-                {
-                    actionsFoundByHttpMethods = FindActionUsingRouteAndQueryParameters(controllerContext, actionsFoundByHttpMethods).ToArray();
-                }
+                // Make sure the action parameter matches the route and query parameters. Overload resolution logic is applied when needed.
+                IEnumerable<ReflectedHttpActionDescriptor> actionsFoundByParams = FindActionUsingRouteAndQueryParameters(controllerContext, actionsFoundByHttpMethods, useActionName);
 
-                List<ReflectedHttpActionDescriptor> selectedActions = RunSelectionFilters(controllerContext, actionsFoundByHttpMethods);
+                List<ReflectedHttpActionDescriptor> selectedActions = RunSelectionFilters(controllerContext, actionsFoundByParams);
                 actionsFoundByHttpMethods = null;
+                actionsFoundByParams = null;
 
                 switch (selectedActions.Count)
                 {
                     case 0:
                         // Throws HttpResponseException with NotFound status because no action matches the request
-                        throw new HttpResponseException(controllerContext.Request.CreateResponse(
+                        throw new HttpResponseException(controllerContext.Request.CreateErrorResponse(
                             HttpStatusCode.NotFound,
+                            Error.Format(SRResources.ResourceNotFound, controllerContext.Request.RequestUri),
                             Error.Format(SRResources.ApiControllerActionSelector_ActionNotFound, _controllerDescriptor.ControllerName)));
                     case 1:
                         return selectedActions[0];
                     default:
-                        // Throws HttpResponseException with InternalServerError status because multiple action matches the request
+                        // Throws exception because multiple actions match the request
                         string ambiguityList = CreateAmbiguousMatchList(selectedActions);
-                        throw new HttpResponseException(controllerContext.Request.CreateResponse(
-                            HttpStatusCode.InternalServerError,
-                            Error.Format(SRResources.ApiControllerActionSelector_AmbiguousMatch, ambiguityList)));
+                        throw Error.InvalidOperation(SRResources.ApiControllerActionSelector_AmbiguousMatch, ambiguityList);
                 }
             }
 
@@ -215,53 +213,64 @@ namespace System.Web.Http.Controllers
                 return new LookupAdapter() { Source = _actionNameMapping };
             }
 
-            private IEnumerable<ReflectedHttpActionDescriptor> FindActionUsingRouteAndQueryParameters(HttpControllerContext controllerContext, IEnumerable<ReflectedHttpActionDescriptor> actionsFound)
+            private IEnumerable<ReflectedHttpActionDescriptor> FindActionUsingRouteAndQueryParameters(HttpControllerContext controllerContext, IEnumerable<ReflectedHttpActionDescriptor> actionsFound, bool hasActionRouteKey)
             {
-                // TODO, DevDiv 320655, improve performance of this method.
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
-                IEnumerable<string> routeParameterNames = routeValues.Select(route => route.Key)
-                    .Where(key =>
-                           !String.Equals(key, ControllerRouteKey, StringComparison.OrdinalIgnoreCase) &&
-                           !String.Equals(key, ActionRouteKey, StringComparison.OrdinalIgnoreCase));
+                HashSet<string> routeParameterNames = new HashSet<string>(routeValues.Keys, StringComparer.OrdinalIgnoreCase);
+                routeParameterNames.Remove(ControllerRouteKey);
+                if (hasActionRouteKey)
+                {
+                    routeParameterNames.Remove(ActionRouteKey);
+                }
 
-                IEnumerable<string> queryParameterNames = controllerContext.Request.RequestUri.ParseQueryString().AllKeys;
-                bool hasRouteParameters = routeParameterNames.Any();
-                bool hasQueryParameters = queryParameterNames.Any();
+                HttpRequestMessage request = controllerContext.Request;
+                Uri requestUri = request.RequestUri;
+                bool hasQueryParameters = requestUri != null && !String.IsNullOrEmpty(requestUri.Query);
+                bool hasRouteParameters = routeParameterNames.Count != 0;
 
                 if (hasRouteParameters || hasQueryParameters)
                 {
-                    // refine the results based on route parameters to make sure that route parameters take precedence over query parameters
-                    if (hasRouteParameters && hasQueryParameters)
+                    var combinedParameterNames = new HashSet<string>(routeParameterNames, StringComparer.OrdinalIgnoreCase);
+                    if (hasQueryParameters)
                     {
-                        // route parameters is a subset of action parameters
-                        actionsFound = actionsFound.Where(descriptor => !routeParameterNames.Except(_actionParameterNames[descriptor], StringComparer.OrdinalIgnoreCase).Any());
+                        foreach (var queryNameValuePair in request.GetQueryNameValuePairs())
+                        {
+                            combinedParameterNames.Add(queryNameValuePair.Key);
+                        }
                     }
 
-                    // further refine the results making sure that action parameters is a subset of route parameters and query parameters
+                    // action parameters is a subset of route parameters and query parameters
+                    actionsFound = actionsFound.Where(descriptor => IsSubset(_actionParameterNames[descriptor], combinedParameterNames));
+
                     if (actionsFound.Count() > 1)
                     {
-                        IEnumerable<string> combinedParameterNames = queryParameterNames.Union(routeParameterNames);
-
-                        // action parameters is a subset of route parameters and query parameters
-                        actionsFound = actionsFound.Where(descriptor => !_actionParameterNames[descriptor].Except(combinedParameterNames, StringComparer.OrdinalIgnoreCase).Any());
-
-                        // select the results with the longest parameter match 
-                        if (actionsFound.Count() > 1)
-                        {
-                            actionsFound = actionsFound
-                                .GroupBy(descriptor => _actionParameterNames[descriptor].Count())
-                                .OrderByDescending(g => g.Key)
-                                .First();
-                        }
+                        // select the results that match the most number of required parameters 
+                        actionsFound = actionsFound
+                            .GroupBy(descriptor => _actionParameterNames[descriptor].Length)
+                            .OrderByDescending(g => g.Key)
+                            .First();
                     }
                 }
                 else
                 {
                     // return actions with no parameters
-                    actionsFound = actionsFound.Where(descriptor => !_actionParameterNames[descriptor].Any());
+                    actionsFound = actionsFound.Where(descriptor => _actionParameterNames[descriptor].Length == 0);
                 }
 
                 return actionsFound;
+            }
+
+            private static bool IsSubset(string[] actionParameters, HashSet<string> routeAndQueryParameters)
+            {
+                foreach (string actionParameter in actionParameters)
+                {
+                    if (!routeAndQueryParameters.Contains(actionParameter))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             private static List<ReflectedHttpActionDescriptor> RunSelectionFilters(HttpControllerContext controllerContext, IEnumerable<HttpActionDescriptor> descriptorsFound)
@@ -302,7 +311,7 @@ namespace System.Web.Http.Controllers
                 else
                 {
                     return matchesWithoutSelectionAttributes;
-                }                
+                }
             }
 
             // This is called when we don't specify an Action name
@@ -399,7 +408,7 @@ namespace System.Web.Http.Controllers
             {
                 return Source.Contains(key);
             }
-                        
+
             public IEnumerator<IGrouping<string, HttpActionDescriptor>> GetEnumerator()
             {
                 return Source.GetEnumerator();

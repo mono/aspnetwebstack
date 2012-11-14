@@ -1,22 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Controllers;
 
 namespace Microsoft.Web.Http.Data
 {
-    [HttpControllerConfiguration(HttpActionInvoker = typeof(DataControllerActionInvoker), HttpActionSelector = typeof(DataControllerActionSelector), ActionValueBinder = typeof(DataControllerActionValueBinder))]
+    [DataControllerConfiguration]
     public abstract class DataController : ApiController
     {
         private ChangeSet _changeSet;
@@ -93,43 +90,6 @@ namespace Microsoft.Web.Http.Data
             }
 
             return true;
-        }
-
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller is responsible for the lifetime of the object")]
-        public override Task<HttpResponseMessage> ExecuteAsync(HttpControllerContext controllerContext, CancellationToken cancellationToken)
-        {
-            return base.ExecuteAsync(controllerContext, cancellationToken)
-                 .Then<HttpResponseMessage, HttpResponseMessage>(response =>
-                 {
-                     int totalCount;
-                     if (response != null &&
-                         controllerContext.Request.Properties.TryGetValue<int>(QueryFilterAttribute.TotalCountKey, out totalCount))
-                     {
-                         ObjectContent objectContent = response.Content as ObjectContent;
-                         IEnumerable results;
-                         if (objectContent != null && (results = objectContent.Value as IEnumerable) != null)
-                         {
-                             HttpResponseMessage oldResponse = response;
-                             // Client has requested the total count, so the actual response content will contain
-                             // the query results as well as the count. Create a new ObjectContent for the query results.
-                             // Because this code does not specify any formatters explicitly, it will use the
-                             // formatters in the configuration.
-                             QueryResult queryResult = new QueryResult(results, totalCount);
-                             response = response.RequestMessage.CreateResponse(oldResponse.StatusCode, queryResult);
-
-                             foreach (var header in oldResponse.Headers)
-                             {
-                                 response.Headers.Add(header.Key, header.Value);
-                             }
-                             // TODO what about content headers?
-
-                             oldResponse.RequestMessage = null;
-                             oldResponse.Dispose();
-                         }
-                     }
-
-                     return response;
-                 });
         }
 
         /// <summary>
@@ -273,8 +233,12 @@ namespace Microsoft.Web.Http.Data
                     paramMap.Add(pds[i].ParameterName, parameters[i]);
                 }
 
-                // TODO this method is not correctly observing the execution results, the catch block below is wrong. 385801
-                action.ExecuteAsync(ActionContext.ControllerContext, paramMap);
+                // TODO - Issue #103
+                // This method is not correctly observing the execution results, the catch block below is wrong.
+                // Submit should be Task<bool>, not bool, and should model bind for the CancellationToken which would then
+                // be propagated through to all the helper methods (one or more of which might also need to be made async,
+                // once we start respecting the fact that the read/write actions should be allowed to be async).
+                action.ExecuteAsync(ActionContext.ControllerContext, paramMap, CancellationToken.None);
             }
             catch (TargetInvocationException tie)
             {

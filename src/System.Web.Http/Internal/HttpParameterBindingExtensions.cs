@@ -1,5 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
@@ -16,26 +18,17 @@ namespace System.Web.Http.Internal
                 throw Error.ArgumentNull("parameterBinding");
             }
 
-            ModelBinderParameterBinding modelParameterBinding = parameterBinding as ModelBinderParameterBinding;
-            if (modelParameterBinding != null)
+            IValueProviderParameterBinding valueProviderParameterBinding = parameterBinding as IValueProviderParameterBinding;
+            if (valueProviderParameterBinding != null)
             {
-                if (modelParameterBinding.ValueProviderFactories.All(factory => factory is IUriValueProviderFactory))
+                IEnumerable<ValueProviderFactory> valueProviderFactories = valueProviderParameterBinding.ValueProviderFactories;
+                if (valueProviderFactories.Any() && valueProviderFactories.All(factory => factory is IUriValueProviderFactory))
                 {
                     return true;
                 }
             }
 
             return false;
-        }
-
-        public static bool HasDefaultValue(this HttpParameterBinding parameterBinding)
-        {
-            if (parameterBinding == null)
-            {
-                throw Error.ArgumentNull("parameterBinding");
-            }
-
-            return parameterBinding.Descriptor.DefaultValue != null;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Controllers;
 
@@ -6,18 +6,20 @@ namespace System.Web.Http.ModelBinding.Binders
 {
     public sealed class ArrayModelBinderProvider : ModelBinderProvider
     {
-        public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+        public override IModelBinder GetBinder(HttpConfiguration configuration, Type modelType)
         {
-            ModelBindingHelper.ValidateBindingContext(bindingContext);
-
-            if (!bindingContext.ModelMetadata.IsReadOnly && bindingContext.ModelType.IsArray &&
-                bindingContext.ValueProvider.ContainsPrefix(bindingContext.ModelName))
+            if (modelType == null)
             {
-                Type elementType = bindingContext.ModelType.GetElementType();
-                return (IModelBinder)Activator.CreateInstance(typeof(ArrayModelBinder<>).MakeGenericType(elementType));
+                throw Error.ArgumentNull("modelType");
             }
 
-            return null;
+            if (!modelType.IsArray)
+            {
+                return null;
+            }
+
+            Type elementType = modelType.GetElementType();
+            return (IModelBinder)Activator.CreateInstance(typeof(ArrayModelBinder<>).MakeGenericType(elementType));
         }
     }
 }

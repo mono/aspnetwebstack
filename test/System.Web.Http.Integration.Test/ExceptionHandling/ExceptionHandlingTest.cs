@@ -1,12 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net;
 using System.Net.Http;
-using System.Web.Http.Dispatcher;
 using System.Web.Http.Properties;
+using Microsoft.TestCommon;
 using Newtonsoft.Json.Linq;
-using Xunit;
-using Xunit.Extensions;
 
 namespace System.Web.Http
 {
@@ -47,8 +45,8 @@ namespace System.Web.Http
                 (response) =>
                 {
                     Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-                    ExceptionSurrogate exception = response.Content.ReadAsAsync<ExceptionSurrogate>().Result;
-                    Assert.Equal(typeof(ArgumentNullException).FullName, exception.ExceptionType.ToString());
+                    HttpError exception = response.Content.ReadAsAsync<HttpError>().Result;
+                    Assert.Equal(typeof(ArgumentNullException).FullName, exception["ExceptionType"].ToString());
                 }
             );
         }
@@ -91,8 +89,8 @@ namespace System.Web.Http
                 (response) =>
                 {
                     Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-                    ExceptionSurrogate exception = response.Content.ReadAsAsync<ExceptionSurrogate>().Result;
-                    Assert.Equal(typeof(ArgumentException).FullName, exception.ExceptionType.ToString());
+                    HttpError exception = response.Content.ReadAsAsync<HttpError>().Result;
+                    Assert.Equal(typeof(ArgumentException).FullName, exception["ExceptionType"].ToString());
                 }
             );
         }
@@ -137,7 +135,7 @@ namespace System.Web.Http
                     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
                     Assert.Equal(
                         String.Format(SRResources.DefaultControllerFactory_ControllerNameNotFound, controllerName),
-                        response.Content.ReadAsAsync<string>().Result);
+                        response.Content.ReadAsAsync<HttpError>().Result["MessageDetail"]);
                 }
             );
         }
@@ -158,7 +156,7 @@ namespace System.Web.Http
                     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
                     Assert.Equal(
                         String.Format(SRResources.ApiControllerActionSelector_ActionNameNotFound, controllerName, actionName),
-                        response.Content.ReadAsAsync<string>().Result);
+                        response.Content.ReadAsAsync<HttpError>().Result["MessageDetail"]);
                 }
             );
         }
@@ -179,7 +177,7 @@ namespace System.Web.Http
                     Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
                     Assert.Equal(
                         String.Format(SRResources.ApiControllerActionSelector_HttpMethodNotSupported, requestMethod.Method),
-                        response.Content.ReadAsAsync<string>().Result);
+                        response.Content.ReadAsAsync<HttpError>().Result.Message);
                 }
             );
         }
@@ -199,7 +197,7 @@ namespace System.Web.Http
                     Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
                     Assert.Contains(
                         String.Format(SRResources.ApiControllerActionSelector_AmbiguousMatch, String.Empty),
-                        response.Content.ReadAsAsync<string>().Result);
+                        response.Content.ReadAsAsync<HttpError>().Result["ExceptionMessage"] as string);
                 }
             );
         }
@@ -218,8 +216,8 @@ namespace System.Web.Http
                 {
                     Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
                     Assert.Contains(
-                        String.Format(SRResources.DefaultControllerFactory_ControllerNameAmbiguous_WithRouteTemplate, controllerName, "{controller}", String.Empty),
-                        response.Content.ReadAsAsync<string>().Result);
+                        String.Format(SRResources.DefaultControllerFactory_ControllerNameAmbiguous_WithRouteTemplate, controllerName, "{controller}", String.Empty, Environment.NewLine),
+                        response.Content.ReadAsAsync<HttpError>().Result["ExceptionMessage"] as string);
                 }
             );
         }
@@ -227,7 +225,7 @@ namespace System.Web.Http
         [Fact]
         public void GenericMethod_Throws_InvalidOperationException()
         {
-            HttpConfiguration config = new HttpConfiguration();
+            HttpConfiguration config = new HttpConfiguration() { IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always };
             config.Routes.MapHttpRoute("Default", "Exception/{action}", new { controller = "Exception" });
             HttpServer server = new HttpServer(config);
             HttpClient client = new HttpClient(server);
@@ -243,14 +241,14 @@ namespace System.Web.Http
                 // Make a request to generic method and verify the exception
                 response = client.PostAsync("http://localhost/Exception/GenericAction", null).Result;
                 Type controllerType = typeof(ExceptionController);
-                ExceptionSurrogate exception = response.Content.ReadAsAsync<ExceptionSurrogate>().Result;
-                Assert.Equal(typeof(InvalidOperationException).FullName, exception.ExceptionType);
+                HttpError exception = response.Content.ReadAsAsync<HttpError>().Result;
+                Assert.Equal(typeof(InvalidOperationException).FullName, exception["ExceptionType"]);
                 Assert.Equal(
                     String.Format(
                         SRResources.ReflectedHttpActionDescriptor_CannotCallOpenGenericMethods,
                         controllerType.GetMethod("GenericAction"),
                         controllerType.FullName),
-                    exception.Message);
+                    exception["ExceptionMessage"]);
             }
         }
     }

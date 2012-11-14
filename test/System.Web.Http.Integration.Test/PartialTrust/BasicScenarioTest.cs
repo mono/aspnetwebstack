@@ -1,10 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.TestCommon;
-using Xunit;
-using Xunit.Extensions;
 
 namespace System.Web.Http.PartialTrust
 {
@@ -46,7 +44,7 @@ namespace System.Web.Http.PartialTrust
         }
     }
 
-    [RunWith(typeof(PartialTrustRunner))]
+    [PartialTrustRunner]
     public class PartialTrustBasicScenarioTest : BasicScenarioTest { }
 
     public class EchoController : ApiController

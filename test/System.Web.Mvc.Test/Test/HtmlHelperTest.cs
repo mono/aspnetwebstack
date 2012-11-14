@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,10 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web.Routing;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Test
 {
@@ -378,9 +377,9 @@ namespace System.Web.Mvc.Test
             // Act & Assert
             Assert.Throws<InvalidOperationException>(
                 () => helper.RenderPartialInternal("partial-view", null /* viewData */, null /* model */, TextWriter.Null, engine.Object),
-                @"The partial view 'partial-view' was not found or no view engine supports the searched locations. The following locations were searched:
-location1
-location2");
+                "The partial view 'partial-view' was not found or no view engine supports the searched locations. The following locations were searched:" + Environment.NewLine
+              + "location1" + Environment.NewLine
+              + "location2");
 
             engine.Verify();
         }
@@ -546,28 +545,28 @@ location2");
                 );
             Assert.Throws<ArgumentException>(
                 () => htmlHelper.HttpMethodOverride((HttpVerbs)10000),
-                @"The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch.
-Parameter name: httpVerb"
+                "The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch." + Environment.NewLine
+              + "Parameter name: httpVerb"
                 );
             Assert.Throws<ArgumentException>(
                 () => htmlHelper.HttpMethodOverride(HttpVerbs.Get),
-                @"The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch.
-Parameter name: httpVerb"
+                "The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch." + Environment.NewLine
+              + "Parameter name: httpVerb"
                 );
             Assert.Throws<ArgumentException>(
                 () => htmlHelper.HttpMethodOverride(HttpVerbs.Post),
-                @"The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch.
-Parameter name: httpVerb"
+                "The specified HttpVerbs value is not supported. The supported values are Delete, Head, Put, Options, and Patch." + Environment.NewLine
+              + "Parameter name: httpVerb"
                 );
             Assert.Throws<ArgumentException>(
                 () => htmlHelper.HttpMethodOverride("gEt"),
-                @"The GET and POST HTTP methods are not supported.
-Parameter name: httpMethod"
+                "The GET and POST HTTP methods are not supported." + Environment.NewLine
+              + "Parameter name: httpMethod"
                 );
             Assert.Throws<ArgumentException>(
                 () => htmlHelper.HttpMethodOverride("pOsT"),
-                @"The GET and POST HTTP methods are not supported.
-Parameter name: httpMethod"
+                "The GET and POST HTTP methods are not supported." + Environment.NewLine
+              + "Parameter name: httpMethod"
                 );
         }
 
@@ -777,7 +776,7 @@ Parameter name: httpMethod"
         }
 
         [Fact]
-        public void GetUnobtrusiveValidationAttributesMessageIsHtmlEncoded()
+        public void GetUnobtrusiveValidationAttributesMessageIsNotHtmlEncoded()
         {
             // Arrange
             var formContext = new FormContext();
@@ -793,7 +792,7 @@ Parameter name: httpMethod"
             IDictionary<string, object> result = htmlHelper.GetUnobtrusiveValidationAttributes("foobar");
 
             // Assert
-            Assert.Equal("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;", result["data-val-type"]);
+            Assert.Equal("<script>alert('xss')</script>", result["data-val-type"]);
         }
 
         [Fact]
@@ -1060,36 +1059,32 @@ Parameter name: httpMethod"
         }
 
         [Fact]
+        [ReplaceCulture]
         public void EvalStringAndFormatValueUseCurrentCulture()
         {
             // Arrange
             DateTime dt = new DateTime(1900, 1, 1, 0, 0, 0);
             HtmlHelper htmlHelper = MvcHelper.GetHtmlHelper(new ViewDataDictionary() { { "date", dt } });
-            string expectedFormattedDate = "-1900/01/01 12:00:00 AM-";
+            string expectedFormattedDate = "-01/01/1900 00:00:00-";
 
             // Act && Assert
-            using (ReplaceCulture("en-ZA", "en-US"))
-            {
-                Assert.Equal(expectedFormattedDate, htmlHelper.FormatValue(dt, "-{0}-"));
-                Assert.Equal(expectedFormattedDate, htmlHelper.EvalString("date", "-{0}-"));
-            }
+            Assert.Equal(expectedFormattedDate, htmlHelper.FormatValue(dt, "-{0}-"));
+            Assert.Equal(expectedFormattedDate, htmlHelper.EvalString("date", "-{0}-"));
         }
 
         [Fact]
+        [ReplaceCulture]
         public void EvalStringAndFormatValueWithEmptyFormatConvertsValueToString()
         {
             // Arrange
             DateTime dt = new DateTime(1900, 1, 1, 0, 0, 0);
             HtmlHelper htmlHelper = MvcHelper.GetHtmlHelper(new ViewDataDictionary() { { "date", dt } });
-            string expectedUnformattedDate = "1900/01/01 12:00:00 AM";
+            string expectedUnformattedDate = "01/01/1900 00:00:00";
 
             // Act && Assert
-            using (ReplaceCulture("en-ZA", "en-US"))
-            {
-                Assert.Equal(expectedUnformattedDate, htmlHelper.FormatValue(dt, String.Empty));
-                Assert.Equal(expectedUnformattedDate, htmlHelper.EvalString("date", String.Empty));
-                Assert.Equal(expectedUnformattedDate, htmlHelper.EvalString("date"));
-            }
+            Assert.Equal(expectedUnformattedDate, htmlHelper.FormatValue(dt, String.Empty));
+            Assert.Equal(expectedUnformattedDate, htmlHelper.EvalString("date", String.Empty));
+            Assert.Equal(expectedUnformattedDate, htmlHelper.EvalString("date"));
         }
 
         private class ObjectWithWrapperMarkup

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Web.Http;
@@ -6,7 +6,7 @@ using System.Web.Http.Controllers;
 
 namespace Microsoft.Web.Http.Data
 {
-    public sealed class DataControllerActionSelector : ApiControllerActionSelector
+    internal sealed class DataControllerActionSelector : ApiControllerActionSelector
     {
         private const string ActionRouteKey = "action";
         private const string SubmitActionValue = "Submit";
@@ -28,9 +28,7 @@ namespace Microsoft.Web.Http.Data
                 return new SubmitProxyActionDescriptor(action);
             }
 
-            // for all other non-CUD operations, we wrap the descriptor in our
-            // customizing descriptor to layer on additional functionality.
-            return new CustomizingActionDescriptor(base.SelectAction(controllerContext));
+            return base.SelectAction(controllerContext);
         }
     }
 }

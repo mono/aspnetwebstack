@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net.Http.Formatting.Parsers;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http
 {
@@ -34,7 +35,7 @@ namespace System.Net.Http
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
 
             try
@@ -59,7 +60,7 @@ namespace System.Net.Http
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
 
             try
@@ -79,7 +80,7 @@ namespace System.Net.Http
         /// <returns>The parsed <see cref="HttpRequestMessage"/> instance.</returns>
         public static Task<HttpRequestMessage> ReadAsHttpRequestMessageAsync(this HttpContent content)
         {
-            return ReadAsHttpRequestMessageAsync(content, Uri.UriSchemeHttp, DefaultBufferSize);
+            return ReadAsHttpRequestMessageAsync(content, "http", DefaultBufferSize);
         }
 
         /// <summary>
@@ -103,27 +104,47 @@ namespace System.Net.Http
         /// <param name="bufferSize">Size of the buffer.</param>
         /// <returns>The parsed <see cref="HttpRequestMessage"/> instance.</returns>
         [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "1#", Justification = "This is not a full URI but only the URI scheme")]
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception translates to parser state.")]
         public static Task<HttpRequestMessage> ReadAsHttpRequestMessageAsync(this HttpContent content, string uriScheme, int bufferSize)
+        {
+            return ReadAsHttpRequestMessageAsync(content, uriScheme, bufferSize, HttpRequestHeaderParser.DefaultMaxHeaderSize);
+        }
+
+        /// <summary>
+        /// Read the <see cref="HttpContent"/> as an <see cref="HttpRequestMessage"/>.
+        /// </summary>
+        /// <param name="content">The content to read.</param>
+        /// <param name="uriScheme">The URI scheme to use for the request URI (the 
+        /// URI scheme is not actually part of the HTTP Request URI and so must be provided externally).</param>
+        /// <param name="bufferSize">Size of the buffer.</param>
+        /// <param name="maxHeaderSize">The max length of the HTTP header.</param>
+        /// <returns>The parsed <see cref="HttpRequestMessage"/> instance.</returns>
+        [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "1#", Justification = "This is not a full URI but only the URI scheme")]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception translates to parser state.")]
+        public static Task<HttpRequestMessage> ReadAsHttpRequestMessageAsync(this HttpContent content, string uriScheme, int bufferSize, int maxHeaderSize)
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
 
             if (uriScheme == null)
             {
-                throw new ArgumentNullException("uriScheme");
+                throw Error.ArgumentNull("uriScheme");
             }
 
             if (!Uri.CheckSchemeName(uriScheme))
             {
-                throw new ArgumentException(RS.Format(Properties.Resources.HttpMessageParserInvalidUriScheme, uriScheme, typeof(Uri).Name), "uriScheme");
+                throw Error.Argument("uriScheme", Properties.Resources.HttpMessageParserInvalidUriScheme, uriScheme, typeof(Uri).Name);
             }
 
             if (bufferSize < MinBufferSize)
             {
-                throw new ArgumentOutOfRangeException("bufferSize", bufferSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MinBufferSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("bufferSize", bufferSize, MinBufferSize);
+            }
+
+            if (maxHeaderSize < InternetMessageFormatHeaderParser.MinHeaderSize)
+            {
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxHeaderSize", maxHeaderSize, InternetMessageFormatHeaderParser.MinHeaderSize);
             }
 
             HttpMessageContent.ValidateHttpMessageContent(content, true, true);
@@ -131,7 +152,7 @@ namespace System.Net.Http
             return content.ReadAsStreamAsync().Then(stream =>
             {
                 HttpUnsortedRequest httpRequest = new HttpUnsortedRequest();
-                HttpRequestHeaderParser parser = new HttpRequestHeaderParser(httpRequest);
+                HttpRequestHeaderParser parser = new HttpRequestHeaderParser(httpRequest, HttpRequestHeaderParser.DefaultMaxRequestLineSize, maxHeaderSize);
                 ParserState parseStatus;
 
                 byte[] buffer = new byte[bufferSize];
@@ -164,7 +185,11 @@ namespace System.Net.Http
                     }
                     else if (parseStatus != ParserState.NeedMoreData)
                     {
-                        throw new IOException(RS.Format(Properties.Resources.HttpMessageParserError, headerConsumed, buffer));
+                        throw Error.InvalidOperation(Properties.Resources.HttpMessageParserError, headerConsumed, buffer);
+                    }
+                    else if (bytesRead == 0)
+                    {
+                        throw new IOException(Properties.Resources.ReadAsHttpMessageUnexpectedTermination);
                     }
                 }
             });
@@ -186,17 +211,34 @@ namespace System.Net.Http
         /// <param name="content">The content to read.</param>
         /// <param name="bufferSize">Size of the buffer.</param>
         /// <returns>The parsed <see cref="HttpResponseMessage"/> instance.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception translates to parser state.")]
         public static Task<HttpResponseMessage> ReadAsHttpResponseMessageAsync(this HttpContent content, int bufferSize)
+        {
+            return ReadAsHttpResponseMessageAsync(content, bufferSize, HttpResponseHeaderParser.DefaultMaxHeaderSize);
+        }
+
+        /// <summary>
+        /// Read the <see cref="HttpContent"/> as an <see cref="HttpResponseMessage"/>.
+        /// </summary>
+        /// <param name="content">The content to read.</param>
+        /// <param name="bufferSize">Size of the buffer.</param>
+        /// <param name="maxHeaderSize">The max length of the HTTP header.</param>
+        /// <returns>The parsed <see cref="HttpResponseMessage"/> instance.</returns>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception translates to parser state.")]
+        public static Task<HttpResponseMessage> ReadAsHttpResponseMessageAsync(this HttpContent content, int bufferSize, int maxHeaderSize)
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
 
             if (bufferSize < MinBufferSize)
             {
-                throw new ArgumentOutOfRangeException("bufferSize", bufferSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MinBufferSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("bufferSize", bufferSize, MinBufferSize);
+            }
+
+            if (maxHeaderSize < InternetMessageFormatHeaderParser.MinHeaderSize)
+            {
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxHeaderSize", maxHeaderSize, InternetMessageFormatHeaderParser.MinHeaderSize);
             }
 
             HttpMessageContent.ValidateHttpMessageContent(content, false, true);
@@ -204,7 +246,7 @@ namespace System.Net.Http
             return content.ReadAsStreamAsync().Then(stream =>
             {
                 HttpUnsortedResponse httpResponse = new HttpUnsortedResponse();
-                HttpResponseHeaderParser parser = new HttpResponseHeaderParser(httpResponse);
+                HttpResponseHeaderParser parser = new HttpResponseHeaderParser(httpResponse, HttpResponseHeaderParser.DefaultMaxStatusLineSize, maxHeaderSize);
                 ParserState parseStatus;
 
                 byte[] buffer = new byte[bufferSize];
@@ -238,7 +280,11 @@ namespace System.Net.Http
                     }
                     else if (parseStatus != ParserState.NeedMoreData)
                     {
-                        throw new IOException(RS.Format(Properties.Resources.HttpMessageParserError, headerConsumed, buffer));
+                        throw Error.InvalidOperation(Properties.Resources.HttpMessageParserError, headerConsumed, buffer);
+                    }
+                    else if (bytesRead == 0)
+                    {
+                        throw new IOException(Properties.Resources.ReadAsHttpMessageUnexpectedTermination);
                     }
                 }
             });
@@ -262,12 +308,12 @@ namespace System.Net.Http
                 int hostCount = hostValues.Count();
                 if (hostCount != 1)
                 {
-                    throw new IOException(RS.Format(Properties.Resources.HttpMessageParserInvalidHostCount, FormattingUtilities.HttpHostHeader, hostCount));
+                    throw Error.InvalidOperation(Properties.Resources.HttpMessageParserInvalidHostCount, FormattingUtilities.HttpHostHeader, hostCount);
                 }
             }
             else
             {
-                throw new IOException(RS.Format(Properties.Resources.HttpMessageParserInvalidHostCount, FormattingUtilities.HttpHostHeader, 0));
+                throw Error.InvalidOperation(Properties.Resources.HttpMessageParserInvalidHostCount, FormattingUtilities.HttpHostHeader, 0);
             }
 
             // We don't use UriBuilder as hostValues.ElementAt(0) contains 'host:port' and UriBuilder needs these split out into separate host and port.
@@ -312,7 +358,7 @@ namespace System.Net.Http
                 // which we may already have parsed as we read the content stream.
                 if (!contentStream.CanSeek)
                 {
-                    throw new IOException(RS.Format(Properties.Resources.HttpMessageContentStreamMustBeSeekable, "ContentReadStream", FormattingUtilities.HttpResponseMessageType.Name));
+                    throw Error.InvalidOperation(Properties.Resources.HttpMessageContentStreamMustBeSeekable, "ContentReadStream", FormattingUtilities.HttpResponseMessageType.Name);
                 }
 
                 contentStream.Seek(0 - rewind, SeekOrigin.Current);

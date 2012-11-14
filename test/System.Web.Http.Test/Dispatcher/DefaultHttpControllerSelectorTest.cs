@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,10 +7,8 @@ using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Hosting;
 using System.Web.Http.Routing;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Dispatcher
 {
@@ -238,6 +236,7 @@ namespace System.Web.Http.Dispatcher
             HttpConfiguration configuration = new HttpConfiguration();
             Mock<IHttpControllerTypeResolver> controllerTypeResolver = new Mock<IHttpControllerTypeResolver>();
             configuration.Services.Replace(typeof(IHttpControllerTypeResolver), controllerTypeResolver.Object);
+            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             controllerTypeResolver
                 .Setup(c => c.GetControllerTypes(It.IsAny<IAssembliesResolver>()))
@@ -257,7 +256,8 @@ namespace System.Web.Http.Dispatcher
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, ex.Response.StatusCode);
-            Assert.Equal("\"No type was found that matches the controller named 'Sample'.\"", ex.Response.Content.ReadAsStringAsync().Result);
+            string response = ex.Response.Content.ReadAsAsync<HttpError>().Result["MessageDetail"] as string;
+            Assert.Equal("No type was found that matches the controller named 'Sample'.", response);
         }
 
         [Fact]
@@ -266,6 +266,7 @@ namespace System.Web.Http.Dispatcher
             HttpConfiguration configuration = new HttpConfiguration();
             Mock<IHttpControllerTypeResolver> controllerTypeResolver = new Mock<IHttpControllerTypeResolver>();
             configuration.Services.Replace(typeof(IHttpControllerTypeResolver), controllerTypeResolver.Object);
+            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             controllerTypeResolver
                 .Setup(c => c.GetControllerTypes(It.IsAny<IAssembliesResolver>()))
@@ -280,17 +281,16 @@ namespace System.Web.Http.Dispatcher
             DefaultHttpControllerSelector selector = new DefaultHttpControllerSelector(configuration);
 
             // Act 
-            var ex = Assert.Throws<HttpResponseException>(
+            var ex = Assert.Throws<InvalidOperationException>(
                 () => selector.SelectController(request));
 
             // Assert
-            Assert.Equal(HttpStatusCode.InternalServerError, ex.Response.StatusCode);
-            string response = ex.Response.Content.ReadAsAsync<string>().Result;
+            string message = ex.Message;
             Assert.Contains(
                 "Multiple types were found that match the controller named 'Sample'. This can happen if the route that services this request ('') found multiple controllers defined with the same name but differing namespaces, which is not supported.\r\n\r\nThe request for 'Sample' has found the following matching controllers:",
-                response);
+                message);
 
-            var duplicateControllers = response.Split(':')[1].Split('\n').Select(str => str.Trim());
+            var duplicateControllers = message.Split(':')[1].Split('\n').Select(str => str.Trim());
             Assert.Contains("FullSampleController", duplicateControllers);
             Assert.Contains("FullSampLeController", duplicateControllers);
             Assert.Contains("FullSAmpLEController", duplicateControllers);
@@ -310,8 +310,6 @@ namespace System.Web.Http.Dispatcher
 
             mockType.Setup(t => t.Name).Returns(controllerName + "Controller");
             mockType.Setup(t => t.FullName).Returns("Full" + controllerName + "Controller");
-            mockType.Setup(t => t.GetCustomAttributes(typeof(HttpControllerConfigurationAttribute), It.IsAny<bool>()))
-                .Returns(new HttpControllerConfigurationAttribute[0]);
             return mockType.Object;
         }
     }

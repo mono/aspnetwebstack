@@ -1,0 +1,333 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory),Runtime.sln))\tools\WebStack.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CF73AAA7-ACE9-4C91-AFA5-5EC1DF18FEEE}</ProjectGuid>
+    <RootNamespace>System.Web.Http.OData</RootNamespace>
+    <AssemblyName>System.Web.Http.OData</AssemblyName>
+    <OutputType>Library</OutputType>
+    <FileAlignment>512</FileAlignment>
+    <RestorePackages>true</RestorePackages>
+    <CopyPackages>true</CopyPackages>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\Extensions\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\Extensions\Release\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>TRACE;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeAnalysis|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\Extensions\CodeAnalysis\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>..\..\bin\Extensions\CodeCoverage\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UseNcrunch)' == 'TRUE'">
+    <SignAssembly>false</SignAssembly>
+    <DelaySign>false</DelaySign>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETMVC;NCRUNCH</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Data.Edm, Version=5.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.Edm.5.1.0-rc2\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.OData, Version=5.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.OData.5.1.0-rc2\lib\net40\Microsoft.Data.OData.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.OData.Contrib, Version=5.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.Data.OData.Contrib.5.1.0.51016-rc2\lib\net40\Microsoft.Data.OData.Contrib.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.4.5.6\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.AspNet.WebApi.Client.4.0.20710.0\lib\net40\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest">
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Spatial, Version=5.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\System.Spatial.5.1.0-rc2\lib\net40\System.Spatial.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.AspNet.WebApi.Core.4.0.20710.0\lib\net40\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\ExtensionsCommonAssemblyInfo.cs">
+      <Link>Properties\ExtensionsCommonAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\TaskHelpers.cs">
+      <Link>Common\TaskHelpers.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\TaskHelpersExtensions.cs">
+      <Link>Common\TaskHelpersExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\Error.cs">
+      <Link>Common\Error.cs</Link>
+    </Compile>
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="HttpErrorExtensions.cs" />
+    <Compile Include="HttpRequestMessageExtensions.cs" />
+    <Compile Include="OData\Builder\ActionLinkBuilder.cs" />
+    <Compile Include="OData\Builder\BindableProcedureFinder.cs" />
+    <Compile Include="OData\Builder\Conventions\ActionLinkGenerationConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\IProcedureConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\AssociationSetDiscoveryConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\DataMemberAttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\LinkGenerationConstants.cs" />
+    <Compile Include="OData\Formatter\Deserialization\CollectionDeserializationHelpers.cs" />
+    <Compile Include="OData\Routing\ActionPathSegment.cs" />
+    <Compile Include="OData\Routing\CastPathSegment.cs" />
+    <Compile Include="OData\Routing\BatchPathSegment.cs" />
+    <Compile Include="OData\Routing\IODataPathParser.cs" />
+    <Compile Include="OData\Routing\ODataPath.cs" />
+    <Compile Include="OData\Routing\ODataSegmentKinds.cs" />
+    <Compile Include="OData\Routing\ServiceBasePathSegment.cs" />
+    <Compile Include="OData\Routing\KeyValuePathSegment.cs" />
+    <Compile Include="OData\Routing\LinksPathSegment.cs" />
+    <Compile Include="OData\Routing\UnresolvedPathSegment.cs" />
+    <Compile Include="OData\Routing\ValuePathSegment.cs" />
+    <Compile Include="OData\Routing\PropertyAccessPathSegment.cs" />
+    <Compile Include="OData\Routing\NavigationPathSegment.cs" />
+    <Compile Include="OData\Routing\EntitySetPathSegment.cs" />
+    <Compile Include="OData\Routing\MetadataPathSegment.cs" />
+    <Compile Include="OData\ODataActionParameters.cs" />
+    <Compile Include="OData\Builder\ActionConfiguration.cs" />
+    <Compile Include="OData\Builder\BindingParameterConfiguration.cs" />
+    <Compile Include="OData\Builder\CollectionPropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\CollectionTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\ComplexPropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\ComplexTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\Conventions\AbstractEntityTypeDiscoveryConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\AttributeConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\AttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\NotMappedAttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\AttributeEdmTypeConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\DataContractAttributeEdmTypeConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\IgnoreDataMemberAttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\RequiredAttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\IConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\IEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\IEdmPropertyConventionOfTPropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\Conventions\IEntitySetConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\Attributes\KeyAttributeEdmPropertyConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\NavigationLinksGenerationConvention.cs" />
+    <Compile Include="ODataRouteNames.cs" />
+    <Compile Include="OData\Builder\Conventions\SelfLinksGenerationConvention.cs" />
+    <Compile Include="OData\Builder\EdmTypeBuilder.cs" />
+    <Compile Include="OData\Builder\EntityCollectionConfigurationOfTEntityType.cs" />
+    <Compile Include="OData\Builder\EdmTypeConfigurationExtensions.cs" />
+    <Compile Include="OData\Builder\EntitySetConfiguration.cs" />
+    <Compile Include="OData\Builder\EntitySetConfigurationOfTEntityType.cs" />
+    <Compile Include="OData\Builder\EntityTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\EntityTypeConfigurationOfTEntityType.cs" />
+    <Compile Include="OData\Builder\IComplexTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\ICollectionTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\IEntitySetConfiguration.cs" />
+    <Compile Include="OData\Builder\IEntityTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\IStructuralTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\NavigationPropertyBinding.cs" />
+    <Compile Include="OData\Builder\NavigationPropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\NonBindingParameterConfiguration.cs" />
+    <Compile Include="OData\Builder\ODataConventionModelBuilder.cs" />
+    <Compile Include="OData\Builder\ODataModelBuilder.cs" />
+    <Compile Include="OData\Builder\ParameterConfiguration.cs" />
+    <Compile Include="OData\Builder\PrimitivePropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\PrimitiveTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\ProcedureConfiguration.cs" />
+    <Compile Include="OData\Builder\ProcedureKind.cs" />
+    <Compile Include="OData\Builder\PropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\PropertyKind.cs" />
+    <Compile Include="OData\Builder\StructuralPropertyConfiguration.cs" />
+    <Compile Include="OData\Builder\StructuralTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\StructuralTypeConfigurationOfTStructuralType.cs" />
+    <Compile Include="OData\Builder\Conventions\ConventionsHelpers.cs" />
+    <Compile Include="OData\Builder\Conventions\EntityKeyConvention.cs" />
+    <Compile Include="OData\Builder\IEdmTypeConfiguration.cs" />
+    <Compile Include="OData\Builder\Conventions\EntityTypeConvention.cs" />
+    <Compile Include="OData\Builder\Conventions\IEdmTypeConvention.cs" />
+    <Compile Include="OData\Builder\ComplexTypeConfigurationOfTComplexType.cs" />
+    <Compile Include="OData\DefaultODataActionResolver.cs" />
+    <Compile Include="OData\EntityInstanceContextOfTEntityType.cs" />
+    <Compile Include="OData\EntityInstanceContext.cs" />
+    <Compile Include="OData\CompiledPropertyAccessor.cs" />
+    <Compile Include="OData\Formatter\ODataParameterBindingAttribute.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataActionPayloadDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataCollectionDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataEntryAnnotation.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataEntryDeserializerOfTItem.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataFeedAnnotation.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataFeedDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataNavigationLinkAnnotation.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataPrimitiveDeserializer.cs" />
+    <Compile Include="OData\FeedContext.cs" />
+    <Compile Include="OData\Formatter\EdmPrimitiveHelpers.cs" />
+    <Compile Include="OData\Formatter\EdmTypeReferenceEqualityComparer.cs" />
+    <Compile Include="OData\Formatter\ODataFormatterParameterBinding.cs" />
+    <Compile Include="OData\Formatter\PatchKeyMode.cs" />
+    <Compile Include="OData\Formatter\PatchKeyModeHelper.cs" />
+    <Compile Include="OData\Formatter\ODataModelBinderProvider.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataErrorSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataMetadataSerializer.cs" />
+    <Compile Include="OData\IDeltaOfTEntityType.cs" />
+    <Compile Include="OData\IODataActionResolver.cs" />
+    <Compile Include="OData\ODataResultOfT.cs" />
+    <Compile Include="OData\Query\Expressions\ClrSafeFunctions.cs" />
+    <Compile Include="OData\Query\Expressions\Linq2ObjectsComparisonMethods.cs" />
+    <Compile Include="OData\Query\HandleNullPropagationOption.cs" />
+    <Compile Include="OData\Query\HandleNullPropagationOptionHelper.cs" />
+    <Compile Include="OData\Query\ODataQueryOptionsOfTEntity.cs" />
+    <Compile Include="OData\Query\ODataQuerySettings.cs" />
+    <Compile Include="OData\Query\ODataRawQueryOptions.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataPayloadKindHelper.cs" />
+    <Compile Include="OData\ODataResult.cs" />
+    <Compile Include="OData\Query\QueryFilterProvider.cs" />
+    <Compile Include="OData\Query\TopQueryOption.cs" />
+    <Compile Include="OData\Delta.cs" />
+    <Compile Include="OData\ExpressionHelperMethods.cs" />
+    <Compile Include="OData\ExpressionHelpers.cs" />
+    <Compile Include="OData\Query\FilterQueryOption.cs" />
+    <Compile Include="OData\IDelta.cs" />
+    <Compile Include="OData\ODataQueryContext.cs" />
+    <Compile Include="OData\ODataMetadataController.cs" />
+    <Compile Include="OData\Query\ODataQueryOptions.cs" />
+    <Compile Include="OData\ODataQueryParameterBindingAttribute.cs" />
+    <Compile Include="OData\Query\OrderByPropertyNode.cs" />
+    <Compile Include="OData\Query\OrderByQueryOption.cs" />
+    <Compile Include="OData\PropertyAccessor.cs" />
+    <Compile Include="OData\Query\SkipQueryOption.cs" />
+    <Compile Include="OData\Builder\EdmModelHelperMethods.cs" />
+    <Compile Include="OData\Builder\EntitySetLinkBuilderAnnotation.cs" />
+    <Compile Include="OData\Builder\EntitySetUrlAnnotation.cs" />
+    <Compile Include="OData\Builder\IEntitySetLinkBuilder.cs" />
+    <Compile Include="OData\Formatter\ODataMessageWrapper.cs" />
+    <Compile Include="OData\Formatter\ODataUriHelpers.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ClrTypeAnnotation.cs" />
+    <Compile Include="OData\Formatter\Deserialization\DefaultODataDeserializerProvider.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataComplexTypeDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataEntryDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataDeserializerProvider.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataDeserializerContext.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataEntityDeserializer.cs" />
+    <Compile Include="OData\Formatter\Deserialization\ODataEntityReferenceLinkDeserializer.cs" />
+    <Compile Include="OData\Formatter\EdmLibHelpers.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataEntityReferenceLinkSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataEntrySerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataQueryProjectionNode.cs" />
+    <Compile Include="HttpActionDescriptorExtensions.cs" />
+    <Compile Include="OData\Routing\ODataPathParser.cs" />
+    <Compile Include="OData\Routing\ODataPathSegment.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\SRResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SRResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="OData\Formatter\ODataMediaTypeFormatter.cs" />
+    <Compile Include="OData\Formatter\Serialization\DefaultODataSerializerProvider.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataCollectionSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataComplexTypeSerializer.cs" />
+    <Compile Include="OData\Formatter\ODataFormatterConstants.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataEntityTypeSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataFeedSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataPrimitiveSerializer.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataSerializerProvider.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataSerializerContext.cs" />
+    <Compile Include="OData\Formatter\Serialization\ODataWorkspaceSerializer.cs" />
+    <Compile Include="QueryableAttribute.cs" />
+    <Compile Include="HttpConfigurationExtensions.cs" />
+    <Compile Include="TypeHelper.cs" />
+    <Compile Include="OData\Query\Expressions\ClrCanonicalFunctions.cs" />
+    <Compile Include="OData\Query\Expressions\FilterBinder.cs" />
+    <Compile Include="OData\Builder\PropertySelectorVisitor.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Common\CommonWebApiResources.resx">
+      <Link>Properties\CommonWebApiResources.resx</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\SRResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SRResources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="..\Common\CommonWebApiResources.Designer.cs">
+      <Link>Properties\CommonWebApiResources.Designer.cs</Link>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CommonWebApiResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDictionary Include="..\CodeAnalysisDictionary.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
+</Project>

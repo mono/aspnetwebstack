@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ComponentModel;
 using System.Globalization;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding.Binders
 {

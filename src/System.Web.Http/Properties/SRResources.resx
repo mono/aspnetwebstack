@@ -117,15 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Common_TypeMustImplementInterface" xml:space="preserve">
-    <value>The type '{0}' does not implement the interface '{1}'.</value>
-  </data>
-  <data name="GenericModelBinderProvider_ParameterMustSpecifyOpenGenericType" xml:space="preserve">
-    <value>The type '{0}' is not an open generic type.</value>
-  </data>
-  <data name="GenericModelBinderProvider_TypeArgumentCountMismatch" xml:space="preserve">
-    <value>The open model type '{0}' has {1} generic type argument(s), but the open binder type '{2}' has {3} generic type argument(s). The binder type must not be an open generic type or must have the same number of generic arguments as the open model type.</value>
-  </data>
   <data name="ModelBinderUtil_ModelCannotBeNull" xml:space="preserve">
     <value>The binding context has a null Model, but this binder requires a non-null model of type '{0}'.</value>
   </data>
@@ -150,9 +141,6 @@
   <data name="Common_PropertyNotFound" xml:space="preserve">
     <value>The property {0}.{1} could not be found.</value>
   </data>
-  <data name="ModelBinderProviderCollection_BinderForTypeNotFound" xml:space="preserve">
-    <value>A binder for type {0} could not be located.</value>
-  </data>
   <data name="ModelBinderProviderCollection_InvalidBinderType" xml:space="preserve">
     <value>The type '{0}' does not subclass {1} or implement the interface {2}.</value>
   </data>
@@ -174,15 +162,6 @@
   <data name="ValidatableObjectAdapter_IncompatibleType" xml:space="preserve">
     <value>The model object inside the metadata claimed to be compatible with {0}, but was actually {1}.</value>
   </data>
-  <data name="DelegatingHandlerArrayContainsNullItem" xml:space="preserve">
-    <value>The '{0}' list is invalid because it contains one or more null items.</value>
-  </data>
-  <data name="DelegatingHandlerArrayHasNonNullInnerHandler" xml:space="preserve">
-    <value>The '{0}' list is invalid because the property '{1}' of '{2}' is not null.</value>
-  </data>
-  <data name="HttpMessageHandlerDisposed" xml:space="preserve">
-    <value>This '{0}' instance has been disposed and can no longer accept HTTP requests.</value>
-  </data>
   <data name="HttpResponseExceptionMessage" xml:space="preserve">
     <value>Processing of the HTTP request resulted in an exception. Please see the HTTP response returned by the 'Response' property of this exception for details.</value>
   </data>
@@ -190,9 +169,7 @@
     <value>Multiple actions were found that match the request: {0}</value>
   </data>
   <data name="DefaultControllerFactory_ControllerNameAmbiguous_WithRouteTemplate" xml:space="preserve">
-    <value>Multiple types were found that match the controller named '{0}'. This can happen if the route that services this request ('{1}') found multiple controllers defined with the same name but differing namespaces, which is not supported.
-
-The request for '{0}' has found the following matching controllers:{2}</value>
+    <value>Multiple types were found that match the controller named '{0}'. This can happen if the route that services this request ('{1}') found multiple controllers defined with the same name but differing namespaces, which is not supported.{3}{3}The request for '{0}' has found the following matching controllers:{2}</value>
   </data>
   <data name="DefaultControllerFactory_ControllerNameNotFound" xml:space="preserve">
     <value>No type was found that matches the controller named '{0}'.</value>
@@ -254,89 +231,11 @@ The request for '{0}' has found the following matching controllers:{2}</value>
   <data name="Route_AddRemoveWithNoKeyNotSupported" xml:space="preserve">
     <value>Adding or removing items from a '{0}' is not supported. Please use a key when adding and removing items.</value>
   </data>
-  <data name="AmbiguousMethodInvocation" xml:space="preserve">
-    <value>Ambiguous invocation of method '{0}' in type '{1}'</value>
-  </data>
-  <data name="CloseParenOrCommaExpected" xml:space="preserve">
-    <value>')' or ',' expected</value>
-  </data>
-  <data name="CloseParenOrOperatorExpected" xml:space="preserve">
-    <value>')' or operator expected</value>
-  </data>
-  <data name="DigitExpected" xml:space="preserve">
-    <value>Digit expected</value>
-  </data>
-  <data name="DuplicateIdentifier" xml:space="preserve">
-    <value>The identifier '{0}' was defined more than once</value>
-  </data>
-  <data name="ExpressionExpected" xml:space="preserve">
-    <value>Expression expected</value>
-  </data>
-  <data name="ExpressionTypeMismatch" xml:space="preserve">
-    <value>Expression of type '{0}' expected</value>
-  </data>
-  <data name="IdentifierExpected" xml:space="preserve">
-    <value>Identifier expected</value>
-  </data>
-  <data name="IncompatibleOperand" xml:space="preserve">
-    <value>Operator '{0}' incompatible with operand type '{1}'</value>
-  </data>
-  <data name="IncompatibleOperands" xml:space="preserve">
-    <value>Operator '{0}' incompatible with operand types '{1}' and '{2}'</value>
-  </data>
-  <data name="InvalidCharacter" xml:space="preserve">
-    <value>Syntax error '{0}'</value>
-  </data>
-  <data name="InvalidIntegerLiteral" xml:space="preserve">
-    <value>Invalid integer literal '{0}'</value>
-  </data>
-  <data name="InvalidQueryOperator" xml:space="preserve">
-    <value>Invalid query operator '{0}'.</value>
-  </data>
-  <data name="InvalidRealLiteral" xml:space="preserve">
-    <value>Invalid real literal '{0}'</value>
-  </data>
-  <data name="MethodIsVoid" xml:space="preserve">
-    <value>Method '{0}' in type '{1}' does not return a value</value>
-  </data>
-  <data name="NoApplicableMethod" xml:space="preserve">
-    <value>No applicable method '{0}' exists in type '{1}'</value>
-  </data>
-  <data name="OpenParenExpected" xml:space="preserve">
-    <value>'(' expected</value>
-  </data>
-  <data name="ParseExceptionFormat" xml:space="preserve">
-    <value>{0} (at index {1})</value>
-  </data>
-  <data name="SyntaxError" xml:space="preserve">
-    <value>Syntax error</value>
-  </data>
-  <data name="UnknownIdentifier" xml:space="preserve">
-    <value>Unknown identifier '{0}'</value>
-  </data>
-  <data name="UnknownPropertyOrField" xml:space="preserve">
-    <value>No property or field '{0}' exists in type '{1}'</value>
-  </data>
-  <data name="UnterminatedStringLiteral" xml:space="preserve">
-    <value>Unterminated string literal</value>
-  </data>
-  <data name="UriQueryStringInvalid" xml:space="preserve">
-    <value>The query specified in the URI is not valid. {0}</value>
-  </data>
   <data name="ValueProviderFactory_Cannot_Create" xml:space="preserve">
     <value>Could not create a '{0}' from '{1}'. Please ensure it derives from '{0}' and has a public parameterless constructor.</value>
   </data>
   <data name="Validation_ValueNotFound" xml:space="preserve">
     <value>A value is required but was not present in the request.</value>
-  </data>
-  <data name="InvalidTypeCreationExpression" xml:space="preserve">
-    <value>Invalid '{0}' type creation expression.</value>
-  </data>
-  <data name="InvalidHexLiteral" xml:space="preserve">
-    <value>Invalid hexadecimal literal.</value>
-  </data>
-  <data name="PositiveIntegerExpectedForODataQueryParameter" xml:space="preserve">
-    <value>The OData query parameter '{0}' has an invalid value. The value should be a positive integer. The provided value was '{1}'</value>
   </data>
   <data name="CannotSupportSingletonInstance" xml:space="preserve">
     <value>Cannot reuse an '{0}' instance. '{0}' has to be constructed per incoming message. Check your custom '{1}' and make sure that it will not manufacture the same instance.</value>
@@ -443,12 +342,6 @@ The request for '{0}' has found the following matching controllers:{2}</value>
   <data name="HttpRequestMessageExtensions_NoContentNegotiator" xml:space="preserve">
     <value>The provided configuration does not have an instance of the '{0}' service registered.</value>
   </data>
-  <data name="ParseErrorInClause" xml:space="preserve">
-    <value>Parse error in {0}. {1}</value>
-  </data>
-  <data name="InaccessiblePropertyOrField" xml:space="preserve">
-    <value>The property or field '{0}' in type '{1}' is not accessible.</value>
-  </data>
   <data name="ReflectedHttpActionDescriptor_CannotCallOpenGenericMethods" xml:space="preserve">
     <value>Cannot call action method '{0}' on controller '{1}' because the action method is a generic method.</value>
   </data>
@@ -464,9 +357,6 @@ The request for '{0}' has found the following matching controllers:{2}</value>
   <data name="HttpActionDescriptor_NoConverterForGenericParamterTypeExists" xml:space="preserve">
     <value>No action result converter could be constructed for a generic parameter type '{0}'.</value>
   </data>
-  <data name="QueryableAttribute_InvalidResultLimit" xml:space="preserve">
-    <value>The value of the ResultLimit property on the Queryable filter applied to action '{0}' on controller '{1}' must be greater than or equal to 0.</value>
-  </data>
   <data name="MissingRequiredMember" xml:space="preserve">
     <value>The {0} property is required.</value>
   </data>
@@ -478,5 +368,50 @@ The request for '{0}' has found the following matching controllers:{2}</value>
   </data>
   <data name="MaxHttpCollectionKeyLimitReached" xml:space="preserve">
     <value>The number of keys in a NameValueCollection has exceeded the limit of '{0}'. You can adjust it by modifying the MaxHttpCollectionKeys property on the '{1}' class.</value>
+  </data>
+  <data name="ControllerNameNotFound" xml:space="preserve">
+    <value>No route providing a controller name was found to match request URI '{0}'</value>
+  </data>
+  <data name="HttpServerDisposed" xml:space="preserve">
+    <value>The server is no longer available.</value>
+  </data>
+  <data name="NoControllerCreated" xml:space="preserve">
+    <value>No controller was created to handle this request.</value>
+  </data>
+  <data name="NoControllerSelected" xml:space="preserve">
+    <value>No controller was selected to handle this request.</value>
+  </data>
+  <data name="NoRouteData" xml:space="preserve">
+    <value>No route data was found for this request.</value>
+  </data>
+  <data name="RequestNotAuthorized" xml:space="preserve">
+    <value>Authorization has been denied for this request.</value>
+  </data>
+  <data name="ValidModelState" xml:space="preserve">
+    <value>The model state is valid.</value>
+  </data>
+  <data name="ErrorOccurred" xml:space="preserve">
+    <value>An error has occurred.</value>
+  </data>
+  <data name="BadRequest" xml:space="preserve">
+    <value>The request is invalid.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>No HTTP resource was found that matches the request URI '{0}'.</value>
+  </data>
+  <data name="OptionalBodyParameterNotSupported" xml:space="preserve">
+    <value>Optional parameter '{0}' is not supported by '{1}'.</value>
+  </data>
+  <data name="MissingDataMemberIsRequired" xml:space="preserve">
+    <value>Property '{0}' on type '{1}' is invalid. Value-typed properties marked as [Required] must also be marked with [DataMember(IsRequired=true)] to be recognized as required. Consider attributing the declaring type with [DataContract] and the property with [DataMember(IsRequired=true)].</value>
+  </data>
+  <data name="ValidationAttributeOnField" xml:space="preserve">
+    <value>Field '{0}' on type '{1}' is attributed with one or more validation attributes. Validation attributes on fields are not supported. Consider using a public property for validation instead.</value>
+  </data>
+  <data name="ValidationAttributeOnNonPublicProperty" xml:space="preserve">
+    <value>Non-public property '{0}' on type '{1}' is attributed with one or more validation attributes. Validation attributes on non-public properties are not supported. Consider using a public property for validation instead.</value>
+  </data>
+  <data name="DependencyResolver_BeginScopeReturnsNull" xml:space="preserve">
+    <value>A dependency resolver of type '{0}' returned an invalid value of null from its BeginScope method. If the container does not have a concept of scope, consider returning a scope that resolves in the root of the container instead.</value>
   </data>
 </root>

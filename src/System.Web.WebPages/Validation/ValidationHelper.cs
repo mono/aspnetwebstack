@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -274,8 +274,7 @@ namespace System.Web.WebPages
             foreach (var attribute in attributes)
             {
                 string key = attribute.Key;
-                // Values are already html encoded.
-                string value = Convert.ToString(attribute.Value, CultureInfo.InvariantCulture);
+                string value = HttpUtility.HtmlEncode(Convert.ToString(attribute.Value, CultureInfo.InvariantCulture));
                 stringBuilder.Append(key)
                     .Append("=\"")
                     .Append(value)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -99,12 +99,12 @@ namespace System.Web.Mvc
             if (castRoute != null)
             {
                 errorText = String.Format(CultureInfo.CurrentCulture, MvcResources.DefaultControllerFactory_ControllerNameAmbiguous_WithRouteUrl,
-                                          controllerName, castRoute.Url, typeList);
+                                          controllerName, castRoute.Url, typeList, Environment.NewLine);
             }
             else
             {
                 errorText = String.Format(CultureInfo.CurrentCulture, MvcResources.DefaultControllerFactory_ControllerNameAmbiguous_WithoutRouteUrl,
-                                          controllerName, typeList);
+                                          controllerName, typeList, Environment.NewLine);
             }
 
             return new InvalidOperationException(errorText);

@@ -4,7 +4,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <CodeAnalysis Condition=" '$(CodeAnalysis)' == '' ">false</CodeAnalysis>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{668E9021-CE84-49D9-98FB-DF125A9FCDB0}</ProjectGuid>
@@ -14,50 +13,73 @@
     <AssemblyName>System.Net.Http.Formatting</AssemblyName>
     <TargetFrameworkProfile Condition="'$(TargetFrameworkVersion)' != 'v4.5'">Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ASPNETMVC</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\</OutputPath>
     <DefineConstants>TRACE;ASPNETMVC</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU'">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeAnalysis|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\CodeAnalysis\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CODE_COVERAGE;ASPNETMVC</DefineConstants>
     <DebugType>full</DebugType>
+    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;CODE_COVERAGE;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Newtonsoft.Json.4.5.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.4.5.6\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20326.1\lib\net40\System.Net.Http.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http.WebRequest, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20326.1\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
@@ -79,22 +101,36 @@
     <Compile Include="..\Common\TaskHelpersExtensions.cs">
       <Link>Common\TaskHelpersExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\RS.cs">
-      <Link>RS.cs</Link>
+    <Compile Include="..\Common\UriQueryUtility.cs">
+      <Link>Common\UriQueryUtility.cs</Link>
     </Compile>
     <Compile Include="..\TransparentCommonAssemblyInfo.cs">
       <Link>Properties\TransparentCommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CloneableExtensions.cs" />
-    <Compile Include="Formatting\JsonReaderQuotaException.cs" />
+    <Compile Include="Formatting\MediaTypeHeaderValueRange.cs" />
+    <Compile Include="HttpContentFormDataExtensions.cs" />
+    <Compile Include="Internal\MultipartWriteDelegatingStream.cs" />
+    <Compile Include="Internal\ReadOnlyStreamWithEncodingPreamble.cs" />
+    <Compile Include="Internal\TypeExtensions.cs" />
+    <Compile Include="MultipartRelatedStreamProvider.cs" />
+    <Compile Include="MultipartFileData.cs" />
+    <Compile Include="MultipartStreamProvider.cs" />
+    <Compile Include="ObjectContentOfT.cs" />
+    <Compile Include="PushStreamContent.cs" />
+    <Compile Include="HttpClientFactory.cs" />
     <Compile Include="Formatting\MediaTypeHeaderValueExtensions.cs" />
+    <Compile Include="Handlers\HttpProgressEventArgs.cs" />
+    <Compile Include="Handlers\ProgressContent.cs" />
+    <Compile Include="Handlers\ProgressMessageHandler.cs" />
+    <Compile Include="Handlers\ProgressStream.cs" />
+    <Compile Include="Handlers\ProgressWriteAsyncResult.cs" />
     <Compile Include="HttpResponseHeadersExtensions.cs" />
     <Compile Include="HttpRequestHeadersExtensions.cs" />
     <Compile Include="Formatting\StringWithQualityHeaderValueComparer.cs" />
     <Compile Include="Formatting\FormDataCollection.cs" />
     <Compile Include="Formatting\ContentNegotiationResult.cs" />
     <Compile Include="Formatting\FormUrlEncodedJson.cs" />
-    <Compile Include="Formatting\SecureJsonTextReader.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Formatting\IFormatterLogger.cs" />
     <Compile Include="Formatting\IRequiredMemberSelector.cs" />
@@ -102,6 +138,7 @@
     <Compile Include="Headers\CookieState.cs" />
     <Compile Include="HttpClientExtensions.cs" />
     <Compile Include="HttpRequestMessageExtensions.cs" />
+    <Compile Include="Internal\AsyncResult.cs" />
     <Compile Include="Internal\HttpValueCollection.cs" />
     <Compile Include="Internal\NonClosingDelegatingStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -118,24 +155,21 @@
     <Compile Include="Formatting\FormUrlEncodedMediaTypeFormatter.cs" />
     <Compile Include="Formatting\IContentNegotiator.cs" />
     <Compile Include="Formatting\JsonMediaTypeFormatter.cs" />
-    <Compile Include="Formatting\MediaRangeMapping.cs" />
     <Compile Include="Formatting\MediaTypeConstants.cs" />
     <Compile Include="Formatting\MediaTypeFormatter.cs" />
     <Compile Include="Formatting\MediaTypeFormatterCollection.cs" />
     <Compile Include="Formatting\MediaTypeFormatterExtensions.cs" />
     <Compile Include="Formatting\MediaTypeWithQualityHeaderValueComparer.cs" />
     <Compile Include="Formatting\MediaTypeMapping.cs" />
-    <Compile Include="Formatting\MediaTypeMatch.cs" />
     <Compile Include="Formatting\ParsedMediaTypeHeaderValue.cs" />
     <Compile Include="Formatting\QueryStringMapping.cs" />
     <Compile Include="Formatting\RequestHeaderMapping.cs" />
-    <Compile Include="Formatting\ResponseFormatterSelectionResult.cs" />
-    <Compile Include="Formatting\ResponseMediaTypeMatch.cs" />
+    <Compile Include="Formatting\MediaTypeFormatterMatchRanking.cs" />
+    <Compile Include="Formatting\MediaTypeFormatterMatch.cs" />
     <Compile Include="Formatting\StringComparisonHelper.cs" />
-    <Compile Include="Formatting\XHRRequestHeaderMapping.cs" />
+    <Compile Include="Formatting\XmlHttpRequestHeaderMapping.cs" />
     <Compile Include="Formatting\XmlMediaTypeFormatter.cs" />
     <Compile Include="Formatting\Parsers\FormUrlEncodedParser.cs" />
-    <Compile Include="HttpContentCollectionExtensions.cs" />
     <Compile Include="HttpContentExtensions.cs" />
     <Compile Include="HttpContentMessageExtensions.cs" />
     <Compile Include="HttpContentMultipartExtensions.cs" />
@@ -148,8 +182,6 @@
     <Compile Include="HttpUnsortedHeaders.cs" />
     <Compile Include="HttpUnsortedRequest.cs" />
     <Compile Include="HttpUnsortedResponse.cs" />
-    <Compile Include="IMultipartStreamProvider.cs" />
-    <Compile Include="Internal\AsyncResultWithExtraData.cs" />
     <Compile Include="Internal\DelegatingStream.cs" />
     <Compile Include="Formatting\Parsers\InternetMessageFormatHeaderParser.cs" />
     <Compile Include="MimeBodyPart.cs" />
@@ -161,7 +193,6 @@
     <Compile Include="ObjectContent.cs" />
     <Compile Include="Formatting\Parsers\ParserState.cs" />
     <Compile Include="UriExtensions.cs" />
-    <Compile Include="Internal\UriQueryUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Common\CommonWebApiResources.Designer.cs">
@@ -195,4 +226,5 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

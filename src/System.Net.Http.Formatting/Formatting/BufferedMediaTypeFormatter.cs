@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net.Http.Headers;
@@ -31,7 +32,7 @@ namespace System.Net.Http.Formatting
             {
                 if (value < MinBufferSize)
                 {
-                    throw Error.ArgumentGreaterThanOrEqualTo("value", value, MinBufferSize);
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, MinBufferSize);
                 }
                 _bufferSizeInBytes = value;
             }
@@ -41,80 +42,81 @@ namespace System.Net.Http.Formatting
         /// Writes synchronously to the buffered stream.
         /// </summary>
         /// <remarks>
-        /// An implementation of this method should close <paramref name="stream"/> upon completion.
+        /// An implementation of this method should close <paramref name="writeStream"/> upon completion.
         /// </remarks>
         /// <param name="type">The type of the object to write.</param>
         /// <param name="value">The object value to write.  It may be <c>null</c>.</param>
-        /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> if available. Note that
-        /// modifying the headers will have no effect on the generated HTTP message; they should only be used to guide the writing.</param>
-        public virtual void WriteToStream(Type type, object value, Stream stream, HttpContentHeaders contentHeaders)
+        /// <param name="writeStream">The <see cref="Stream"/> to which to write.</param>
+        /// <param name="content">The <see cref="HttpContent"/> if available. Note that
+        /// modifying the headers of the content will have no effect on the generated HTTP message; they should only be used to guide the writing.</param>
+        public virtual void WriteToStream(Type type, object value, Stream writeStream, HttpContent content)
         {
-            throw new NotSupportedException(RS.Format(Properties.Resources.MediaTypeFormatterCannotWriteSync, GetType().Name));
+            throw Error.NotSupported(Properties.Resources.MediaTypeFormatterCannotWriteSync, GetType().Name);
         }
 
         /// <summary>
         /// Reads synchronously from the buffered stream.
         /// </summary>
         /// <remarks>
-        /// An implementation of this method should close <paramref name="stream"/> upon completion.
+        /// An implementation of this method should close <paramref name="readStream"/> upon completion.
         /// </remarks>
         /// <param name="type">The type of the object to deserialize.</param>
-        /// <param name="stream">The <see cref="Stream"/> to read.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> if available.</param>
+        /// <param name="readStream">The <see cref="Stream"/> to read.</param>
+        /// <param name="content">The <see cref="HttpContent"/> if available.</param>
         /// <param name="formatterLogger">The <see cref="IFormatterLogger"/> to log events to.</param>
         /// <returns>An object of the given type.</returns>
-        public virtual object ReadFromStream(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public virtual object ReadFromStream(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            throw new NotSupportedException(RS.Format(Properties.Resources.MediaTypeFormatterCannotReadSync, GetType().Name));
+            throw Error.NotSupported(Properties.Resources.MediaTypeFormatterCannotReadSync, GetType().Name);
         }
 
         // Sealed because derived classes shouldn't override the async version. Override sync version instead.
-        public sealed override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public sealed override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (writeStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("writeStream");
             }
 
             return TaskHelpers.RunSynchronously(
                 () =>
                 {
-                    using (Stream bufferedStream = GetBufferStream(stream, _bufferSizeInBytes))
+                    using (Stream bufferedStream = GetBufferStream(writeStream, _bufferSizeInBytes))
                     {
-                        WriteToStream(type, value, bufferedStream, contentHeaders);
+                        WriteToStream(type, value, bufferedStream, content);
                     }
                 });
         }
 
-        public sealed override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public sealed override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (readStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("readStream");
             }
 
             return TaskHelpers.RunSynchronously<object>(
                 () =>
                 {
+                    HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
                     if (contentHeaders != null && contentHeaders.ContentLength == 0)
                     {
                         return GetDefaultValueForType(type);
                     }
 
-                    using (Stream bufferedStream = GetBufferStream(stream, _bufferSizeInBytes))
+                    using (Stream bufferedStream = GetBufferStream(readStream, _bufferSizeInBytes))
                     {
-                        return ReadFromStream(type, bufferedStream, contentHeaders, formatterLogger);
+                        return ReadFromStream(type, bufferedStream, content, formatterLogger);
                     }
                 });
         }
@@ -130,10 +132,7 @@ namespace System.Net.Http.Formatting
 
             // This uses a naive buffering. BufferedStream() will block the thread while it drains the buffer. 
             // We can explore a smarter implementation that async drains the buffer. 
-            Stream bufferedStream = new BufferedStream(nonClosingStream, bufferSize);
-
-            // We now have buffered, non-closing stream which we can pass to the user.
-            return bufferedStream;
+            return new BufferedStream(nonClosingStream, bufferSize);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,7 +17,7 @@ namespace System.Web.WebPages.Deployment
         private const string SharedLibPublicKey = "31bf3856ad364e35";
 
         internal static readonly AssemblyName ThisAssemblyName = new AssemblyName(typeof(AssemblyUtils).Assembly.FullName);
-        private static readonly Version WebPagesV1Version = new Version(1, 0, 0, 0);
+        internal static readonly Version WebPagesV1Version = new Version(1, 0, 0, 0);
         private static readonly string _binFileName = Path.GetFileName(ThisAssemblyName.Name) + ".dll";
 
         // Special case MWI because it does not share the same assembly version as the rest of WebPages.
@@ -158,7 +158,7 @@ namespace System.Web.WebPages.Deployment
         public static IDictionary<string, Version> GetAssembliesMatchingOtherVersions(IDictionary<string, IEnumerable<string>> references)
         {
             var webPagesAssemblies = AssemblyUtils.GetAssembliesForVersion(AssemblyUtils.ThisAssemblyName.Version);
-            if (webPagesAssemblies == null || !webPagesAssemblies.Any())
+            if (references == null || webPagesAssemblies == null || !webPagesAssemblies.Any())
             {
                 return new Dictionary<string, Version>(0);
             }

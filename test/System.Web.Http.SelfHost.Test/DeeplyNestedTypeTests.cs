@@ -1,14 +1,14 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.ServiceModel;
 using System.Text;
-using Newtonsoft.Json.Linq;
-using Xunit;
 using System.Xml.Linq;
-using System.Xml;
+using Microsoft.TestCommon;
+using Newtonsoft.Json.Linq;
 
 namespace System.Web.Http.SelfHost
 {
@@ -28,6 +28,7 @@ namespace System.Web.Http.SelfHost
             baseAddress = String.Format("http://localhost/");
 
             HttpSelfHostConfiguration config = new HttpSelfHostConfiguration(baseAddress);
+            config.HostNameComparisonMode = HostNameComparisonMode.Exact;
             config.Routes.MapHttpRoute("Default", "{controller}/{action}", new { controller = "DeepNestedType" });
 
             server = new HttpSelfHostServer(config);

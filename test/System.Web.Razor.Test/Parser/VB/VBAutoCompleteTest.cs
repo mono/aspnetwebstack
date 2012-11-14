@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Generator;
 using System.Web.Razor.Parser;
@@ -7,7 +7,7 @@ using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.VB
 {
@@ -83,8 +83,8 @@ namespace System.Web.Razor.Test.Parser.VB
         [Fact]
         public void FunctionsDirective_AutoComplete_At_StartOfFile()
         {
-            ParseBlockTest(@"@Functions
-foo",
+            ParseBlockTest("@Functions" + Environment.NewLine
+                         + "foo",
                 new FunctionsBlock(
                     Factory.CodeTransition("@").Accepts(AcceptedCharacters.None),
                     Factory.MetaCode("Functions").Accepts(AcceptedCharacters.None),
@@ -102,8 +102,8 @@ foo",
         [Fact]
         public void HelperDirective_AutoComplete_At_StartOfFile()
         {
-            ParseBlockTest(@"@Helper Strong(value As String)
-Foo",
+            ParseBlockTest("@Helper Strong(value As String)" + Environment.NewLine
+                         + "Foo",
                 new HelperBlock(new HelperCodeGenerator(new LocationTagged<string>("Strong(value As String)", 8, 0, 8), headerComplete: true),
                     Factory.CodeTransition(),
                     Factory.MetaCode("Helper ")
@@ -122,8 +122,8 @@ Foo",
         [Fact]
         public void SectionDirective_AutoComplete_At_StartOfFile()
         {
-            ParseBlockTest(@"@Section Header
-Foo",
+            ParseBlockTest("@Section Header" + Environment.NewLine
+                         + "Foo",
                 new SectionBlock(new SectionCodeGenerator("Header"),
                     Factory.CodeTransition(),
                     Factory.MetaCode("Section Header")
@@ -139,8 +139,8 @@ Foo",
         [Fact]
         public void VerbatimBlock_AutoComplete_At_StartOfFile()
         {
-            ParseBlockTest(@"@Code
-Foo",
+            ParseBlockTest("@Code" + Environment.NewLine
+                         + "Foo",
                 new StatementBlock(
                     Factory.CodeTransition(),
                     Factory.MetaCode("Code").Accepts(AcceptedCharacters.None),

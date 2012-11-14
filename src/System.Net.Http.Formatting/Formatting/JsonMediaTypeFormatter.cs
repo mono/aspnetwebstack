@@ -1,15 +1,16 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net.Http.Headers;
 using System.Net.Http.Internal;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
 using System.Xml;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -21,19 +22,15 @@ namespace System.Net.Http.Formatting
     /// </summary>
     public class JsonMediaTypeFormatter : MediaTypeFormatter
     {
-        private static readonly MediaTypeHeaderValue[] _supportedMediaTypes = new MediaTypeHeaderValue[]
-        {
-            MediaTypeConstants.ApplicationJsonMediaType,
-            MediaTypeConstants.TextJsonMediaType
-        };
-
         private JsonSerializerSettings _jsonSerializerSettings;
-        private readonly IContractResolver _defaultContractResolver;
         private int _maxDepth = FormattingUtilities.DefaultMaxDepth;
-        private XmlDictionaryReaderQuotas _readerQuotas = FormattingUtilities.CreateDefaultReaderQuotas();
 
+#if !NETFX_CORE
         private ConcurrentDictionary<Type, DataContractJsonSerializer> _dataContractSerializerCache = new ConcurrentDictionary<Type, DataContractJsonSerializer>();
+        private readonly IContractResolver _defaultContractResolver;
+        private XmlDictionaryReaderQuotas _readerQuotas = FormattingUtilities.CreateDefaultReaderQuotas();
         private RequestHeaderMapping _requestHeaderMapping;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonMediaTypeFormatter"/> class.
@@ -41,21 +38,23 @@ namespace System.Net.Http.Formatting
         public JsonMediaTypeFormatter()
         {
             // Set default supported media types
-            foreach (MediaTypeHeaderValue value in _supportedMediaTypes)
-            {
-                SupportedMediaTypes.Add(value);
-            }
+            SupportedMediaTypes.Add(MediaTypeConstants.ApplicationJsonMediaType);
+            SupportedMediaTypes.Add(MediaTypeConstants.TextJsonMediaType);
 
             // Initialize serializer
+#if !NETFX_CORE
             _defaultContractResolver = new JsonContractResolver(this);
+#endif
             _jsonSerializerSettings = CreateDefaultSerializerSettings();
 
             // Set default supported character encodings
             SupportedEncodings.Add(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true));
             SupportedEncodings.Add(new UnicodeEncoding(bigEndian: false, byteOrderMark: true, throwOnInvalidBytes: true));
 
-            _requestHeaderMapping = new XHRRequestHeaderMapping();
+#if !NETFX_CORE
+            _requestHeaderMapping = new XmlHttpRequestHeaderMapping();
             MediaTypeMappings.Add(_requestHeaderMapping);
+#endif
         }
 
         /// <summary>
@@ -85,13 +84,14 @@ namespace System.Net.Http.Formatting
             {
                 if (value == null)
                 {
-                    throw new ArgumentNullException("value");
+                    throw Error.ArgumentNull("value");
                 }
 
                 _jsonSerializerSettings = value;
             }
         }
 
+#if !NETFX_CORE
         /// <summary>
         /// Gets or sets a value indicating whether to use <see cref="DataContractJsonSerializer"/> by default.
         /// </summary>
@@ -99,12 +99,14 @@ namespace System.Net.Http.Formatting
         ///     <c>true</c> if use <see cref="DataContractJsonSerializer"/> by default; otherwise, <c>false</c>. The default is <c>false</c>.
         /// </value>
         public bool UseDataContractJsonSerializer { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets a value indicating whether to indent elements when writing data. 
         /// </summary>
         public bool Indent { get; set; }
 
+#if !NETFX_CORE
         /// <summary>
         /// Gets or sets the maximum depth allowed by this formatter.
         /// </summary>
@@ -118,33 +120,32 @@ namespace System.Net.Http.Formatting
             {
                 if (value < FormattingUtilities.DefaultMinDepth)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, FormattingUtilities.DefaultMinDepth));
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, FormattingUtilities.DefaultMinDepth);
                 }
 
                 _maxDepth = value;
                 _readerQuotas.MaxDepth = value;
             }
         }
+#endif
 
         /// <summary>
         /// Creates a <see cref="JsonSerializerSettings"/> instance with the default settings used by the <see cref="JsonMediaTypeFormatter"/>.
         /// </summary>
+        [SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "This could only be static half the time.")]
         public JsonSerializerSettings CreateDefaultSerializerSettings()
         {
             return new JsonSerializerSettings()
             {
+#if !NETFX_CORE
                 ContractResolver = _defaultContractResolver,
+#endif
                 MissingMemberHandling = MissingMemberHandling.Ignore,
 
                 // Do not change this setting
                 // Setting this to None prevents Json.NET from loading malicious, unsafe, or security-sensitive types
                 TypeNameHandling = TypeNameHandling.None
             };
-        }
-
-        internal bool ContainsSerializerForType(Type type)
-        {
-            return _dataContractSerializerCache.ContainsKey(type);
         }
 
         /// <summary>
@@ -157,19 +158,21 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
+#if !NETFX_CORE
             if (UseDataContractJsonSerializer)
             {
                 // If there is a registered non-null serializer, we can support this type.
                 DataContractJsonSerializer serializer =
-                    _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(t));
+                    _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(t, throwOnError: false));
 
                 // Null means we tested it before and know it is not supported
                 return serializer != null;
             }
             else
+#endif
             {
                 return true;
             }
@@ -185,21 +188,23 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
+#if !NETFX_CORE
             if (UseDataContractJsonSerializer)
             {
                 MediaTypeFormatter.TryGetDelegatingTypeForIQueryableGenericOrSame(ref type);
 
                 // If there is a registered non-null serializer, we can support this type.
                 object serializer =
-                    _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(t));
+                    _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(t, throwOnError: false));
 
                 // Null means we tested it before and know it is not supported
                 return serializer != null;
             }
             else
+#endif
             {
                 return true;
             }
@@ -207,27 +212,29 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Called during deserialization to read an object of the specified <paramref name="type"/>
-        /// from the specified <paramref name="stream"/>.
+        /// from the specified <paramref name="readStream"/>.
         /// </summary>
         /// <param name="type">The type of object to read.</param>
-        /// <param name="stream">The <see cref="Stream"/> from which to read.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> for the content being written.</param>
+        /// <param name="readStream">The <see cref="Stream"/> from which to read.</param>
+        /// <param name="content">The <see cref="HttpContent"/> for the content being written.</param>
         /// <param name="formatterLogger">The <see cref="IFormatterLogger"/> to log events to.</param>
         /// <returns>A <see cref="Task"/> whose result will be the object instance that has been read.</returns>
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (readStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("readStream");
             }
 
             return TaskHelpers.RunSynchronously<object>(() =>
             {
+                HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
+
                 // If content length is 0 then return default value for this type
                 if (contentHeaders != null && contentHeaders.ContentLength == 0)
                 {
@@ -239,17 +246,19 @@ namespace System.Net.Http.Formatting
 
                 try
                 {
+#if !NETFX_CORE
                     if (UseDataContractJsonSerializer)
                     {
                         DataContractJsonSerializer dataContractSerializer = GetDataContractSerializer(type);
-                        using (XmlReader reader = JsonReaderWriterFactory.CreateJsonReader(new NonClosingDelegatingStream(stream), effectiveEncoding, _readerQuotas, null))
+                        using (XmlReader reader = JsonReaderWriterFactory.CreateJsonReader(new NonClosingDelegatingStream(readStream), effectiveEncoding, _readerQuotas, null))
                         {
                             return dataContractSerializer.ReadObject(reader);
                         }
                     }
                     else
+#endif
                     {
-                        using (JsonTextReader jsonTextReader = new SecureJsonTextReader(new StreamReader(stream, effectiveEncoding), _maxDepth) { CloseInput = false })
+                        using (JsonTextReader jsonTextReader = new JsonTextReader(new StreamReader(readStream, effectiveEncoding)) { CloseInput = false, MaxDepth = _maxDepth })
                         {
                             JsonSerializer jsonSerializer = JsonSerializer.Create(_jsonSerializerSettings);
                             if (formatterLogger != null)
@@ -259,7 +268,7 @@ namespace System.Net.Http.Formatting
                                 jsonSerializer.Error += (sender, e) =>
                                 {
                                     Exception exception = e.ErrorContext.Error;
-                                    formatterLogger.LogError(e.ErrorContext.Path, exception.Message);
+                                    formatterLogger.LogError(e.ErrorContext.Path, exception);
                                     e.ErrorContext.Handled = true;
                                 };
                             }
@@ -273,7 +282,7 @@ namespace System.Net.Http.Formatting
                     {
                         throw;
                     }
-                    formatterLogger.LogError(String.Empty, e.Message);
+                    formatterLogger.LogError(String.Empty, e);
                     return GetDefaultValueForType(type);
                 }
             });
@@ -281,49 +290,39 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Called during serialization to write an object of the specified <paramref name="type"/>
-        /// to the specified <paramref name="stream"/>.
+        /// to the specified <paramref name="writeStream"/>.
         /// </summary>
         /// <param name="type">The type of object to write.</param>
         /// <param name="value">The object to write.</param>
-        /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> for the content being written.</param>
+        /// <param name="writeStream">The <see cref="Stream"/> to which to write.</param>
+        /// <param name="content">The <see cref="HttpContent"/> for the content being written.</param>
         /// <param name="transportContext">The <see cref="TransportContext"/>.</param>
         /// <returns>A <see cref="Task"/> that will write the value to the stream.</returns>
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (writeStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("writeStream");
             }
 
+#if !NETFX_CORE
             if (UseDataContractJsonSerializer && Indent)
             {
-                throw new NotSupportedException(RS.Format(Properties.Resources.UnsupportedIndent, typeof(DataContractJsonSerializer)));
+                throw Error.NotSupported(Properties.Resources.UnsupportedIndent, typeof(DataContractJsonSerializer));
             }
+#endif
 
             return TaskHelpers.RunSynchronously(() =>
             {
-                Encoding effectiveEncoding = SelectCharacterEncoding(contentHeaders);
+                Encoding effectiveEncoding = SelectCharacterEncoding(content == null ? null : content.Headers);
 
-                if (!UseDataContractJsonSerializer)
-                {
-                    using (JsonTextWriter jsonTextWriter = new JsonTextWriter(new StreamWriter(stream, effectiveEncoding)) { CloseOutput = false })
-                    {
-                        if (Indent)
-                        {
-                            jsonTextWriter.Formatting = Newtonsoft.Json.Formatting.Indented;
-                        }
-                        JsonSerializer jsonSerializer = JsonSerializer.Create(_jsonSerializerSettings);
-                        jsonSerializer.Serialize(jsonTextWriter, value);
-                        jsonTextWriter.Flush();
-                    }
-                }
-                else
+#if !NETFX_CORE
+                if (UseDataContractJsonSerializer)
                 {
                     if (MediaTypeFormatter.TryGetDelegatingTypeForIQueryableGenericOrSame(ref type))
                     {
@@ -334,63 +333,61 @@ namespace System.Net.Http.Formatting
                     }
 
                     DataContractJsonSerializer dataContractSerializer = GetDataContractSerializer(type);
-                    using (XmlWriter writer = JsonReaderWriterFactory.CreateJsonWriter(stream, effectiveEncoding, ownsStream: false))
+                    using (XmlWriter writer = JsonReaderWriterFactory.CreateJsonWriter(writeStream, effectiveEncoding, ownsStream: false))
                     {
                         dataContractSerializer.WriteObject(writer, value);
+                    }
+                }
+                else
+#endif
+                {
+                    using (JsonTextWriter jsonTextWriter = new JsonTextWriter(new StreamWriter(writeStream, effectiveEncoding)) { CloseOutput = false })
+                    {
+                        if (Indent)
+                        {
+                            jsonTextWriter.Formatting = Newtonsoft.Json.Formatting.Indented;
+                        }
+                        JsonSerializer jsonSerializer = JsonSerializer.Create(_jsonSerializerSettings);
+                        jsonSerializer.Serialize(jsonTextWriter, value);
+                        jsonTextWriter.Flush();
                     }
                 }
             });
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is propagated.")]
-        private static DataContractJsonSerializer CreateDataContractSerializer(Type type)
+#if !NETFX_CORE
+        private static DataContractJsonSerializer CreateDataContractSerializer(Type type, bool throwOnError)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             DataContractJsonSerializer serializer = null;
+            Exception exception = null;
 
             try
             {
-                if (IsKnownUnserializableType(type))
-                {
-                    return null;
-                }
-
-                //// TODO: CSDMAIN 211321 -- determine the correct algorithm to know what is serializable.
+                // Verify that type is a valid data contract by forcing the serializer to try to create a data contract
+                FormattingUtilities.XsdDataContractExporter.GetRootElementName(type);
                 serializer = new DataContractJsonSerializer(type);
             }
-            catch (Exception)
+            catch (InvalidDataContractException invalidDataContractException)
             {
-                //// TODO: CSDMain 232171 -- review and fix swallowed exception
+                exception = invalidDataContractException;
+            }
+
+            if (exception != null)
+            {
+                if (throwOnError)
+                {
+                    throw Error.InvalidOperation(exception, Properties.Resources.SerializerCannotSerializeType,
+                                  typeof(DataContractJsonSerializer).Name,
+                                  type.Name);
+                }
             }
 
             return serializer;
-        }
-
-        private static bool IsKnownUnserializableType(Type type)
-        {
-            if (type.IsGenericType)
-            {
-                if (typeof(IEnumerable).IsAssignableFrom(type))
-                {
-                    return IsKnownUnserializableType(type.GetGenericArguments()[0]);
-                }
-            }
-
-            if (!type.IsVisible)
-            {
-                return true;
-            }
-
-            if (type.HasElementType && IsKnownUnserializableType(type.GetElementType()))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private DataContractJsonSerializer GetDataContractSerializer(Type type)
@@ -398,16 +395,16 @@ namespace System.Net.Http.Formatting
             Contract.Assert(type != null, "Type cannot be null");
 
             DataContractJsonSerializer serializer =
-                _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(type));
+                _dataContractSerializerCache.GetOrAdd(type, (t) => CreateDataContractSerializer(type, throwOnError: true));
 
             if (serializer == null)
             {
                 // A null serializer means the type cannot be serialized
-                throw new InvalidOperationException(
-                    RS.Format(Properties.Resources.SerializerCannotSerializeType, typeof(DataContractJsonSerializer).Name, type.Name));
+                throw Error.InvalidOperation(Properties.Resources.SerializerCannotSerializeType, typeof(DataContractJsonSerializer).Name, type.Name);
             }
 
             return serializer;
         }
+#endif
     }
 }

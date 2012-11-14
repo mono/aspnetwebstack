@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -15,12 +15,6 @@ namespace System.Web.Helpers.AntiXsrf
         private readonly ITokenStore _tokenStore;
         private readonly ITokenValidator _validator;
 
-        public AntiForgeryWorker()
-            : this(new AntiForgeryTokenSerializer(), new AntiForgeryConfigWrapper(), new AntiForgeryTokenStore(), new TokenValidator())
-        {
-        }
-
-        // for unit testing
         internal AntiForgeryWorker(IAntiForgeryTokenSerializer serializer, IAntiForgeryConfig config, ITokenStore tokenStore, ITokenValidator validator)
         {
             _serializer = serializer;

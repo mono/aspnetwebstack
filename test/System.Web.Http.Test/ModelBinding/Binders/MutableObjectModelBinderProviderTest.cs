@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -22,7 +22,7 @@ namespace System.Web.Http.ModelBinding.Binders
             MutableObjectModelBinderProvider binderProvider = new MutableObjectModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);
@@ -45,7 +45,7 @@ namespace System.Web.Http.ModelBinding.Binders
             MutableObjectModelBinderProvider binderProvider = new MutableObjectModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.NotNull(binder);
@@ -69,7 +69,7 @@ namespace System.Web.Http.ModelBinding.Binders
             MutableObjectModelBinderProvider binderProvider = new MutableObjectModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);
@@ -92,7 +92,7 @@ namespace System.Web.Http.ModelBinding.Binders
             MutableObjectModelBinderProvider binderProvider = new MutableObjectModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);

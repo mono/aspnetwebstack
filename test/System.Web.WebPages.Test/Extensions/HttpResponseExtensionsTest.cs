@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.IO;
@@ -6,8 +6,8 @@ using System.Net;
 using System.Text;
 using System.Web;
 using System.Web.WebPages;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace Microsoft.WebPages.Test.Helpers
 {

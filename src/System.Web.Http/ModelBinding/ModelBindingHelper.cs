@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
@@ -14,6 +15,8 @@ namespace System.Web.Http.ModelBinding
 {
     internal static class ModelBindingHelper
     {
+        private static readonly ConcurrentDictionary<Type, ModelBinderAttribute> _modelBinderAttributeCache = new ConcurrentDictionary<Type, ModelBinderAttribute>();
+
         internal static TModel CastOrDefault<TModel>(object model)
         {
             return (model is TModel) ? (TModel)model : default(TModel);
@@ -98,20 +101,17 @@ namespace System.Web.Http.ModelBinding
             }
         }
 
-        // Returns true if the ModelBinderAttribute specifies a binder provider of <TProvider> or binder instance of <TBinder>
-        internal static bool IsModelBinderFor<TProvider, TBinder>(ModelBinderAttribute modelBinderAttribute)
-        {
-            Contract.Assert(modelBinderAttribute != null, "modelBinderAttribute cannot be null");
-            Type binderType = modelBinderAttribute.BinderType;
-            return binderType != null &&
-                   (typeof(TProvider).IsAssignableFrom(binderType) ||
-                    typeof(TBinder).IsAssignableFrom(binderType));
-        }
-
         internal static bool TryGetProviderFromAttribute(Type modelType, ModelBinderAttribute modelBinderAttribute, out ModelBinderProvider provider)
         {
             Contract.Assert(modelType != null, "modelType cannot be null.");
             Contract.Assert(modelBinderAttribute != null, "modelBinderAttribute cannot be null");
+
+            // TODO, 386718, remove the following if statement when the bug is resolved
+            if (modelBinderAttribute.BinderType == null)
+            {
+                provider = null;
+                return false;
+            }
 
             if (typeof(ModelBinderProvider).IsAssignableFrom(modelBinderAttribute.BinderType))
             {
@@ -138,7 +138,7 @@ namespace System.Web.Http.ModelBinding
 
         internal static bool TryGetProviderFromAttributes(Type modelType, out ModelBinderProvider provider)
         {
-            ModelBinderAttribute attr = TypeDescriptorHelper.Get(modelType).GetAttributes().OfType<ModelBinderAttribute>().FirstOrDefault();
+            ModelBinderAttribute attr = GetModelBinderAttribute(modelType);
             if (attr == null)
             {
                 provider = null;
@@ -148,25 +148,15 @@ namespace System.Web.Http.ModelBinding
             return TryGetProviderFromAttribute(modelType, attr, out provider);
         }
 
-        internal static bool TryGetProviderFromAttributes(HttpParameterDescriptor parameterDescriptor, out ModelBinderProvider provider)
+        private static ModelBinderAttribute GetModelBinderAttribute(Type modelType)
         {
-            Contract.Assert(parameterDescriptor != null, "parameterDescriptor cannot be null.");
-
-            Type modelType = parameterDescriptor.ParameterType;
-
-            ModelBinderAttribute attr = parameterDescriptor.GetCustomAttributes<ModelBinderAttribute>().FirstOrDefault();
-            if (attr == null)
+            ModelBinderAttribute modelBinderAttribute;
+            if (!_modelBinderAttributeCache.TryGetValue(modelType, out modelBinderAttribute))
             {
-                attr = TypeDescriptorHelper.Get(modelType).GetAttributes().OfType<ModelBinderAttribute>().FirstOrDefault();
+                modelBinderAttribute = TypeDescriptorHelper.Get(modelType).GetAttributes().OfType<ModelBinderAttribute>().FirstOrDefault();
+                _modelBinderAttributeCache.TryAdd(modelType, modelBinderAttribute);
             }
-
-            if (attr == null)
-            {
-                provider = null;
-                return false;
-            }
-
-            return TryGetProviderFromAttribute(modelType, attr, out provider);
+            return modelBinderAttribute;
         }
 
         internal static void ValidateBindingContext(ModelBindingContext bindingContext)

@@ -1,28 +1,24 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.ServiceModel;
 using System.Web.Http.SelfHost;
-using Xunit;
-using Xunit.Extensions;
+using System.Web.Http.Util;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
     /// <summary>
     /// Tests actions that directly use HttpRequestMessage parameters
     /// </summary>
-    public class HttpContentBindingTests : IDisposable
+    public class HttpContentBindingTests
     {
         public HttpContentBindingTests()
         {
-            this.SetupHost();
-        }
-
-        public void Dispose()
-        {
-            this.CleanupHost();
+            SetupHost();
         }
 
         [Theory]
@@ -48,29 +44,21 @@ namespace System.Web.Http.ModelBinding
             Assert.Equal(order.OrderValue, receivedOrder.OrderValue);
         }
 
-        private HttpSelfHostServer server = null;
+        private HttpServer server = null;
         private string baseAddress = null;
         private HttpClient httpClient = null;
 
         private void SetupHost()
         {
-            httpClient = new HttpClient();
-
-            baseAddress = String.Format("http://{0}", Environment.MachineName);
+            baseAddress = "http://localhost/";
 
             HttpSelfHostConfiguration config = new HttpSelfHostConfiguration(baseAddress);
+            config.HostNameComparisonMode = HostNameComparisonMode.Exact;
             config.Routes.MapHttpRoute("Default", "{controller}/{action}", new { controller = "HttpContentBinding", action = "HandleMessage" });
+            config.MessageHandlers.Add(new ConvertToStreamMessageHandler());
 
-            server = new HttpSelfHostServer(config);
-            server.OpenAsync().Wait();
-        }
-
-        private void CleanupHost()
-        {
-            if (server != null)
-            {
-                server.CloseAsync().Wait();
-            }
+            server = new HttpServer(config);
+            httpClient = new HttpClient(server);
         }
     }
 

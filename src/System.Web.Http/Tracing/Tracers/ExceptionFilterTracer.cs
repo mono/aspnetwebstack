@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +23,6 @@ namespace System.Web.Http.Tracing.Tracers
             get { return InnerFilter as IExceptionFilter; }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "This layer needs to observe all completion paths")]
         public Task ExecuteExceptionFilterAsync(HttpActionExecutedContext actionExecutedContext,
                                                 CancellationToken cancellationToken)
         {

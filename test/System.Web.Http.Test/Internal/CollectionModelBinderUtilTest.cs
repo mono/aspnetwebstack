@@ -1,14 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Web.Http.Metadata;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.ValueProviders;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.Internal
 {
@@ -249,130 +247,6 @@ namespace System.Web.Http.Internal
 
             // Assert
             Assert.Null(indexNames);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ModelTypeNotGeneric_Fail()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(int));
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(null, null, modelMetadata);
-
-            // Assert
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ModelTypeOpenGeneric_Fail()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(IList<>));
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(null, null, modelMetadata);
-
-            // Assert
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ModelTypeWrongNumberOfGenericArguments_Fail()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(KeyValuePair<int, string>));
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(ICollection<>), null, modelMetadata);
-
-            // Assert
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadOnlyReference_ModelInstanceImmutable_Valid()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(() => new int[0], typeof(IList<int>));
-            modelMetadata.IsReadOnly = true;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(IList<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadOnlyReference_ModelInstanceMutable_Valid()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(() => new List<int>(), typeof(IList<int>));
-            modelMetadata.IsReadOnly = true;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(IList<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            Assert.Equal(new[] { typeof(int) }, typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadOnlyReference_ModelInstanceOfWrongType_Fail()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(() => new HashSet<int>(), typeof(ICollection<int>));
-            modelMetadata.IsReadOnly = true;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(IList<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            // HashSet<> is not an IList<>, so we can't update
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadOnlyReference_ModelIsNull_Fail()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(IList<int>));
-            modelMetadata.IsReadOnly = true;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(ICollection<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            Assert.Null(typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadWriteReference_NewInstanceAssignableToModelType_Success()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(IList<int>));
-            modelMetadata.IsReadOnly = false;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(ICollection<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            Assert.Equal(new[] { typeof(int) }, typeArguments);
-        }
-
-        [Fact]
-        public void GetTypeArgumentsForUpdatableGenericCollection_ReadWriteReference_NewInstanceNotAssignableToModelType_MutableInstance_Success()
-        {
-            // Arrange
-            ModelMetadata modelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(() => new Collection<int>(), typeof(Collection<int>));
-            modelMetadata.IsReadOnly = false;
-
-            // Act
-            Type[] typeArguments = CollectionModelBinderUtil.GetTypeArgumentsForUpdatableGenericCollection(typeof(ICollection<>), typeof(List<>), modelMetadata);
-
-            // Assert
-            Assert.Equal(new[] { typeof(int) }, typeArguments);
         }
 
         [Fact]

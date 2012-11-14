@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Linq.Expressions;
 using System.Web.Mvc;
 using System.Web.Routing;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 using ExpressionHelper = Microsoft.Web.Mvc.Internal.ExpressionHelper;
 
 namespace Microsoft.Web.Mvc.Test
@@ -113,7 +112,8 @@ namespace Microsoft.Web.Mvc.Test
             // Act & Assert
             Assert.Throws<ArgumentException>(
                 () => ExpressionHelper.GetRouteValuesFromExpression(expression),
-                "Expression must be a method call." + Environment.NewLine + "Parameter name: action");
+                "Expression must be a method call." + Environment.NewLine
+              + "Parameter name: action");
         }
 
         [Fact]
@@ -125,7 +125,8 @@ namespace Microsoft.Web.Mvc.Test
             // Act & Assert
             Assert.Throws<ArgumentException>(
                 () => ExpressionHelper.GetRouteValuesFromExpression(index),
-                "Controller name must end in 'Controller'." + Environment.NewLine + "Parameter name: action");
+                "Controller name must end in 'Controller'." + Environment.NewLine
+              + "Parameter name: action");
         }
 
         [Fact]
@@ -137,7 +138,8 @@ namespace Microsoft.Web.Mvc.Test
             // Act & Assert
             Assert.Throws<ArgumentException>(
                 () => ExpressionHelper.GetRouteValuesFromExpression(index),
-                "Cannot route to class named 'Controller'." + Environment.NewLine + "Parameter name: action");
+                "Cannot route to class named 'Controller'." + Environment.NewLine
+              + "Parameter name: action");
         }
 
         [Fact]

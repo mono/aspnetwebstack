@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -6,8 +6,7 @@ using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
 using System.Web.TestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Helpers.Test
 {
@@ -225,7 +224,7 @@ namespace System.Web.Helpers.Test
 
             // Assert            
             Assert.True(visitor.Members.Contains("string Name = David"));
-            Assert.True(visitor.Members.Contains("double Age = 23.3"));
+            Assert.True(visitor.Members.Contains(String.Format("double Age = {0}", 23.3)));
             Assert.True(visitor.Members.Contains("PersonNode Next = Visited"));
         }
 

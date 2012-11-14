@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -29,7 +29,7 @@ namespace Microsoft.Web.Http.Data.Helpers
                 DataControllerMetadataGenerator.GetMetadata(description);
 
             JToken metadataValue = new JObject(metadata.Select(
-                m => new KeyValuePair<string, JToken>(m.EncodedTypeName, m.ToJToken())));
+                m => new JProperty(m.EncodedTypeName, m.ToJToken())));
 
             return htmlHelper.Raw(metadataValue);
         }

@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -21,10 +21,11 @@ namespace System.Web.Http.ModelBinding.Binders
             TypeMatchModelBinderProvider provider = new TypeMatchModelBinderProvider();
 
             // Act
-            IModelBinder binder = provider.GetBinder(null, bindingContext);
+            IModelBinder binder = provider.GetBinder(null, bindingContext.ModelType);
+            bool bound = binder.BindModel(null, bindingContext);
 
             // Assert
-            Assert.Null(binder);
+            Assert.False(bound);
         }
 
         [Fact]
@@ -40,7 +41,7 @@ namespace System.Web.Http.ModelBinding.Binders
             TypeMatchModelBinderProvider provider = new TypeMatchModelBinderProvider();
 
             // Act
-            IModelBinder binder = provider.GetBinder(null, bindingContext);
+            IModelBinder binder = provider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.IsType<TypeMatchModelBinder>(binder);

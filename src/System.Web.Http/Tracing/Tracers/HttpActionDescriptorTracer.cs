@@ -1,8 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
@@ -20,10 +24,42 @@ namespace System.Web.Http.Tracing.Tracers
         private readonly HttpActionDescriptor _innerDescriptor;
         private readonly ITraceWriter _traceWriter;
 
-        public HttpActionDescriptorTracer(HttpControllerContext controllerContext, HttpActionDescriptor innerDescriptor, ITraceWriter traceWriter) : base(controllerContext.ControllerDescriptor)
+        public HttpActionDescriptorTracer(HttpControllerContext controllerContext, HttpActionDescriptor innerDescriptor, ITraceWriter traceWriter)
+            : base(controllerContext.ControllerDescriptor)
         {
+            Contract.Assert(innerDescriptor != null);
+            Contract.Assert(traceWriter != null);
+
             _innerDescriptor = innerDescriptor;
             _traceWriter = traceWriter;
+        }
+
+        public override ConcurrentDictionary<object, object> Properties
+        {
+            get
+            {
+                return _innerDescriptor.Properties;
+            }
+        }
+
+        public override HttpActionBinding ActionBinding
+        {
+            get
+            {
+                return _innerDescriptor.ActionBinding;
+            }
+            set
+            {
+                _innerDescriptor.ActionBinding = value;
+            }
+        }
+
+        public override Collection<HttpMethod> SupportedHttpMethods
+        {
+            get
+            {
+                return _innerDescriptor.SupportedHttpMethods;
+            }
         }
 
         public override string ActionName
@@ -41,7 +77,7 @@ namespace System.Web.Http.Tracing.Tracers
             get { return _innerDescriptor.ReturnType; }
         }
 
-        public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments)
+        public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, CancellationToken cancellationToken)
         {
             return _traceWriter.TraceBeginEndAsync<object>(
                 controllerContext.Request,
@@ -56,9 +92,9 @@ namespace System.Web.Http.Tracing.Tracers
                 },
                 execute: () =>
                 {
-                    return _innerDescriptor.ExecuteAsync(controllerContext, arguments);
+                    return _innerDescriptor.ExecuteAsync(controllerContext, arguments, cancellationToken);
                 },
-                endTrace: (tr, value) => 
+                endTrace: (tr, value) =>
                 {
                     tr.Message = Error.Format(SRResources.TraceActionReturnValue,
                                               FormattingUtilities.ValueToString(value, CultureInfo.CurrentCulture));

@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.ServiceModel.Channels;
 
 namespace System.Web.Http.SelfHost.ServiceModel.Channels
@@ -15,7 +15,7 @@ namespace System.Web.Http.SelfHost.ServiceModel.Channels
         protected LayeredChannel(ChannelManagerBase channelManager, TInnerChannel innerChannel)
             : base(channelManager)
         {
-            Debug.Assert(innerChannel != null, "innerChannel cannot be null");
+            Contract.Assert(innerChannel != null);
 
             _innerChannel = innerChannel;
             _onInnerChannelFaulted = new EventHandler(OnInnerChannelFaulted);
@@ -27,7 +27,6 @@ namespace System.Web.Http.SelfHost.ServiceModel.Channels
             get { return _innerChannel; }
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Existing public API")]
         public override T GetProperty<T>()
         {
             T baseProperty = base.GetProperty<T>();

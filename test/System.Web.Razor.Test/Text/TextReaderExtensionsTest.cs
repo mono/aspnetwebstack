@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Web.Razor.Parser;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Text
 {
@@ -116,14 +115,14 @@ namespace System.Web.Razor.Test.Text
         public void ReadUntilWithMultipleTerminatorsHonorsInclusiveFlagWhenFalse()
         {
             // NOTE: Using named parameters would be difficult here, hence the inline comment
-            RunReaderTest("<bar/>", "<bar", '/', r => r.ReadUntil( /* inclusive */ false, '/', '>'));
+            RunReaderTest("<bar/>", "<bar", '/', r => r.ReadUntil(/* inclusive */ false, '/', '>'));
         }
 
         [Fact]
         public void ReadUntilWithMultipleTerminatorsHonorsInclusiveFlagWhenTrue()
         {
             // NOTE: Using named parameters would be difficult here, hence the inline comment
-            RunReaderTest("<bar/>", "<bar/", '>', r => r.ReadUntil( /* inclusive */ true, '/', '>'));
+            RunReaderTest("<bar/>", "<bar/", '>', r => r.ReadUntil(/* inclusive */ true, '/', '>'));
         }
 
         [Fact]

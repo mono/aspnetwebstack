@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -166,14 +166,14 @@ namespace System.Web.Mvc.Async
 
             public WaitHandle AsyncWaitHandle
             {
-                get { return _innerAsyncResult.AsyncWaitHandle; }
+                get { return null; }
             }
 
             public bool CompletedSynchronously { get; private set; }
 
             public bool IsCompleted
             {
-                get { return _innerAsyncResult.IsCompleted; }
+                get { return _timedOut || _innerAsyncResult.IsCompleted; }
             }
 
             // kicks off the process, instantiates a timer if requested

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -26,7 +26,6 @@ namespace System.Web.Http.Validation.Providers
     /// </summary>
     // [SecuritySafeCritical] because class constructor accesses DataAnnotations types
     [SecuritySafeCritical]
-    [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable", Justification = "This class is cached for the lifetime of the application.")]
     public class DataAnnotationsModelValidatorProvider : AssociatedValidatorProvider
     {
         // Factories for validation attributes

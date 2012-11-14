@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,9 +7,6 @@ using System.Web.Http.Metadata;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.ModelBinding;
 using Microsoft.TestCommon;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Validation
 {
@@ -142,6 +139,25 @@ namespace System.Web.Http.Validation
             Assert.Contains("Street", actionContext.ModelState.Keys);
             ModelState streetState = actionContext.ModelState["Street"];
             Assert.Equal(2, streetState.Errors.Count);
+        }
+
+        [Fact]
+        public void ValidationErrorsNotAddedOnInvalidFields()
+        {
+            // Arrange
+            ModelMetadataProvider metadataProvider = new DataAnnotationsModelMetadataProvider();
+            HttpActionContext actionContext = ContextUtil.CreateActionContext();
+            object model = new Address() { Street = "Microsoft Way" };
+
+            actionContext.ModelState.AddModelError("Street", "error");
+
+            // Act
+            new DefaultBodyModelValidator().Validate(model, typeof(Address), metadataProvider, actionContext, string.Empty);
+
+            // Assert
+            Assert.Contains("Street", actionContext.ModelState.Keys);
+            ModelState streetState = actionContext.ModelState["Street"];
+            Assert.Equal(1, streetState.Errors.Count);
         }
     }
 

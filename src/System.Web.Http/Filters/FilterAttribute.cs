@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -13,7 +13,7 @@ namespace System.Web.Http.Filters
     {
         private static readonly ConcurrentDictionary<Type, bool> _attributeUsageCache = new ConcurrentDictionary<Type, bool>();
 
-        public bool AllowMultiple
+        public virtual bool AllowMultiple
         {
             get { return AllowsMultiple(GetType()); }
         }

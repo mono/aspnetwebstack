@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -24,6 +24,7 @@ namespace System.Web.Http
         private ModelStateDictionary _modelState;
         private HttpConfiguration _configuration;
         private HttpControllerContext _controllerContext;
+        private UrlHelper _urlHelper;
 
         /// <summary>
         /// Gets the <see name="HttpRequestMessage"/> of the current ApiController.
@@ -37,7 +38,7 @@ namespace System.Web.Http
             {
                 if (value == null)
                 {
-                    throw Error.ArgumentNull("value");
+                    throw Error.PropertyNull();
                 }
 
                 _request = value;
@@ -56,7 +57,7 @@ namespace System.Web.Http
             {
                 if (value == null)
                 {
-                    throw Error.ArgumentNull("value");
+                    throw Error.PropertyNull();
                 }
 
                 _configuration = value;
@@ -75,7 +76,7 @@ namespace System.Web.Http
             {
                 if (value == null)
                 {
-                    throw Error.ArgumentNull("value");
+                    throw Error.PropertyNull();
                 }
 
                 _controllerContext = value;
@@ -101,11 +102,31 @@ namespace System.Web.Http
         }
 
         /// <summary>
-        /// Returns an instance of a UrlHelper, which is used to generate URLs to other APIs.
+        /// Gets an instance of a <see name="UrlHelper" />, which is used to generate URLs to other APIs.
+        /// 
+        /// The setter is not intended to be used other than for unit testing purpose. 
         /// </summary>
         public UrlHelper Url
         {
-            get { return ControllerContext.Url; }
+            get
+            {
+                if (_urlHelper == null)
+                {
+                    _urlHelper = Request.GetUrlHelper();
+                }
+
+                return _urlHelper;
+            }
+
+            set
+            {
+                if (value == null)
+                {
+                    throw Error.PropertyNull();
+                }
+
+                _urlHelper = value;
+            }
         }
 
         /// <summary>
@@ -117,6 +138,7 @@ namespace System.Web.Http
             get { return Thread.CurrentPrincipal; }
         }
 
+        [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "This method is a coordinator, so this coupling is expected.")]
         public virtual Task<HttpResponseMessage> ExecuteAsync(HttpControllerContext controllerContext, CancellationToken cancellationToken)
         {
             if (_request != null)
@@ -135,7 +157,8 @@ namespace System.Web.Http
             }
 
             HttpControllerDescriptor controllerDescriptor = controllerContext.ControllerDescriptor;
-            HttpActionDescriptor actionDescriptor = controllerDescriptor.HttpActionSelector.SelectAction(controllerContext);
+            ServicesContainer controllerServices = controllerDescriptor.Configuration.Services;
+            HttpActionDescriptor actionDescriptor = controllerServices.GetActionSelector().SelectAction(controllerContext);
             HttpActionContext actionContext = new HttpActionContext(controllerContext, actionDescriptor);
 
             IEnumerable<FilterInfo> filters = actionDescriptor.GetFilterPipeline();
@@ -156,7 +179,7 @@ namespace System.Web.Http
                     _modelState = actionContext.ModelState;
                     Func<Task<HttpResponseMessage>> invokeFunc = InvokeActionWithActionFilters(actionContext, cancellationToken, actionFilters, () =>
                     {
-                        return controllerDescriptor.HttpActionInvoker.InvokeActionAsync(actionContext, cancellationToken);
+                        return controllerServices.GetActionInvoker().InvokeActionAsync(actionContext, cancellationToken);
                     });
                     return invokeFunc();
                 });
@@ -211,7 +234,7 @@ namespace System.Web.Http
                                        {
                                            return TaskHelpers.FromError<HttpResponseMessage>(executedContext.Exception);
                                        }
-                                   });
+                                   }, runSynchronously: true);
 
                     return info.Task(resultTask);
                 });

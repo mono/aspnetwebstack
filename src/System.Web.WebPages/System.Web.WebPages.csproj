@@ -4,7 +4,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <CodeAnalysis Condition=" '$(CodeAnalysis)' == '' ">false</CodeAnalysis>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{76EFA9C5-8D7E-4FDF-B710-E20F8B6B00D2}</ProjectGuid>
@@ -12,36 +11,62 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>System.Web.WebPages</RootNamespace>
     <AssemblyName>System.Web.WebPages</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ASPNETWEBPAGES</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETWEBPAGES</DefineConstants>
+    <FileAlignment>512</FileAlignment>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\</OutputPath>
     <DefineConstants>TRACE;ASPNETWEBPAGES</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <FileAlignment>512</FileAlignment>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU'">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeAnalysis|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\CodeAnalysis\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ASPNETWEBPAGES</DefineConstants>
+    <FileAlignment>512</FileAlignment>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CODE_COVERAGE;ASPNETWEBPAGES</DefineConstants>
     <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;CODE_COVERAGE;ASPNETWEBPAGES</DefineConstants>
+    <FileAlignment>512</FileAlignment>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
@@ -68,14 +93,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CommonResources.resx</DependentUpon>
     </Compile>
-    <Compile Include="..\ExceptionHelper.cs">
-      <Link>Common\ExceptionHelper.cs</Link>
+    <Compile Include="..\Common\HashCodeCombiner.cs">
+      <Link>Common\HashCodeCombiner.cs</Link>
     </Compile>
     <Compile Include="..\GlobalSuppressions.cs">
       <Link>Common\GlobalSuppressions.cs</Link>
-    </Compile>
-    <Compile Include="..\HashCodeCombiner.cs">
-      <Link>Common\HashCodeCombiner.cs</Link>
     </Compile>
     <Compile Include="..\TransparentCommonAssemblyInfo.cs">
       <Link>Properties\TransparentCommonAssemblyInfo.cs</Link>
@@ -85,9 +107,6 @@
     <Compile Include="ApplicationParts\DictionaryBasedVirtualPathFactory.cs" />
     <Compile Include="ApplicationParts\IResourceAssembly.cs" />
     <Compile Include="ApplicationParts\LazyAction.cs" />
-    <Compile Include="..\MimeMapping.cs">
-      <Link>Common\MimeMapping.cs</Link>
-    </Compile>
     <Compile Include="ApplicationParts\ResourceAssembly.cs" />
     <Compile Include="ApplicationParts\ResourceHandler.cs" />
     <Compile Include="ApplicationParts\ResourceRouteHandler.cs" />
@@ -103,11 +122,12 @@
     <Compile Include="BrowserHelpers.cs" />
     <Compile Include="Helpers\AntiXsrf\ClaimUidExtractor.cs" />
     <Compile Include="Helpers\AntiXsrf\AntiForgeryTokenStore.cs" />
+    <Compile Include="Helpers\AntiXsrf\MachineKey45CryptoSystem.cs" />
     <Compile Include="Helpers\AntiXsrf\ITokenStore.cs" />
     <Compile Include="Helpers\AntiXsrf\TokenValidator.cs" />
     <Compile Include="Helpers\AntiXsrf\ITokenValidator.cs" />
     <Compile Include="Helpers\AntiXsrf\IClaimUidExtractor.cs" />
-    <Compile Include="Helpers\AntiXsrf\MachineKeyCryptoSystem.cs" />
+    <Compile Include="Helpers\AntiXsrf\MachineKey40CryptoSystem.cs" />
     <Compile Include="Helpers\AntiXsrf\ICryptoSystem.cs" />
     <Compile Include="Helpers\Claims\Claim.cs" />
     <Compile Include="Helpers\Claims\ClaimsIdentity.cs" />
@@ -146,7 +166,10 @@
     </Compile>
     <Compile Include="Instrumentation\PageInstrumentationServiceAdapter.cs" />
     <Compile Include="Instrumentation\PositionTagged.cs" />
+    <Compile Include="IVirtualPathUtility.cs" />
+    <Compile Include="MimeMapping.cs" />
     <Compile Include="Mvc\ModelClientValidationEqualToRule.cs" />
+    <Compile Include="Mvc\ModelClientValidationMembershipPasswordRule.cs" />
     <Compile Include="Mvc\ModelClientValidationRangeRule.cs" />
     <Compile Include="Mvc\ModelClientValidationRegexRule.cs" />
     <Compile Include="Mvc\ModelClientValidationRemoteRule.cs" />
@@ -175,7 +198,6 @@
     <Compile Include="Mvc\TagRenderMode.cs" />
     <Compile Include="StartPage.cs" />
     <Compile Include="RequestResourceTracker.cs" />
-    <Compile Include="SecurityUtil.cs" />
     <Compile Include="DynamicHttpApplicationState.cs" />
     <Compile Include="DynamicPageDataDictionary.cs" />
     <Compile Include="Html\HtmlHelper.Checkbox.cs" />
@@ -202,6 +224,7 @@
     <Compile Include="TemplateStack.cs" />
     <Compile Include="Utils\CultureUtil.cs" />
     <Compile Include="Utils\PathUtil.cs" />
+    <Compile Include="VirtualPathUtilityWrapper.cs" />
     <Compile Include="WebPageHttpModule.cs" />
     <Compile Include="HelperPage.cs" />
     <Compile Include="HelperResult.cs" />
@@ -233,12 +256,6 @@
     <Compile Include="Utils\BuildManagerExceptionUtil.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebPage.cs" />
-    <Compile Include="..\IVirtualPathUtility.cs">
-      <Link>Common\IVirtualPathUtility.cs</Link>
-    </Compile>
-    <Compile Include="..\VirtualPathUtilityWrapper.cs">
-      <Link>Common\VirtualPathUtilityWrapper.cs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -284,4 +301,5 @@
     <CodeAnalysisDictionary Include="..\CodeAnalysisDictionary.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -22,9 +23,15 @@ namespace System.Web.Http.Tracing.Tracers
 
         public MediaTypeFormatterTracer(MediaTypeFormatter innerFormatter, ITraceWriter traceWriter, HttpRequestMessage request)
         {
+            Contract.Assert(innerFormatter != null);
+            Contract.Assert(traceWriter != null);
+
             InnerFormatter = innerFormatter;
             TraceWriter = traceWriter;
             Request = request;
+
+            // copy all non-overridable members from inner formatter
+            CopyNonOverriableMembersFromInner(this);
         }
 
         public MediaTypeFormatter InnerFormatter { get; private set; }
@@ -59,50 +66,33 @@ namespace System.Web.Http.Tracing.Tracers
 
             MediaTypeFormatter tracer = null;
 
+            XmlMediaTypeFormatter xmlFormatter = formatter as XmlMediaTypeFormatter;
+            JsonMediaTypeFormatter jsonFormatter = formatter as JsonMediaTypeFormatter;
+            FormUrlEncodedMediaTypeFormatter formUrlFormatter = formatter as FormUrlEncodedMediaTypeFormatter;
+            BufferedMediaTypeFormatter bufferedFormatter = formatter as BufferedMediaTypeFormatter;
+
             // We special-case Xml, Json and FormUrlEncoded formatters because we expect to be able
             // to find them with IsAssignableFrom in the MediaTypeFormatterCollection.
-            if (formatter is XmlMediaTypeFormatter)
+            if (xmlFormatter != null)
             {
-                tracer = new XmlMediaTypeFormatterTracer(formatter, traceWriter, request);
+                tracer = new XmlMediaTypeFormatterTracer(xmlFormatter, traceWriter, request);
             }
-            else if (formatter is JsonMediaTypeFormatter)
+            else if (jsonFormatter != null)
             {
-                tracer = new JsonMediaTypeFormatterTracer(formatter, traceWriter, request);
+                tracer = new JsonMediaTypeFormatterTracer(jsonFormatter, traceWriter, request);
             }
-            else if (formatter is FormUrlEncodedMediaTypeFormatter)
+            else if (formUrlFormatter != null)
             {
-                tracer = new FormUrlEncodedMediaTypeFormatterTracer(formatter, traceWriter, request);
+                tracer = new FormUrlEncodedMediaTypeFormatterTracer(formUrlFormatter, traceWriter, request);
             }
-            else if (formatter is BufferedMediaTypeFormatter)
+            else if (bufferedFormatter != null)
             {
-                tracer = new BufferedMediaTypeFormatterTracer(formatter, traceWriter, request);
+                tracer = new BufferedMediaTypeFormatterTracer(bufferedFormatter, traceWriter, request);
             }
             else
             {
                 tracer = new MediaTypeFormatterTracer(formatter, traceWriter, request);
             }
-
-            // Copy SupportedMediaTypes and MediaTypeMappings and SupportedEncodings because they are publically visible
-            tracer.SupportedMediaTypes.Clear();
-            foreach (MediaTypeHeaderValue mediaType in formatter.SupportedMediaTypes)
-            {
-                tracer.SupportedMediaTypes.Add(mediaType);
-            }
-
-            tracer.MediaTypeMappings.Clear();
-            foreach (MediaTypeMapping mapping in formatter.MediaTypeMappings)
-            {
-                tracer.MediaTypeMappings.Add(mapping);
-            }
-
-            tracer.SupportedEncodings.Clear();
-            foreach (var encoding in formatter.SupportedEncodings)
-            {
-                tracer.SupportedEncodings.Add(encoding);
-            }
-
-            // Copy IRequiredMemberSelector
-            tracer.RequiredMemberSelector = formatter.RequiredMemberSelector;
 
             return tracer;
         }
@@ -173,7 +163,7 @@ namespace System.Web.Http.Tracing.Tracers
             return InnerFormatter.GetHashCode();
         }
 
-        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, string mediaType)
+        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, MediaTypeHeaderValue mediaType)
         {
             InnerFormatter.SetDefaultContentHeaders(type, headers, mediaType);
         }
@@ -183,9 +173,9 @@ namespace System.Web.Http.Tracing.Tracers
             return InnerFormatter.ToString();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "Tracing layer needs to observer all Task completion paths")]
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
+            HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
             MediaTypeHeaderValue contentType = contentHeaders == null ? null : contentHeaders.ContentType;
 
             return TraceWriter.TraceBeginEndAsync<object>(
@@ -202,7 +192,7 @@ namespace System.Web.Http.Tracing.Tracers
                                         contentType == null ? SRResources.TraceNoneObjectMessage : contentType.ToString());
                 },
 
-                execute: () => InnerFormatter.ReadFromStreamAsync(type, stream, contentHeaders, formatterLogger),
+                execute: () => InnerFormatter.ReadFromStreamAsync(type, readStream, content, formatterLogger),
 
                 endTrace: (tr, value) =>
                 {
@@ -214,9 +204,9 @@ namespace System.Web.Http.Tracing.Tracers
                 errorTrace: null);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "Tracing layer needs to observer all Task completion paths")]
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
+            HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
             MediaTypeHeaderValue contentType = contentHeaders == null
                                        ? null
                                        : contentHeaders.ContentType;
@@ -235,9 +225,32 @@ namespace System.Web.Http.Tracing.Tracers
                                         type.Name,
                                         contentType == null ? SRResources.TraceNoneObjectMessage : contentType.ToString());
                 },
-                execute: () => InnerFormatter.WriteToStreamAsync(type, value, stream, contentHeaders, transportContext),
+                execute: () => InnerFormatter.WriteToStreamAsync(type, value, writeStream, content, transportContext),
                 endTrace: null,
                 errorTrace: null);
+        }
+
+        public void CopyNonOverriableMembersFromInner(MediaTypeFormatter toFormatter)
+        {
+            toFormatter.SupportedMediaTypes.Clear();
+            foreach (var mediaType in InnerFormatter.SupportedMediaTypes)
+            {
+                toFormatter.SupportedMediaTypes.Add(mediaType);
+            }
+
+            toFormatter.SupportedEncodings.Clear();
+            foreach (var encoding in InnerFormatter.SupportedEncodings)
+            {
+                toFormatter.SupportedEncodings.Add(encoding);
+            }
+
+            toFormatter.MediaTypeMappings.Clear();
+            foreach (var mapping in InnerFormatter.MediaTypeMappings)
+            {
+                toFormatter.MediaTypeMappings.Add(mapping);
+            }
+
+            toFormatter.RequiredMemberSelector = InnerFormatter.RequiredMemberSelector;
         }
     }
 }

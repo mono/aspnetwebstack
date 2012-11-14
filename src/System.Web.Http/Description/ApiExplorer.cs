@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -195,7 +195,8 @@ namespace System.Web.Http.Description
 
         private void ExploreRouteActions(IHttpRoute route, string localPath, HttpControllerDescriptor controllerDescriptor, Collection<ApiDescription> apiDescriptions)
         {
-            ILookup<string, HttpActionDescriptor> actionMappings = controllerDescriptor.HttpActionSelector.GetActionMapping(controllerDescriptor);
+            ServicesContainer controllerServices = controllerDescriptor.Configuration.Services;
+            ILookup<string, HttpActionDescriptor> actionMappings = controllerServices.GetActionSelector().GetActionMapping(controllerDescriptor);
             string actionVariableValue;
             if (actionMappings != null)
             {
@@ -256,13 +257,13 @@ namespace System.Web.Http.Description
             // request formatters
             ApiParameterDescription bodyParameter = parameterDescriptions.FirstOrDefault(description => description.Source == ApiParameterSource.FromBody);
             IEnumerable<MediaTypeFormatter> supportedRequestBodyFormatters = bodyParameter != null ?
-                _config.Formatters.Where(f => f.CanReadType(bodyParameter.ParameterDescriptor.ParameterType)) :
+                actionDescriptor.Configuration.Formatters.Where(f => f.CanReadType(bodyParameter.ParameterDescriptor.ParameterType)) :
                 Enumerable.Empty<MediaTypeFormatter>();
 
             // response formatters
             Type returnType = actionDescriptor.ReturnType;
             IEnumerable<MediaTypeFormatter> supportedResponseFormatters = returnType != null ?
-                _config.Formatters.Where(f => f.CanWriteType(returnType)) :
+                actionDescriptor.Configuration.Formatters.Where(f => f.CanWriteType(returnType)) :
                 Enumerable.Empty<MediaTypeFormatter>();
 
             // get HttpMethods supported by an action. Usually there is one HttpMethod per action but we allow multiple of them per action as well.
@@ -367,10 +368,10 @@ namespace System.Web.Http.Description
 
         private string GetApiDocumentation(HttpActionDescriptor actionDescriptor)
         {
-            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.Services.GetDocumentationProvider();
+            IDocumentationProvider documentationProvider = DocumentationProvider ?? actionDescriptor.Configuration.Services.GetDocumentationProvider();
             if (documentationProvider == null)
             {
-                return string.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, actionDescriptor.ActionName);
+                return String.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, actionDescriptor.ActionName);
             }
 
             return documentationProvider.GetDocumentation(actionDescriptor);
@@ -378,10 +379,10 @@ namespace System.Web.Http.Description
 
         private string GetApiParameterDocumentation(HttpParameterDescriptor parameterDescriptor)
         {
-            IDocumentationProvider documentationProvider = DocumentationProvider ?? _config.Services.GetDocumentationProvider();
+            IDocumentationProvider documentationProvider = DocumentationProvider ?? parameterDescriptor.Configuration.Services.GetDocumentationProvider();
             if (documentationProvider == null)
             {
-                return string.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, parameterDescriptor.Prefix ?? parameterDescriptor.ParameterName);
+                return String.Format(CultureInfo.CurrentCulture, SRResources.ApiExplorer_DefaultDocumentation, parameterDescriptor.Prefix ?? parameterDescriptor.ParameterName);
             }
 
             return documentationProvider.GetDocumentation(parameterDescriptor);
@@ -449,7 +450,8 @@ namespace System.Web.Http.Description
                 return null;
             }
 
-            IActionValueBinder actionValueBinder = controllerDescriptor.ActionValueBinder;
+            ServicesContainer controllerServices = controllerDescriptor.Configuration.Services;
+            IActionValueBinder actionValueBinder = controllerServices.GetActionValueBinder();
             HttpActionBinding actionBinding = actionValueBinder != null ? actionValueBinder.GetBinding(actionDescriptor) : null;
             return actionBinding;
         }

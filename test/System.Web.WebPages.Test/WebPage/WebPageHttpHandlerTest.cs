@@ -1,13 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Specialized;
 using System.IO;
 using System.Security;
 using System.Text;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.WebPages.Test
 {
@@ -121,7 +120,7 @@ namespace System.Web.WebPages.Test
             webPageHttpHandler.ProcessRequestInternal(context.Object);
 
             // Assert
-            Assert.Equal("2.0", headers[WebPageHttpHandler.WebPagesVersionHeaderName]);
+            Assert.Equal("2.1", headers[WebPageHttpHandler.WebPagesVersionHeaderName]);
             Assert.Equal("=?UTF-8?B?fi9pbmRleC5jc2h0bWx8fi9MYXlvdXQuY3NodG1s?=", headers["X-SourceFiles"]);
         }
 
@@ -178,15 +177,14 @@ namespace System.Web.WebPages.Test
         [Fact]
         public void VersionHeaderTest()
         {
-            bool headerSet = false;
             Mock<HttpResponseBase> mockResponse = new Mock<HttpResponseBase>();
-            mockResponse.Setup(response => response.AppendHeader("X-AspNetWebPages-Version", "2.0")).Callback(() => headerSet = true);
+            mockResponse.Setup(response => response.AppendHeader("X-AspNetWebPages-Version", "2.1")).Verifiable();
 
             Mock<HttpContextBase> mockContext = new Mock<HttpContextBase>();
             mockContext.SetupGet(context => context.Response).Returns(mockResponse.Object);
 
             WebPageHttpHandler.AddVersionHeader(mockContext.Object);
-            Assert.True(headerSet);
+            mockResponse.Verify();
         }
 
         [Fact]

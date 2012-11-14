@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -74,7 +74,6 @@ namespace System.Web.Http.Controllers
             }
         }
 
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller is responsible for disposing of response instance.")]
         public virtual Task ExecuteBindingAsync(HttpActionContext actionContext, CancellationToken cancellationToken)
         {
             if (_parameterBindings.Length == 0)
@@ -87,9 +86,9 @@ namespace System.Web.Http.Controllers
             {
                 if (!parameterBinder.IsValid)
                 {
-                    // Error code here is 500 because the WebService developer's action signature is bad. 
-                    return TaskHelpers.FromError(new HttpResponseException(actionContext.Request.CreateResponse(
-                        HttpStatusCode.InternalServerError, parameterBinder.ErrorMessage)));
+                    // Throwing an exception because the webService developer's action signature is bad.
+                    // This exception will be caught and converted into a 500 by the dispatcher
+                    return TaskHelpers.FromError(new InvalidOperationException(parameterBinder.ErrorMessage));
                 }
             }
 
@@ -101,7 +100,7 @@ namespace System.Web.Http.Controllers
 
             // Execute all the binders.
             IEnumerable<Task> tasks = from parameterBinder in ParameterBindings select parameterBinder.ExecuteBindingAsync(_metadataProvider, actionContext, cancellationToken);
-            return TaskHelpers.Iterate(tasks, cancellationToken);
+            return TaskHelpers.Iterate(tasks, cancellationToken, disposeEnumerator: false);
         }
     }
 }

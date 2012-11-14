@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System;
 using System.Web.Mvc;
 using System.Web.Routing;
+using Microsoft.TestCommon;
 using Microsoft.Web.UnitTestUtil;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace Microsoft.Web.Mvc.Test
 {
@@ -100,9 +100,10 @@ namespace Microsoft.Web.Mvc.Test
         public void MailToWithMultipartBodyRendersProperMailtoEncoding()
         {
             HtmlHelper html = MvcHelper.GetHtmlHelperWithPath(new ViewDataDictionary());
-            string body = @"Line one
-Line two
-Line three";
+            string body = "Line one" + Environment.NewLine
+                        + "Line two" + Environment.NewLine
+                        + "Line three";
+
             MvcHtmlString result = html.Mailto("email me", "test@example.com", null, body, null, null, null);
             Assert.Equal("<a href=\"mailto:test@example.com?body=Line one%0ALine two%0ALine three\">email me</a>", result.ToHtmlString());
         }
@@ -111,9 +112,10 @@ Line three";
         public void MailToWithAllValuesProvidedRendersCorrectTag()
         {
             HtmlHelper html = MvcHelper.GetHtmlHelperWithPath(new ViewDataDictionary());
-            string body = @"Line one
-Line two
-Line three";
+            string body = "Line one" + Environment.NewLine
+                        + "Line two" + Environment.NewLine
+                        + "Line three";
+
             MvcHtmlString result = html.Mailto("email me", "test@example.com", "the subject", body, "cc@example.com", "bcc@example.com", new { title = "email test" });
             string expected = @"<a href=""mailto:test@example.com?subject=the subject&amp;cc=cc@example.com&amp;bcc=bcc@example.com&amp;body=Line one%0ALine two%0ALine three"" title=""email test"">email me</a>";
             Assert.Equal(expected, result.ToHtmlString());
@@ -123,9 +125,10 @@ Line three";
         public void MailToWithAttributesWithUnderscores()
         {
             HtmlHelper html = MvcHelper.GetHtmlHelperWithPath(new ViewDataDictionary());
-            string body = @"Line one
-Line two
-Line three";
+            string body = "Line one" + Environment.NewLine
+                        + "Line two" + Environment.NewLine
+                        + "Line three";
+
             MvcHtmlString result = html.Mailto("email me", "test@example.com", "the subject", body, "cc@example.com", "bcc@example.com", new { foo_bar = "baz" });
             string expected = @"<a foo-bar=""baz"" href=""mailto:test@example.com?subject=the subject&amp;cc=cc@example.com&amp;bcc=bcc@example.com&amp;body=Line one%0ALine two%0ALine three"">email me</a>";
             Assert.Equal(expected, result.ToHtmlString());

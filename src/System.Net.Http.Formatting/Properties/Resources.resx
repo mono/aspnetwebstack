@@ -162,14 +162,8 @@
   <data name="HttpMessageParserInvalidUriScheme" xml:space="preserve">
     <value>Invalid URI scheme: '{0}'. The URI scheme must be a valid '{1}' scheme.</value>
   </data>
-  <data name="InvalidMediaRange" xml:space="preserve">
-    <value>The value '{0}' is not a valid media range.</value>
-  </data>
   <data name="MimeMultipartParserBadBoundary" xml:space="preserve">
     <value>MIME multipart boundary cannot end with an empty space.</value>
-  </data>
-  <data name="ArgumentMustBeGreaterThanOrEqualTo" xml:space="preserve">
-    <value>Value must be greater than or equal to {0}.</value>
   </data>
   <data name="MultipartFormDataStreamProviderNoContentDisposition" xml:space="preserve">
     <value>Did not find required '{0}' header field in MIME multipart body part.</value>
@@ -235,13 +229,10 @@
     <value>The media type formatter of type '{0}' does not support writing because it does not implement the WriteToStreamAsync method.</value>
   </data>
   <data name="MediaTypeFormatterCannotReadSync" xml:space="preserve">
-    <value>The media type formatter of type '{0}' does not support reading because it does not implement the OnReadFromStream method.</value>
+    <value>The media type formatter of type '{0}' does not support reading because it does not implement the ReadFromStream method.</value>
   </data>
   <data name="MediaTypeFormatterCannotWriteSync" xml:space="preserve">
-    <value>The media type formatter of type '{0}' does not support writing because it does not implement the OnWriteToStream method.</value>
-  </data>
-  <data name="JsonTooDeep" xml:space="preserve">
-    <value>This reader's MaxDepth of {0} has been exceeded. Consider using a larger MaxDepth.</value>
+    <value>The media type formatter of type '{0}' does not support writing because it does not implement the WriteToStream method.</value>
   </data>
   <data name="ObjectContent_FormatterCannotWriteType" xml:space="preserve">
     <value>The configured formatter '{0}' cannot write an object of type '{1}'.</value>
@@ -270,9 +261,6 @@
   <data name="MediaTypeFormatterNoEncoding" xml:space="preserve">
     <value>No encoding found for media type formatter '{0}'. There must be at least one supported encoding registered in order for the media type formatter to read or write content.</value>
   </data>
-  <data name="ArgumentMustBeGreaterThan" xml:space="preserve">
-    <value>Value must be greater than {0}.</value>
-  </data>
   <data name="CookieInvalidName" xml:space="preserve">
     <value>The specified value is not a valid cookie name.</value>
   </data>
@@ -281,5 +269,26 @@
   </data>
   <data name="MaxHttpCollectionKeyLimitReached" xml:space="preserve">
     <value>The number of keys in a NameValueCollection has exceeded the limit of '{0}'. You can adjust it by modifying the MaxHttpCollectionKeys property on the '{1}' class.</value>
+  </data>
+  <data name="AsyncResult_CallbackThrewException" xml:space="preserve">
+    <value>Async Callback threw an exception.</value>
+  </data>
+  <data name="AsyncResult_MultipleCompletes" xml:space="preserve">
+    <value>The IAsyncResult implementation '{0}' tried to complete a single operation multiple times. This could be caused by an incorrect application IAsyncResult implementation or other extensibility code, such as an IAsyncResult that returns incorrect CompletedSynchronously values or invokes the AsyncCallback multiple times.</value>
+  </data>
+  <data name="AsyncResult_MultipleEnds" xml:space="preserve">
+    <value>End cannot be called twice on an AsyncResult.</value>
+  </data>
+  <data name="AsyncResult_ResultMismatch" xml:space="preserve">
+    <value>An incorrect IAsyncResult was provided to an 'End' method. The IAsyncResult object passed to 'End' must be the one returned from the matching 'Begin' or passed to the callback provided to 'Begin'.</value>
+  </data>
+  <data name="DelegatingHandlerArrayContainsNullItem" xml:space="preserve">
+    <value>The '{0}' list is invalid because it contains one or more null items.</value>
+  </data>
+  <data name="DelegatingHandlerArrayHasNonNullInnerHandler" xml:space="preserve">
+    <value>The '{0}' list is invalid because the property '{1}' of '{2}' is not null.</value>
+  </data>
+  <data name="ReadAsHttpMessageUnexpectedTermination" xml:space="preserve">
+    <value>Unexpected end of HTTP message stream. HTTP message is not complete.</value>
   </data>
 </root>

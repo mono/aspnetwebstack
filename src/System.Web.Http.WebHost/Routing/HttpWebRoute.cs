@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -14,58 +14,60 @@ namespace System.Web.Http.WebHost.Routing
     /// a special "httproute" key is specified when generating URLs. There is no special behavior
     /// for incoming URLs.
     /// </summary>
-    public class HttpWebRoute : Route
+    internal class HttpWebRoute : Route
     {
         /// <summary>
         /// Key used to signify that a route URL generation request should include HTTP routes (e.g. Web API).
         /// If this key is not specified then no HTTP routes will match.
         /// </summary>
-        private const string HttpRouteKey = "httproute";
+        internal const string HttpRouteKey = "httproute";
 
         [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "0#", Justification = "Matches the base class's parameter names.")]
-        public HttpWebRoute(string url, IRouteHandler routeHandler)
-            : base(url, routeHandler)
-        {
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "0#", Justification = "Matches the base class's parameter names.")]
-        public HttpWebRoute(string url, RouteValueDictionary defaults, IRouteHandler routeHandler)
-            : base(url, defaults, routeHandler)
-        {
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "0#", Justification = "Matches the base class's parameter names.")]
-        public HttpWebRoute(string url, RouteValueDictionary defaults, RouteValueDictionary constraints, IRouteHandler routeHandler)
-            : base(url, defaults, constraints, routeHandler)
-        {
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "0#", Justification = "Matches the base class's parameter names.")]
-        public HttpWebRoute(string url, RouteValueDictionary defaults, RouteValueDictionary constraints, RouteValueDictionary dataTokens, IRouteHandler routeHandler)
+        public HttpWebRoute(string url, RouteValueDictionary defaults, RouteValueDictionary constraints, RouteValueDictionary dataTokens, IRouteHandler routeHandler, IHttpRoute httpRoute)
             : base(url, defaults, constraints, dataTokens, routeHandler)
         {
+            if (httpRoute == null)
+            {
+                throw Error.ArgumentNull("httpRoute");
+            }
+
+            HttpRoute = httpRoute;
         }
+
+        /// <summary>
+        /// Gets the <see cref="IHttpRoute"/> associated with this <see cref="HttpWebRoute"/>.
+        /// </summary>
+        public IHttpRoute HttpRoute { get; private set; }
 
         protected override bool ProcessConstraint(HttpContextBase httpContext, object constraint, string parameterName, RouteValueDictionary values, RouteDirection routeDirection)
         {
             IHttpRouteConstraint httpRouteConstraint = constraint as IHttpRouteConstraint;
             if (httpRouteConstraint != null)
             {
-                HttpRequestMessage request = httpContext.GetHttpRequestMessage();
-                if (request == null)
-                {
-                    request = HttpControllerHandler.ConvertRequest(httpContext);
-                    httpContext.SetHttpRequestMessage(request);
-                }
-
-                return httpRouteConstraint.Match(request, new HostedHttpRoute(this), parameterName, values, ConvertRouteDirection(routeDirection));
+                HttpRequestMessage request = httpContext.GetOrCreateHttpRequestMessage();
+                return httpRouteConstraint.Match(request, HttpRoute, parameterName, values, ConvertRouteDirection(routeDirection));
             }
 
             return base.ProcessConstraint(httpContext, constraint, parameterName, values, routeDirection);
         }
 
-        public override VirtualPathData GetVirtualPath(RequestContext requestContext, RouteValueDictionary values)
+        public override RouteData GetRouteData(HttpContextBase httpContext)
         {
+            if (HttpRoute is HostedHttpRoute)
+            {
+                return base.GetRouteData(httpContext);
+            }
+            else
+            {
+                // if user passed us a custom IHttpRoute, then we should invoke their function instead of the base
+                HttpRequestMessage request = httpContext.GetOrCreateHttpRequestMessage();
+                IHttpRouteData data = HttpRoute.GetRouteData(httpContext.Request.ApplicationPath, request);
+                return data == null ? null : data.ToRouteData();
+            }
+        }
+
+        public override VirtualPathData GetVirtualPath(RequestContext requestContext, RouteValueDictionary values)
+        {   
             // Only perform URL generation if the "httproute" key was specified. This allows these
             // routes to be ignored when a regular MVC app tries to generate URLs. Without this special
             // key an HTTP route used for Web API would normally take over almost all the routes in a
@@ -77,7 +79,18 @@ namespace System.Web.Http.WebHost.Routing
             // Remove the value from the collection so that it doesn't affect the generated URL
             RouteValueDictionary newValues = GetRouteDictionaryWithoutHttpRouteKey(values);
 
-            return base.GetVirtualPath(requestContext, newValues);
+            if (HttpRoute is HostedHttpRoute)
+            {
+                return base.GetVirtualPath(requestContext, newValues);
+            }
+            else
+            {
+                // if user passed us a custom IHttpRoute, then we should invoke their function instead of the base
+                HttpRequestMessage request = requestContext.HttpContext.GetOrCreateHttpRequestMessage();
+                IHttpVirtualPathData virtualPathData = HttpRoute.GetVirtualPath(request, values);
+
+                return virtualPathData == null ? null : new VirtualPathData(this, virtualPathData.VirtualPath);
+            }
         }
 
         private static RouteValueDictionary GetRouteDictionaryWithoutHttpRouteKey(IDictionary<string, object> routeValues)

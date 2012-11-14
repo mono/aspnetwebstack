@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Routing;
 using System.Web.Routing;
@@ -8,9 +8,8 @@ namespace System.Web.Http.WebHost.Routing
     internal class HostedHttpVirtualPathData : IHttpVirtualPathData
     {
         private readonly VirtualPathData _virtualPath;
-        private readonly HostedHttpRoute _hostedHttpRoute;
 
-        public HostedHttpVirtualPathData(VirtualPathData virtualPath)
+        public HostedHttpVirtualPathData(VirtualPathData virtualPath, IHttpRoute httpRoute)
         {
             if (virtualPath == null)
             {
@@ -18,17 +17,22 @@ namespace System.Web.Http.WebHost.Routing
             }
 
             _virtualPath = virtualPath;
-            _hostedHttpRoute = new HostedHttpRoute(_virtualPath.Route as Route);
+            Route = httpRoute;
         }
 
-        public IHttpRoute Route
-        {
-            get { return _hostedHttpRoute; }
-        }
+        public IHttpRoute Route { get; private set; }
 
         public string VirtualPath
         {
             get { return _virtualPath.VirtualPath; }
+            set
+            {
+                if (value == null)
+                {
+                    throw Error.PropertyNull();
+                }
+                _virtualPath.VirtualPath = value;
+            }
         }
     }
 }

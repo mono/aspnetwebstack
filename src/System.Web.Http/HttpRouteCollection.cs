@@ -1,13 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net.Http;
-using System.Web.Http.Controllers;
 using System.Web.Http.Properties;
 using System.Web.Http.Routing;
 
@@ -89,11 +87,11 @@ namespace System.Web.Http
             return null;
         }
 
-        public virtual IHttpVirtualPathData GetVirtualPath(HttpControllerContext controllerContext, string name, IDictionary<string, object> values)
+        public virtual IHttpVirtualPathData GetVirtualPath(HttpRequestMessage request, string name, IDictionary<string, object> values)
         {
-            if (controllerContext == null)
+            if (request == null)
             {
-                throw Error.ArgumentNull("controllerContext");
+                throw Error.ArgumentNull("request");
             }
 
             if (name == null)
@@ -106,7 +104,7 @@ namespace System.Web.Http
             {
                 throw Error.Argument("name", SRResources.RouteCollection_NameNotFound, name);
             }
-            IHttpVirtualPathData virtualPath = route.GetVirtualPath(controllerContext, values);
+            IHttpVirtualPathData virtualPath = route.GetVirtualPath(request, values);
             if (virtualPath == null)
             {
                 return null;
@@ -125,19 +123,24 @@ namespace System.Web.Http
             return new HttpVirtualPathData(virtualPath.Route, virtualPathRoot + virtualPath.VirtualPath);
         }
 
-        public IHttpRoute CreateRoute(string routeTemplate, object defaults, object constraints, IDictionary<string, object> parameters)
+        public IHttpRoute CreateRoute(string routeTemplate, object defaults, object constraints)
         {
             IDictionary<string, object> dataTokens = new Dictionary<string, object>();
 
-            return CreateRoute(routeTemplate, GetTypeProperties(defaults), GetTypeProperties(constraints), dataTokens, parameters);
+            return CreateRoute(routeTemplate, new HttpRouteValueDictionary(defaults), new HttpRouteValueDictionary(constraints), dataTokens, handler: null);
         }
 
-        public virtual IHttpRoute CreateRoute(string routeTemplate, IDictionary<string, object> defaults, IDictionary<string, object> constraints, IDictionary<string, object> dataTokens, IDictionary<string, object> parameters)
+        public IHttpRoute CreateRoute(string routeTemplate, IDictionary<string, object> defaults, IDictionary<string, object> constraints, IDictionary<string, object> dataTokens)
         {
-            HttpRouteValueDictionary routeDefaults = defaults != null ? new HttpRouteValueDictionary(defaults) : null;
-            HttpRouteValueDictionary routeConstraints = constraints != null ? new HttpRouteValueDictionary(constraints) : null;
-            HttpRouteValueDictionary routeDataTokens = dataTokens != null ? new HttpRouteValueDictionary(dataTokens) : null;
-            return new HttpRoute(routeTemplate, routeDefaults, routeConstraints, routeDataTokens);
+            return CreateRoute(routeTemplate, defaults, constraints, dataTokens, handler: null);
+        }
+
+        public virtual IHttpRoute CreateRoute(string routeTemplate, IDictionary<string, object> defaults, IDictionary<string, object> constraints, IDictionary<string, object> dataTokens, HttpMessageHandler handler)
+        {
+            HttpRouteValueDictionary routeDefaults = new HttpRouteValueDictionary(defaults);
+            HttpRouteValueDictionary routeConstraints = new HttpRouteValueDictionary(constraints);
+            HttpRouteValueDictionary routeDataTokens = new HttpRouteValueDictionary(dataTokens);
+            return new HttpRoute(routeTemplate, routeDefaults, routeConstraints, routeDataTokens, handler);
         }
 
         void ICollection<IHttpRoute>.Add(IHttpRoute route)
@@ -261,24 +264,6 @@ namespace System.Web.Http
             return _dictionary.TryGetValue(name, out route);
         }
 
-        internal static IDictionary<string, object> GetTypeProperties(object instance)
-        {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            if (instance != null)
-            {
-                PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(instance);
-                foreach (PropertyDescriptor prop in properties)
-                {
-                    object val = prop.GetValue(instance);
-                    result.Add(prop.Name, val);
-                }
-            }
-
-            return result;
-        }
-
-        #region IDisposable
-
         public void Dispose()
         {
             Dispose(true);
@@ -292,7 +277,5 @@ namespace System.Web.Http
                 _disposed = true;
             }
         }
-
-        #endregion
     }
 }

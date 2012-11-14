@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -57,7 +56,7 @@ namespace System.Web.Http.ModelBinding.Binders
             ModelBindingContext bindingContext = GetBindingContext(typeof(object));
 
             // Act
-            IModelBinder binder = provider.GetBinder(null, bindingContext);
+            IModelBinder binder = provider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);
@@ -74,10 +73,11 @@ namespace System.Web.Http.ModelBinding.Binders
             bindingContext.ValueProvider = new SimpleHttpValueProvider();
 
             // Act
-            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext);
+            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext.ModelType);
+            bool bound = returnedBinder.BindModel(null, bindingContext);
 
             // Assert
-            Assert.Null(returnedBinder);
+            Assert.False(bound);
         }
 
         [Fact]
@@ -99,12 +99,14 @@ namespace System.Web.Http.ModelBinding.Binders
             ModelBindingContext bindingContext = GetBindingContext(typeof(string));
 
             // Act
-            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext);
-            returnedBinder = provider.GetBinder(null, bindingContext);
+            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext.ModelType);
+            returnedBinder.BindModel(null, bindingContext);
+
+            returnedBinder = provider.GetBinder(null, bindingContext.ModelType);
+            returnedBinder.BindModel(null, bindingContext);
 
             // Assert
             Assert.Equal(2, numExecutions);
-            Assert.Equal(theBinderInstance, returnedBinder);
         }
 
         [Fact]
@@ -119,10 +121,10 @@ namespace System.Web.Http.ModelBinding.Binders
             ModelBindingContext bindingContext = GetBindingContext(typeof(string));
 
             // Act
-            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext);
+            IModelBinder returnedBinder = provider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
-            Assert.Equal(theBinderInstance, returnedBinder);
+            Assert.NotNull(returnedBinder);
         }
 
         [Fact]
@@ -133,7 +135,7 @@ namespace System.Web.Http.ModelBinding.Binders
 
             // Act & assert
             Assert.ThrowsArgumentNull(
-                delegate { provider.GetBinder(null, null); }, "bindingContext");
+                delegate { provider.GetBinder(null, null); }, "modelType");
         }
 
         [Fact]

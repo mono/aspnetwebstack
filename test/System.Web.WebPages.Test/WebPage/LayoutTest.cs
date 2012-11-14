@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Globalization;
 using System.Web.WebPages.Resources;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.WebPages.Test
 {
@@ -270,10 +269,10 @@ namespace System.Web.WebPages.Test
             Utils.AssignObjectFactoriesAndDisplayModeProvider(page, layout1, layout2);
 
             var result = Utils.RenderWebPage(page);
-            var expected = @"MyPage
-<layout2 header><layout1 header>index header</layout1 header></layout2 header>
-<layout2><layout1>hello world</layout1></layout2>
-<layout2 footer><layout1 footer>index footer</layout1 footer></layout2 footer>";
+            var expected = "MyPage" + Environment.NewLine
+                         + "<layout2 header><layout1 header>index header</layout1 header></layout2 header>" + Environment.NewLine
+                         + "<layout2><layout1>hello world</layout1></layout2>" + Environment.NewLine
+                         + "<layout2 footer><layout1 footer>index footer</layout1 footer></layout2 footer>";
             Assert.Equal(expected, result);
         }
 

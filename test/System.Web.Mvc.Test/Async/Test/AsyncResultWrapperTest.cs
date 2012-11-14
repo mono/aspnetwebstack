@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Threading;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Mvc.Async.Test
 {
@@ -53,7 +52,7 @@ namespace System.Web.Mvc.Async.Test
 
             // Assert
             Assert.Equal(innerResult.AsyncState, outerResult.AsyncState);
-            Assert.Equal(innerResult.AsyncWaitHandle, outerResult.AsyncWaitHandle);
+            Assert.Null(outerResult.AsyncWaitHandle);
             Assert.Equal(innerResult.CompletedSynchronously, outerResult.CompletedSynchronously);
             Assert.Equal(innerResult.IsCompleted, outerResult.IsCompleted);
         }
@@ -160,8 +159,8 @@ namespace System.Web.Mvc.Async.Test
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { AsyncResultWrapper.End<int>(asyncResult); },
-                @"The provided IAsyncResult is not valid for this method.
-Parameter name: asyncResult");
+                "The provided IAsyncResult is not valid for this method." + Environment.NewLine
+              + "Parameter name: asyncResult");
         }
 
         [Fact]
@@ -185,8 +184,8 @@ Parameter name: asyncResult");
             // Act & assert
             Assert.Throws<ArgumentException>(
                 delegate { AsyncResultWrapper.End(asyncResult, "some other tag"); },
-                @"The provided IAsyncResult is not valid for this method.
-Parameter name: asyncResult");
+                "The provided IAsyncResult is not valid for this method." + Environment.NewLine
+              + "Parameter name: asyncResult");
         }
 
         [Fact]
@@ -202,7 +201,7 @@ Parameter name: asyncResult");
             AsyncResultWrapper.End(asyncResult);
             Assert.Throws<InvalidOperationException>(
                 delegate { AsyncResultWrapper.End(asyncResult); },
-                @"The provided IAsyncResult has already been consumed.");
+                "The provided IAsyncResult has already been consumed.");
         }
 
         [Fact]
@@ -223,6 +222,7 @@ Parameter name: asyncResult");
             // wait for the timeout
             waitHandle.WaitOne();
 
+            Assert.True(asyncResult.IsCompleted);
             Assert.Throws<TimeoutException>(
                 delegate { AsyncResultWrapper.End(asyncResult); });
         }

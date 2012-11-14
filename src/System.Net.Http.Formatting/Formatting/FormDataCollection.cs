@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -6,14 +6,16 @@ using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Formatting.Internal;
 using System.Net.Http.Formatting.Parsers;
+using System.Text;
 using System.Threading;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
     /// <summary>
     /// Represent the form data.
     /// - This has 100% fidelity (including ordering, which is important for deserializing ordered array). 
-    /// - using interfaces allows us to optimize the implementation. Eg, we can avoid eagerly string-splitting a 10gb file. 
+    /// - using interfaces allows us to optimize the implementation. E.g., we can avoid eagerly string-splitting a 10gb file. 
     /// - This also provides a convenient place to put extension methods. 
     /// </summary>
     public class FormDataCollection : IEnumerable<KeyValuePair<string, string>>
@@ -31,7 +33,7 @@ namespace System.Net.Http.Formatting
         {
             if (pairs == null)
             {
-                throw new ArgumentNullException("pairs");
+                throw Error.ArgumentNull("pairs");
             }
             _pairs = pairs;
         }
@@ -44,19 +46,23 @@ namespace System.Net.Http.Formatting
         {
             if (uri == null)
             {
-                throw new ArgumentNullException("uri");
+                throw Error.ArgumentNull("uri");
             }
 
             string query = uri.Query;
+            if (query != null && query.Length > 0 && query[0] == '?')
+            {
+                query = query.Substring(1);
+            }
 
             _pairs = ParseQueryString(query);
         }
 
         /// <summary>
-        /// Initialize a form collection from a query string. 
-        /// This should be just the query string and not the full URI.
+        /// Initialize a form collection from a URL encoded query string. Any leading question
+        /// mark (?) will be considered part of the query string and treated as any other value.
         /// </summary>        
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1057:StringUriOverloadsCallSystemUriOverloads", Justification = "string is a querystring, not a URI")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1057:StringUriOverloadsCallSystemUriOverloads", Justification = "string is a query string, not a URI")]
         public FormDataCollection(string query)
         {
             _pairs = ParseQueryString(query);
@@ -71,12 +77,7 @@ namespace System.Net.Http.Formatting
                 return result;
             }
 
-            if (query.Length > 0 && query[0] == '?')
-            {
-                query = query.Substring(1);
-            }
-
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(query);
+            byte[] bytes = Encoding.UTF8.GetBytes(query);
 
             FormUrlEncodedParser parser = new FormUrlEncodedParser(result, Int64.MaxValue);
 
@@ -85,7 +86,7 @@ namespace System.Net.Http.Formatting
 
             if (state != ParserState.Done)
             {
-                throw new InvalidOperationException(RS.Format(Properties.Resources.FormUrlEncodedParseError, bytesConsumed));
+                throw Error.InvalidOperation(Properties.Resources.FormUrlEncodedParseError, bytesConsumed);
             }
 
             return result;

@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.ModelBinding.Binders;
 using System.Web.Http.Util;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -27,7 +27,7 @@ namespace System.Web.Http.ModelBinding
             CollectionModelBinderProvider binderProvider = new CollectionModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.IsType<CollectionModelBinder<int>>(binder);
@@ -50,7 +50,33 @@ namespace System.Web.Http.ModelBinding
             CollectionModelBinderProvider binderProvider = new CollectionModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
+
+            // Assert
+            Assert.Null(binder);
+        }
+
+        [Fact]
+        public void GetBinder_ModelTypeIsNullable_ReturnsNull()
+        {
+            // Arrange
+            CollectionModelBinderProvider binderProvider = new CollectionModelBinderProvider();
+
+            // Act
+            IModelBinder binder = binderProvider.GetBinder(null, typeof(int?));
+
+            // Assert
+            Assert.Null(binder);
+        }
+
+        [Fact]
+        public void GetBinder_ModelTypeIsGeneric_ReturnsNull()
+        {
+            // Arrange
+            CollectionModelBinderProvider binderProvider = new CollectionModelBinderProvider();
+
+            // Act
+            IModelBinder binder = binderProvider.GetBinder(null, typeof(Tuple<int>));
 
             // Assert
             Assert.Null(binder);
@@ -70,10 +96,11 @@ namespace System.Web.Http.ModelBinding
             CollectionModelBinderProvider binderProvider = new CollectionModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
+            bool bound = binder.BindModel(null, bindingContext);
 
             // Assert
-            Assert.Null(binder);
+            Assert.False(bound);
         }
     }
 }

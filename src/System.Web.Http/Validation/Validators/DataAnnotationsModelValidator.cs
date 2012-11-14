@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -29,11 +29,6 @@ namespace System.Web.Http.Validation.Validators
             // [SecuritySafeCritical] because it uses DataAnnotations type RequiredAttribute
             [SecuritySafeCritical]
             get { return Attribute is RequiredAttribute; }
-        }
-
-        internal static ModelValidator Create(IEnumerable<ModelValidatorProvider> validatorProviders, ValidationAttribute attribute)
-        {
-            return new DataAnnotationsModelValidator(validatorProviders, attribute);
         }
 
         // [SecuritySafeCritical] because is uses DataAnnotations type ValidationContext

@@ -1,7 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.ValueProviders;
 
@@ -12,8 +11,18 @@ namespace System.Web.Http
     {
         public override IEnumerable<ValueProviderFactory> GetValueProviderFactories(HttpConfiguration configuration)
         {
-            var factories = from f in base.GetValueProviderFactories(configuration) where f is IUriValueProviderFactory select f;
-            return factories;
+            if (configuration == null)
+            {
+                throw Error.ArgumentNull("configuration");
+            }
+
+            foreach (ValueProviderFactory f in base.GetValueProviderFactories(configuration))
+            {
+                if (f is IUriValueProviderFactory)
+                {
+                    yield return f;
+                }
+            }
         }
     }
 }

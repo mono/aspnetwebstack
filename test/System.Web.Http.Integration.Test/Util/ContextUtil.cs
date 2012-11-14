@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Web.Http.Controllers;
@@ -48,7 +48,7 @@ namespace System.Web.Http
             HttpRequestMessage req = request ?? new HttpRequestMessage();
             req.Properties[HttpPropertyKeys.HttpConfigurationKey] = config;
             req.Properties[HttpPropertyKeys.HttpRouteDataKey] = route;
-            return new HttpControllerContext(config, route, req);
+            return new HttpControllerContext(config, route, req) { ControllerDescriptor = new HttpControllerDescriptor(config) };
         }
 
         public static HttpActionContext CreateActionContext(HttpControllerContext controllerContext = null, HttpActionDescriptor actionDescriptor = null)
@@ -59,6 +59,16 @@ namespace System.Web.Http
             if (descriptor.Configuration == null)
             {
                 descriptor.Configuration = controllerContext.Configuration;
+            }
+
+            if (context.ControllerDescriptor == null)
+            {
+                context.ControllerDescriptor = new HttpControllerDescriptor(descriptor.Configuration);
+            }
+
+            if (descriptor.ControllerDescriptor == null)
+            {
+                descriptor.ControllerDescriptor = context.ControllerDescriptor;
             }
 
             return new HttpActionContext(context, descriptor);

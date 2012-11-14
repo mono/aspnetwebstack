@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Globalization;
 using System.Linq;
@@ -16,12 +16,6 @@ namespace System.Web.Helpers.AntiXsrf
         private readonly ClaimsIdentityConverter _claimsIdentityConverter;
         private readonly IAntiForgeryConfig _config;
 
-        public ClaimUidExtractor()
-            : this(new AntiForgeryConfigWrapper(), ClaimsIdentityConverter.Default)
-        {
-        }
-
-        // for unit testing
         internal ClaimUidExtractor(IAntiForgeryConfig config, ClaimsIdentityConverter claimsIdentityConverter)
         {
             _config = config;

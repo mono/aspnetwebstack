@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Util;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -27,7 +27,7 @@ namespace System.Web.Http.ModelBinding.Binders
             KeyValuePairModelBinderProvider binderProvider = new KeyValuePairModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.IsType<KeyValuePairModelBinder<int, string>>(binder);
@@ -51,53 +51,7 @@ namespace System.Web.Http.ModelBinding.Binders
             KeyValuePairModelBinderProvider binderProvider = new KeyValuePairModelBinderProvider();
 
             // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
-
-            // Assert
-            Assert.Null(binder);
-        }
-
-        [Fact]
-        public void GetBinder_ValueProviderDoesNotContainKeyProperty_ReturnsNull()
-        {
-            // Arrange
-            ModelBindingContext bindingContext = new ModelBindingContext
-            {
-                ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(KeyValuePair<int, string>)),
-                ModelName = "foo",
-                ValueProvider = new SimpleHttpValueProvider
-                {
-                    { "foo.value", "someValue" }
-                }
-            };
-
-            KeyValuePairModelBinderProvider binderProvider = new KeyValuePairModelBinderProvider();
-
-            // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
-
-            // Assert
-            Assert.Null(binder);
-        }
-
-        [Fact]
-        public void GetBinder_ValueProviderDoesNotContainValueProperty_ReturnsNull()
-        {
-            // Arrange
-            ModelBindingContext bindingContext = new ModelBindingContext
-            {
-                ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(null, typeof(KeyValuePair<int, string>)),
-                ModelName = "foo",
-                ValueProvider = new SimpleHttpValueProvider
-                {
-                    { "foo.key", 42 }
-                }
-            };
-
-            KeyValuePairModelBinderProvider binderProvider = new KeyValuePairModelBinderProvider();
-
-            // Act
-            IModelBinder binder = binderProvider.GetBinder(null, bindingContext);
+            IModelBinder binder = binderProvider.GetBinder(null, bindingContext.ModelType);
 
             // Assert
             Assert.Null(binder);

@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using System.Threading.Tasks;
-using Xunit;
+using Microsoft.TestCommon;
 
 // No namespace so that these extensions are available for all test classes
 

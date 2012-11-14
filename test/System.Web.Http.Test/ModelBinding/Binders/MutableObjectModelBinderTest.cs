@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,9 +8,9 @@ using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.Validation;
+using System.Web.Http.ValueProviders;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.ModelBinding.Binders
 {
@@ -20,11 +20,15 @@ namespace System.Web.Http.ModelBinding.Binders
         public void BindModel()
         {
             // Arrange
+            Mock<IValueProvider> mockValueProvider = new Mock<IValueProvider>();
+            mockValueProvider.Setup(o => o.ContainsPrefix(It.IsAny<string>())).Returns(true);
+
             Mock<IModelBinder> mockDtoBinder = new Mock<IModelBinder>();
             ModelBindingContext bindingContext = new ModelBindingContext
             {
                 ModelMetadata = GetMetadataForObject(new Person()),
-                ModelName = "someName"
+                ModelName = "someName",
+                ValueProvider = mockValueProvider.Object
             };
             HttpActionContext context = ContextUtil.CreateActionContext();
             context.ControllerContext.Configuration.Services.Replace(typeof(ModelBinderProvider), new SimpleModelBinderProvider(typeof(ComplexModelDto), mockDtoBinder.Object) { SuppressPrefixCheck = true });
@@ -477,8 +481,9 @@ namespace System.Web.Http.ModelBinding.Binders
             testableBinder.SetPropertyPublic(null, bindingContext, propertyMetadata, dtoResult, requiredValidator: null);
 
             // Assert
-            Assert.Equal(@"Date of death can't be before date of birth.
-Parameter name: value", bindingContext.ModelState["foo"].Errors[0].Exception.Message);
+            Assert.Equal("Date of death can't be before date of birth." + Environment.NewLine
+                       + "Parameter name: value",
+                         bindingContext.ModelState["foo"].Errors[0].Exception.Message);
         }
 
         [Fact]
@@ -557,8 +562,9 @@ Parameter name: value", bindingContext.ModelState["foo"].Errors[0].Exception.Mes
             // Assert
             Assert.False(bindingContext.ModelState.IsValid);
             Assert.Equal(1, bindingContext.ModelState["foo.NameNoAttribute"].Errors.Count);
-            Assert.Equal(@"This is a different exception.
-Parameter name: value", bindingContext.ModelState["foo.NameNoAttribute"].Errors[0].Exception.Message);
+            Assert.Equal("This is a different exception." + Environment.NewLine
+                       + "Parameter name: value",
+                         bindingContext.ModelState["foo.NameNoAttribute"].Errors[0].Exception.Message);
         }
 
         [Fact]
@@ -743,7 +749,7 @@ Parameter name: value", bindingContext.ModelState["foo.NameNoAttribute"].Errors[
 
             protected override void SetProperty(HttpActionContext actionContext, ModelBindingContext bindingContext, ModelMetadata propertyMetadata, ComplexModelDtoResult dtoResult, ModelValidator requiredValidator)
             {
- 	            SetPropertyPublic(actionContext, bindingContext, propertyMetadata, dtoResult, requiredValidator);
+                SetPropertyPublic(actionContext, bindingContext, propertyMetadata, dtoResult, requiredValidator);
             }
         }
     }

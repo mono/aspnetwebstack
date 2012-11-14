@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.CodeDom;
 using System.Collections.Concurrent;
@@ -198,6 +198,15 @@ namespace System.Web.WebPages.Razor
 
         public string VirtualPath { get; private set; }
 
+        /// <summary>
+        /// Adds a namespace to the global imports list for this AppDomain
+        /// </summary>
+        /// <remarks>
+        /// IMPORTANT: ALL uses of WebPageRazorHost (and derived classes) within the same AppDomain will share this list.
+        /// Therefore this method should only be used in runtime scenarios, not in design-time scenarios where the Razor
+        /// data structures for multiple files and projects may be shared within a single AppDomain.
+        /// </remarks>
+        /// <param name="ns">The namespace to add to the global imports list.</param>
         public static void AddGlobalImport(string ns)
         {
             if (String.IsNullOrEmpty(ns))

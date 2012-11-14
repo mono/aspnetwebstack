@@ -4,7 +4,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <CodeAnalysis Condition=" '$(CodeAnalysis)' == '' ">false</CodeAnalysis>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DDC1CE0C-486E-4E35-BB3B-EAB61F8F9440}</ProjectGuid>
@@ -13,49 +12,77 @@
     <RootNamespace>System.Web.Http</RootNamespace>
     <AssemblyName>System.Web.Http</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ASPNETMVC</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\</OutputPath>
     <DefineConstants>TRACE;ASPNETMVC</DefineConstants>
-    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU'">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeAnalysis|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\CodeAnalysis\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'CodeCoverage|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CODE_COVERAGE;ASPNETMVC</DefineConstants>
     <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\CodeCoverage\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;CODE_COVERAGE;ASPNETMVC</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <RunCodeAnalysis>$(CodeAnalysis)</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\Strict.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.4.5.6\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20326.1\lib\net40\System.Net.Http.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http.WebRequest, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20326.1\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.Net.Http.2.0.20710.0\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
     </Reference>
-    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -68,6 +95,9 @@
     </Compile>
     <Compile Include="..\Common\DictionaryExtensions.cs">
       <Link>Common\DictionaryExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Common\EnsureStackHelper.cs">
+      <Link>Common\EnsureStackHelper.cs</Link>
     </Compile>
     <Compile Include="..\Common\Error.cs">
       <Link>Common\Error.cs</Link>
@@ -84,16 +114,28 @@
     <Compile Include="..\Common\TaskHelpersExtensions.cs">
       <Link>Common\TaskHelpersExtensions.cs</Link>
     </Compile>
+    <Compile Include="..\Common\UriQueryUtility.cs">
+      <Link>Common\UriQueryUtility.cs</Link>
+    </Compile>
     <Compile Include="AcceptVerbsAttribute.cs" />
+    <Compile Include="Controllers\HttpControllerSettings.cs" />
+    <Compile Include="Controllers\HttpParameterDescriptorExtensions.cs" />
     <Compile Include="Controllers\IActionResultConverter.cs" />
-    <Compile Include="Controllers\HttpControllerConfigurationAttribute.cs" />
     <Compile Include="Controllers\HttpActionContext.cs" />
+    <Compile Include="Controllers\IControllerConfiguration.cs" />
+    <Compile Include="Tracing\TraceLevelHelper.cs" />
+    <Compile Include="Tracing\TraceKindHelper.cs" />
+    <Compile Include="Validation\IModelValidatorCache.cs" />
+    <Compile Include="Validation\ModelValidatorCache.cs" />
     <Compile Include="Controllers\ResponseMessageResultConverter.cs" />
     <Compile Include="Controllers\ValueResultConverter.cs" />
     <Compile Include="Controllers\VoidResultConverter.cs" />
     <Compile Include="Dependencies\IDependencyScope.cs" />
     <Compile Include="Dispatcher\DefaultAssembliesResolver.cs" />
+    <Compile Include="Dispatcher\HttpRoutingDispatcher.cs" />
     <Compile Include="Dispatcher\IAssembliesResolver.cs" />
+    <Compile Include="Hosting\IHostBufferPolicySelector.cs" />
+    <Compile Include="HttpConfigurationExtensions.cs" />
     <Compile Include="HttpOptionsAttribute.cs" />
     <Compile Include="HttpHeadAttribute.cs" />
     <Compile Include="HttpPatchAttribute.cs" />
@@ -107,7 +149,6 @@
     <Compile Include="IncludeErrorDetailPolicy.cs" />
     <Compile Include="Filters\HttpActionExecutedContext.cs" />
     <Compile Include="Internal\HttpParameterBindingExtensions.cs" />
-    <Compile Include="Internal\UriQueryUtility.cs" />
     <Compile Include="ModelBinding\FormatterParameterBinding.cs" />
     <Compile Include="ModelBinding\CancellationTokenParameterBinding.cs" />
     <Compile Include="ModelBinding\ErrorParameterBinding.cs" />
@@ -117,14 +158,14 @@
     <Compile Include="ActionNameAttribute.cs" />
     <Compile Include="Controllers\ReflectedHttpActionDescriptor.cs" />
     <Compile Include="AllowAnonymousAttribute.cs" />
-    <Compile Include="Dispatcher\ExceptionSurrogate.cs" />
+    <Compile Include="HttpError.cs" />
     <Compile Include="HttpResponseException.cs" />
     <Compile Include="ModelBinding\HttpRequestParameterBinding.cs" />
+    <Compile Include="ModelBinding\IValueProviderParameterBinding.cs" />
     <Compile Include="ModelBinding\JQueryMVCFormUrlEncodedFormatter.cs" />
     <Compile Include="ModelBinding\ModelBinderParameterBinding.cs" />
-    <Compile Include="Query\ParseException.cs" />
-    <Compile Include="Query\ServiceQueryPart.cs" />
-    <Compile Include="QueryableAttribute.cs" />
+    <Compile Include="ModelBinding\ParameterBindingRulesCollection.cs" />
+    <Compile Include="ParameterBindingAttribute.cs" />
     <Compile Include="HttpResponseMessageExtensions.cs" />
     <Compile Include="Dispatcher\DefaultHttpControllerActivator.cs" />
     <Compile Include="Controllers\HttpControllerDescriptor.cs" />
@@ -165,7 +206,6 @@
     <Compile Include="ModelBinding\Binders\CompositeModelBinderProvider.cs" />
     <Compile Include="ModelBinding\Binders\CompositeModelBinder.cs" />
     <Compile Include="HttpRouteCollectionExtensions.cs" />
-    <Compile Include="Query\QueryValidator.cs" />
     <Compile Include="RouteParameter.cs" />
     <Compile Include="Routing\BoundRouteTemplate.cs" />
     <Compile Include="Routing\IHttpVirtualPathData.cs" />
@@ -199,7 +239,6 @@
     <Compile Include="Dispatcher\IHttpControllerSelector.cs" />
     <Compile Include="Filters\FilterAttribute.cs" />
     <Compile Include="Hosting\HttpPropertyKeys.cs" />
-    <Compile Include="Hosting\HttpPipelineFactory.cs" />
     <Compile Include="Dispatcher\HttpControllerDispatcher.cs" />
     <Compile Include="Dispatcher\IHttpControllerTypeResolver.cs" />
     <Compile Include="Internal\TypeHelper.cs" />
@@ -212,10 +251,10 @@
     <Compile Include="Controllers\ApiControllerActionSelector.cs" />
     <Compile Include="Controllers\HttpParameterBinding.cs" />
     <Compile Include="Controllers\HttpParameterDescriptor.cs" />
+    <Compile Include="Services\ControllerServices.cs" />
     <Compile Include="Services\DefaultServices.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Controllers\IHttpController.cs" />
-    <Compile Include="Internal\DataTypeUtil.cs" />
     <Compile Include="Internal\TypeDescriptorHelper.cs" />
     <Compile Include="Internal\CollectionModelBinderUtil.cs" />
     <Compile Include="Metadata\Providers\AssociatedMetadataProvider.cs" />
@@ -228,7 +267,6 @@
     <Compile Include="Metadata\Providers\EmptyMetadataProvider.cs" />
     <Compile Include="ModelBinding\Binders\ArrayModelBinderProvider.cs" />
     <Compile Include="ModelBinding\Binders\ArrayModelBinder.cs" />
-    <Compile Include="ModelBinding\Binders\BinaryDataModelBinderProvider.cs" />
     <Compile Include="ModelBinding\HttpBindingBehavior.cs" />
     <Compile Include="ModelBinding\HttpBindingBehaviorAttribute.cs" />
     <Compile Include="ModelBinding\Binders\CollectionModelBinderProvider.cs" />
@@ -242,10 +280,8 @@
     <Compile Include="ModelBinding\ModelBinderAttribute.cs" />
     <Compile Include="ModelBinding\CustomModelBinderAttribute.cs" />
     <Compile Include="ModelBinding\ModelBindingContext.cs" />
-    <Compile Include="ModelBinding\Binders\GenericModelBinderProvider.cs" />
     <Compile Include="ModelBinding\IModelBinder.cs" />
     <Compile Include="ModelBinding\Binders\KeyValuePairModelBinderProvider.cs" />
-    <Compile Include="Internal\HttpActionContextExtensions.cs" />
     <Compile Include="ModelBinding\Binders\KeyValuePairModelBinder.cs" />
     <Compile Include="ModelBinding\ModelBinderConfig.cs" />
     <Compile Include="ModelBinding\ModelBinderErrorMessageProvider.cs" />
@@ -261,6 +297,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SRResources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Services\ServicesContainer.cs" />
     <Compile Include="Tracing\IFormatterTracer.cs" />
     <Compile Include="Tracing\ITraceManager.cs" />
     <Compile Include="Tracing\ITraceWriter.cs" />
@@ -317,7 +354,9 @@
     <Compile Include="Validation\Providers\AssociatedValidatorProvider.cs" />
     <Compile Include="Validation\Providers\DataAnnotationsModelValidatorProvider.cs" />
     <Compile Include="Validation\Providers\DataMemberModelValidatorProvider.cs" />
+    <Compile Include="Validation\Providers\InvalidModelValidatorProvider.cs" />
     <Compile Include="Validation\Providers\RequiredMemberModelValidatorProvider.cs" />
+    <Compile Include="Validation\Validators\ErrorModelValidator.cs" />
     <Compile Include="Validation\Validators\RequiredMemberModelValidator.cs" />
     <Compile Include="Validation\Validators\ValidatableObjectAdapter.cs" />
     <Compile Include="Validation\Validators\DataAnnotationsModelValidator.cs" />
@@ -326,7 +365,7 @@
     <Compile Include="ValueProviders\IUriValueProviderFactory.cs" />
     <Compile Include="ValueProviders\Providers\CompositeValueProvider.cs" />
     <Compile Include="ValueProviders\Providers\CompositeValueProviderFactory.cs" />
-    <Compile Include="ValueProviders\Providers\NameValueCollectionValueProvider.cs" />
+    <Compile Include="ValueProviders\Providers\NameValuePairsValueProvider.cs" />
     <Compile Include="ValueProviders\Providers\ElementalValueProvider.cs" />
     <Compile Include="ValueProviders\IEnumerableValueProvider.cs" />
     <Compile Include="ValueProviders\Providers\RouteDataValueProvider.cs" />
@@ -339,18 +378,15 @@
     <Compile Include="ValueProviders\IValueProvider.cs" />
     <Compile Include="HttpConfiguration.cs" />
     <Compile Include="ApiController.cs" />
-    <Compile Include="Query\DynamicQueryable.cs" />
-    <Compile Include="Query\ODataQueryDeserializer.cs" />
-    <Compile Include="Query\QueryComposer.cs" />
-    <Compile Include="Query\QueryResolver.cs" />
-    <Compile Include="Query\ServiceQuery.cs" />
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="..\CodeAnalysisDictionary.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Modelbinding_ClassDiagram.cd" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Common\CommonWebApiResources.Designer.cs">
@@ -382,4 +418,5 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

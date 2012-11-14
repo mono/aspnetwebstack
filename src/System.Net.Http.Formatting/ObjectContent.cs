@@ -1,10 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net.Http.Formatting;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http
 {
@@ -24,7 +26,7 @@ namespace System.Net.Http
         /// <param name="value">The value of the object this instance will contain.</param>
         /// <param name="formatter">The formatter to use when serializing the value.</param>
         public ObjectContent(Type type, object value, MediaTypeFormatter formatter)
-            : this(type, value, formatter, null)
+            : this(type, value, formatter, (MediaTypeHeaderValue)null)
         {
         }
 
@@ -34,16 +36,35 @@ namespace System.Net.Http
         /// <param name="type">The type of object this instance will contain.</param>
         /// <param name="value">The value of the object this instance will contain.</param>
         /// <param name="formatter">The formatter to use when serializing the value.</param>
-        /// <param name="mediaType">The media type to associate with this object.</param>
+        /// <param name="mediaType">The authoritative value of the content's Content-Type header. Can be <c>null</c> in which case the
+        /// <paramref name="formatter">formatter's</paramref> default content type will be used.</param>
         public ObjectContent(Type type, object value, MediaTypeFormatter formatter, string mediaType)
+            : this(type, value, formatter, BuildHeaderValue(mediaType))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ObjectContent"/> class.
+        /// </summary>
+        /// <param name="type">The type of object this instance will contain.</param>
+        /// <param name="value">The value of the object this instance will contain.</param>
+        /// <param name="formatter">The formatter to use when serializing the value.</param>
+        /// <param name="mediaType">The authoritative value of the content's Content-Type header. Can be <c>null</c> in which case the
+        /// <paramref name="formatter">formatter's</paramref> default content type will be used.</param>
+        public ObjectContent(Type type, object value, MediaTypeFormatter formatter, MediaTypeHeaderValue mediaType)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
             if (formatter == null)
             {
-                throw new ArgumentNullException("formatter");
+                throw Error.ArgumentNull("formatter");
+            }
+
+            if (!formatter.CanWriteType(type))
+            {
+                throw Error.InvalidOperation(Properties.Resources.ObjectContent_FormatterCannotWriteType, formatter.GetType().FullName, type.Name);
             }
 
             _formatter = formatter;
@@ -75,6 +96,11 @@ namespace System.Net.Http
             set { VerifyAndSetObject(value); }
         }
 
+        internal static MediaTypeHeaderValue BuildHeaderValue(string mediaType)
+        {
+            return mediaType != null ? new MediaTypeHeaderValue(mediaType) : null;
+        }
+
         /// <summary>
         /// Asynchronously serializes the object's content to the given <paramref name="stream"/>.
         /// </summary>
@@ -83,7 +109,7 @@ namespace System.Net.Http
         /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            return _formatter.WriteToStreamAsync(ObjectType, Value, stream, Headers, context);
+            return _formatter.WriteToStreamAsync(ObjectType, Value, stream, this, context);
         }
 
         /// <summary>
@@ -99,8 +125,8 @@ namespace System.Net.Http
 
         private static bool IsTypeNullable(Type type)
         {
-            return !type.IsValueType ||
-                    (type.IsGenericType &&
+            return !type.IsValueType() ||
+                   (type.IsGenericType() &&
                     type.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
 
@@ -113,7 +139,7 @@ namespace System.Net.Http
                 // Null may not be assigned to value types (unless Nullable<T>)
                 if (!IsTypeNullable(ObjectType))
                 {
-                    throw new InvalidOperationException(RS.Format(Properties.Resources.CannotUseNullValueType, typeof(ObjectContent).Name, ObjectType.Name));
+                    throw Error.InvalidOperation(Properties.Resources.CannotUseNullValueType, typeof(ObjectContent).Name, ObjectType.Name);
                 }
             }
             else
@@ -122,45 +148,11 @@ namespace System.Net.Http
                 Type objectType = value.GetType();
                 if (!ObjectType.IsAssignableFrom(objectType))
                 {
-                    throw new ArgumentException(RS.Format(Properties.Resources.ObjectAndTypeDisagree, objectType.Name, ObjectType.Name), "value");
-                }
-
-                if (!_formatter.CanWriteType(objectType))
-                {
-                    throw new InvalidOperationException(RS.Format(Properties.Resources.ObjectContent_FormatterCannotWriteType, _formatter.GetType().FullName, objectType.Name));
+                    throw Error.Argument("value", Properties.Resources.ObjectAndTypeDisagree, objectType.Name, ObjectType.Name);
                 }
             }
 
             _value = value;
-        }
-    }
-
-    /// <summary>
-    /// Generic form of <see cref="ObjectContent"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of object this <see cref="ObjectContent"/> class will contain.</typeparam>
-    [SuppressMessage("Microsoft.StyleCop.CSharp.MaintainabilityRules", "SA1402:FileMayOnlyContainASingleClass", Justification = "Class contains generic forms")]
-    public class ObjectContent<T> : ObjectContent
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ObjectContent{T}"/> class.
-        /// </summary>
-        /// <param name="value">The value of the object this instance will contain.</param>
-        /// <param name="formatter">The formatter to use when serializing the value.</param>
-        public ObjectContent(T value, MediaTypeFormatter formatter)
-            : this(value, formatter, null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ObjectContent{T}"/> class.
-        /// </summary>
-        /// <param name="value">The value of the object this instance will contain.</param>
-        /// <param name="formatter">The formatter to use when serializing the value.</param>
-        /// <param name="mediaType">The media type to associate with this object.</param>
-        public ObjectContent(T value, MediaTypeFormatter formatter, string mediaType)
-            : base(typeof(T), value, formatter, mediaType)
-        {
         }
     }
 }

@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.WebPages.Deployment.Test
 {
@@ -36,17 +36,17 @@ namespace System.Web.WebPages.Deployment.Test
             var assemblies = new[]
             {
                 new AssemblyName("System.Web.WebPages.Deployment, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
-                new AssemblyName("System.Web.WebPages.Development, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
-                new AssemblyName("System.Web.WebPages.Deployment, Version=2.1.0.0, Culture=neutral, PublicKeyToken=7777777777777777"),
+                new AssemblyName("System.Web.WebPages.Development, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
+                new AssemblyName("System.Web.WebPages.Deployment, Version=2.2.0.0, Culture=neutral, PublicKeyToken=7777777777777777"),
                 new AssemblyName("System.Web.WebPages.Deployment, Version=2.3.0.0, Culture=en-US, PublicKeyToken=31bf3856ad364e35"),
-                new AssemblyName("System.Web.WebPages.Deployment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35")
+                new AssemblyName("System.Web.WebPages.Deployment, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35")
             };
 
             // Act
             var maxVersion = AssemblyUtils.GetMaxWebPagesVersion(assemblies);
 
             // Assert
-            Assert.Equal(new Version("2.0.0.0"), maxVersion);
+            Assert.Equal(new Version("2.1.0.0"), maxVersion);
         }
 
         [Fact]
@@ -86,13 +86,13 @@ namespace System.Web.WebPages.Deployment.Test
             var binDirectory = @"X:\test\project";
             TestFileSystem fileSystem = new TestFileSystem();
             fileSystem.AddFile(Path.Combine(binDirectory, "System.Web.WebPages.Deployment.dll"));
-            Func<string, AssemblyName> getAssembyName = _ => new AssemblyName("System.Web.WebPages.Deployment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35");
+            Func<string, AssemblyName> getAssembyName = _ => new AssemblyName("System.Web.WebPages.Deployment, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35");
 
             // Act
             var binVersion = AssemblyUtils.GetVersionFromBin(binDirectory, fileSystem, getAssembyName);
 
             // Assert
-            Assert.Equal(new Version("2.0.0.0"), binVersion);
+            Assert.Equal(new Version("2.1.0.0"), binVersion);
         }
 
         [Fact]
@@ -159,22 +159,48 @@ namespace System.Web.WebPages.Deployment.Test
             var expectedAssemblies = new[]
             {
                 "Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "System.Web.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "System.Web.Helpers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "System.Web.WebPages, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "System.Web.WebPages.Administration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "System.Web.WebPages.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "WebMatrix.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
-                "WebMatrix.WebData, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "System.Web.Razor, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "System.Web.Helpers, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "System.Web.WebPages, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "System.Web.WebPages.Administration, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "System.Web.WebPages.Razor, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "WebMatrix.Data, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+                "WebMatrix.WebData, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
             };
 
             // Act 
-            var assemblies = AssemblyUtils.GetAssembliesForVersion(new Version("2.0.0.0"))
+            var assemblies = AssemblyUtils.GetAssembliesForVersion(new Version("2.1.0.0"))
                 .Select(c => c.ToString())
                 .ToArray();
 
             // Assert
             Assert.Equal(expectedAssemblies, assemblies);
+        }
+
+        [Fact]
+        public void GetMatchingAssembliesReturnsEmptyDictionaryIfAssemblyReferencesCollectionIsNull()
+        {
+            // Arrange
+            Dictionary<string, IEnumerable<string>> assemblyReferences = null;
+
+            // Act
+            var referencedAssemblies = AssemblyUtils.GetAssembliesMatchingOtherVersions(assemblyReferences);
+
+            // Assert
+            Assert.Empty(referencedAssemblies);
+        }
+
+        [Fact]
+        public void GetMatchingAssembliesReturnsEmptyDictionaryIfAssemblyReferencesCollectionIsEmpty()
+        {
+            // Arrange
+            var assemblyReferences = new Dictionary<string, IEnumerable<string>>();
+
+            // Act
+            var referencedAssemblies = AssemblyUtils.GetAssembliesMatchingOtherVersions(assemblyReferences);
+
+            // Assert
+            Assert.Empty(referencedAssemblies);
         }
 
         [Fact]
@@ -184,14 +210,8 @@ namespace System.Web.WebPages.Deployment.Test
             var assemblyReferences = new Dictionary<string, IEnumerable<string>>
             {
                 { @"x:\site\bin\A.dll", new List<string> { "mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=null" }},
-                { @"x:\site\bin\B.dll", new List<string> { "System.Web.Mvc, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" }},
+                { @"x:\site\bin\B.dll", new List<string> { "System.Web.Mvc, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" }},
             };
-
-            var a = "1";
-            var b = "2";
-
-            var c = new { a, b };
-            Console.WriteLine(c.a);
 
             // Act
             var referencedAssemblies = AssemblyUtils.GetAssembliesMatchingOtherVersions(assemblyReferences);

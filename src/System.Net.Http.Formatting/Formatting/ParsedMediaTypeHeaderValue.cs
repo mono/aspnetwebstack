@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.Contracts;
 using System.Net.Http.Headers;
@@ -8,22 +8,18 @@ namespace System.Net.Http.Formatting
     internal class ParsedMediaTypeHeaderValue
     {
         private const string MediaRangeAsterisk = "*";
-        private const char MediaTypeSubTypeDelimiter = '/';
-        private const string QualityFactorParameterName = "q";
-        private const double DefaultQualityFactor = 1.0;
+        private const char MediaTypeSubtypeDelimiter = '/';
 
-        private MediaTypeHeaderValue _mediaType;
         private string _type;
         private string _subType;
-        private bool? _hasNonQualityFactorParameter;
-        private double? _qualityFactor;
+        private bool? _isAllMediaRange;
+        private bool? _isSubtypeMediaRange;
 
         public ParsedMediaTypeHeaderValue(MediaTypeHeaderValue mediaType)
         {
             Contract.Assert(mediaType != null, "The 'mediaType' parameter should not be null.");
 
-            _mediaType = mediaType;
-            string[] splitMediaType = mediaType.MediaType.Split(MediaTypeSubTypeDelimiter);
+            string[] splitMediaType = mediaType.MediaType.Split(MediaTypeSubtypeDelimiter);
 
             Contract.Assert(splitMediaType.Length == 2, "The constructor of the MediaTypeHeaderValue would have failed if there wasn't a type and subtype.");
 
@@ -36,65 +32,32 @@ namespace System.Net.Http.Formatting
             get { return _type; }
         }
 
-        public string SubType
+        public string Subtype
         {
             get { return _subType; }
         }
 
         public bool IsAllMediaRange
         {
-            get { return IsSubTypeMediaRange && String.Equals(MediaRangeAsterisk, Type, StringComparison.Ordinal); }
-        }
-
-        public bool IsSubTypeMediaRange
-        {
-            get { return String.Equals(MediaRangeAsterisk, SubType, StringComparison.Ordinal); }
-        }
-
-        public bool HasNonQualityFactorParameter
-        {
             get
             {
-                if (!_hasNonQualityFactorParameter.HasValue)
+                if (!_isAllMediaRange.HasValue)
                 {
-                    _hasNonQualityFactorParameter = false;
-                    foreach (NameValueHeaderValue param in _mediaType.Parameters)
-                    {
-                        if (!String.Equals(QualityFactorParameterName, param.Name, StringComparison.Ordinal))
-                        {
-                            _hasNonQualityFactorParameter = true;
-                        }
-                    }
+                    _isAllMediaRange = IsSubtypeMediaRange && String.Equals(MediaRangeAsterisk, Type, StringComparison.Ordinal);
                 }
-
-                return _hasNonQualityFactorParameter.Value;
+                return _isAllMediaRange.Value;
             }
         }
 
-        public string CharSet
-        {
-            get { return _mediaType.CharSet; }
-        }
-
-        public double QualityFactor
+        public bool IsSubtypeMediaRange
         {
             get
             {
-                if (!_qualityFactor.HasValue)
+                if (!_isSubtypeMediaRange.HasValue)
                 {
-                    MediaTypeWithQualityHeaderValue mediaTypeWithQuality = _mediaType as MediaTypeWithQualityHeaderValue;
-                    if (mediaTypeWithQuality != null)
-                    {
-                        _qualityFactor = mediaTypeWithQuality.Quality;
-                    }
-
-                    if (!_qualityFactor.HasValue)
-                    {
-                        _qualityFactor = DefaultQualityFactor;
-                    }
+                    _isSubtypeMediaRange = String.Equals(MediaRangeAsterisk, Subtype, StringComparison.Ordinal);
                 }
-
-                return _qualityFactor.Value;
+                return _isSubtypeMediaRange.Value;
             }
         }
     }

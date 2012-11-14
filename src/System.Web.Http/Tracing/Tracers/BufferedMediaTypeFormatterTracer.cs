@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Globalization;
 using System.IO;
@@ -16,14 +16,13 @@ namespace System.Web.Http.Tracing.Tracers
 
         private MediaTypeFormatterTracer _innerTracer;
 
-        public BufferedMediaTypeFormatterTracer(MediaTypeFormatter innerFormatter, ITraceWriter traceWriter, HttpRequestMessage request)
+        public BufferedMediaTypeFormatterTracer(BufferedMediaTypeFormatter innerFormatter, ITraceWriter traceWriter, HttpRequestMessage request)
         {
             _innerTracer = new MediaTypeFormatterTracer(innerFormatter, traceWriter, request);
-        }
 
-        private BufferedMediaTypeFormatter InnerBufferedFormatter
-        {
-            get { return _innerTracer.InnerFormatter as BufferedMediaTypeFormatter; }
+            // copy non-overridable members from inner formatter
+            _innerTracer.CopyNonOverriableMembersFromInner(this);
+            BufferSize = innerFormatter.BufferSize;
         }
 
         HttpRequestMessage IFormatterTracer.Request
@@ -31,7 +30,7 @@ namespace System.Web.Http.Tracing.Tracers
             get { return _innerTracer.Request; }
         }
 
-        MediaTypeFormatter IFormatterTracer.InnerFormatter
+        public MediaTypeFormatter InnerFormatter
         {
             get { return _innerTracer.InnerFormatter; }
         }
@@ -51,14 +50,15 @@ namespace System.Web.Http.Tracing.Tracers
             return _innerTracer.GetPerRequestFormatterInstance(type, request, mediaType);
         }
 
-        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, string mediaType)
+        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, MediaTypeHeaderValue mediaType)
         {
             _innerTracer.SetDefaultContentHeaders(type, headers, mediaType);
         }
 
-        public override object ReadFromStream(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override object ReadFromStream(Type type, Stream stream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            BufferedMediaTypeFormatter innerFormatter = InnerBufferedFormatter;
+            BufferedMediaTypeFormatter innerFormatter = InnerFormatter as BufferedMediaTypeFormatter;
+            HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
             MediaTypeHeaderValue contentType = contentHeaders == null ? null : contentHeaders.ContentType;
             object value = null;
 
@@ -77,7 +77,7 @@ namespace System.Web.Http.Tracing.Tracers
                 },
                 execute: () =>
                 {
-                    value = innerFormatter.ReadFromStream(type, stream, contentHeaders, formatterLogger);
+                    value = innerFormatter.ReadFromStream(type, stream, content, formatterLogger);
                 },
                 endTrace: (tr) =>
                 {
@@ -90,10 +90,11 @@ namespace System.Web.Http.Tracing.Tracers
             return value;
         }
 
-        public override void WriteToStream(Type type, object value, Stream stream, HttpContentHeaders contentHeaders)
+        public override void WriteToStream(Type type, object value, Stream stream, HttpContent content)
         {
-            BufferedMediaTypeFormatter innerFormatter = InnerBufferedFormatter;
+            BufferedMediaTypeFormatter innerFormatter = InnerFormatter as BufferedMediaTypeFormatter;
 
+            HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
             MediaTypeHeaderValue contentType = contentHeaders == null
                            ? null
                            : contentHeaders.ContentType;
@@ -114,7 +115,7 @@ namespace System.Web.Http.Tracing.Tracers
                 },
                 execute: () =>
                 {
-                    innerFormatter.WriteToStream(type, value, stream, contentHeaders);
+                    innerFormatter.WriteToStream(type, value, stream, content);
                 },
                 endTrace: null,
                 errorTrace: null);

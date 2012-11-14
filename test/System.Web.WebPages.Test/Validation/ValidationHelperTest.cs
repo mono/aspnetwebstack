@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
@@ -6,9 +6,8 @@ using System.Linq;
 using System.Web.Mvc;
 using System.Web.WebPages.Html;
 using System.Web.WebPages.Scope;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.WebPages.Validation.Test
 {
@@ -821,7 +820,6 @@ namespace System.Web.WebPages.Validation.Test
 
         private class AutoFailValidator : IValidator
         {
-
             public ValidationResult Validate(ValidationContext validationContext)
             {
                 return new ValidationResult("Failed!");

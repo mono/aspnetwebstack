@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Globalization;
 
@@ -26,6 +26,9 @@ namespace System.Web.Razor.Text
             get { return _absoluteIndex; }
         }
 
+        /// <summary>
+        /// Gets the 1-based index of the line referred to by this Source Location.
+        /// </summary>
         public int LineIndex
         {
             get { return _lineIndex; }

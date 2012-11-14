@@ -1,8 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Web.Http.Controllers;
 using System.Web.Http.Routing;
 using System.Web.Routing;
 
@@ -10,42 +9,38 @@ namespace System.Web.Http.WebHost.Routing
 {
     internal class HostedHttpRoute : IHttpRoute
     {
-        private readonly Route _route;
-
-        public HostedHttpRoute(Route route)
+        public HostedHttpRoute(string uriTemplate, IDictionary<string, object> defaults, IDictionary<string, object> constraints, IDictionary<string, object> dataTokens, HttpMessageHandler handler)
         {
-            if (route == null)
-            {
-                throw Error.ArgumentNull("route");
-            }
-
-            _route = route;
+            RouteValueDictionary routeDefaults = defaults != null ? new RouteValueDictionary(defaults) : null;
+            RouteValueDictionary routeConstraints = constraints != null ? new RouteValueDictionary(constraints) : null;
+            RouteValueDictionary routeDataTokens = dataTokens != null ? new RouteValueDictionary(dataTokens) : null;
+            OriginalRoute = new HttpWebRoute(uriTemplate, routeDefaults, routeConstraints, routeDataTokens, HttpControllerRouteHandler.Instance, this);
+            Handler = handler;
         }
 
         public string RouteTemplate
         {
-            get { return _route.Url; }
+            get { return OriginalRoute.Url; }
         }
 
         public IDictionary<string, object> Defaults
         {
-            get { return _route.Defaults; }
+            get { return OriginalRoute.Defaults; }
         }
 
         public IDictionary<string, object> Constraints
         {
-            get { return _route.Constraints; }
+            get { return OriginalRoute.Constraints; }
         }
 
         public IDictionary<string, object> DataTokens
         {
-            get { return _route.DataTokens; }
+            get { return OriginalRoute.DataTokens; }
         }
 
-        internal Route OriginalRoute
-        {
-            get { return _route; }
-        }
+        public HttpMessageHandler Handler { get; private set; }
+
+        internal Route OriginalRoute { get; private set; }
 
         public IHttpRouteData GetRouteData(string rootVirtualPath, HttpRequestMessage request)
         {
@@ -60,36 +55,38 @@ namespace System.Web.Http.WebHost.Routing
             }
 
             HttpContextBase httpContextBase;
-            if (request.Properties.TryGetValue(HttpControllerHandler.HttpContextBaseKey, out httpContextBase))
+            if (!request.Properties.TryGetValue(HttpControllerHandler.HttpContextBaseKey, out httpContextBase))
             {
-                RouteData routeData = _route.GetRouteData(httpContextBase);
-                if (routeData != null)
-                {
-                    return new HostedHttpRouteData(routeData);
-                }
+                httpContextBase = new HttpRequestMessageContextWrapper(rootVirtualPath, request);
+            }
+
+            RouteData routeData = OriginalRoute.GetRouteData(httpContextBase);
+            if (routeData != null)
+            {
+                return new HostedHttpRouteData(routeData);
             }
 
             return null;
         }
 
-        public IHttpVirtualPathData GetVirtualPath(HttpControllerContext controllerContext, IDictionary<string, object> values)
+        public IHttpVirtualPathData GetVirtualPath(HttpRequestMessage request, IDictionary<string, object> values)
         {
-            if (controllerContext == null)
+            if (request == null)
             {
-                throw Error.ArgumentNull("controllerContext");
+                throw Error.ArgumentNull("request");
             }
 
             HttpContextBase httpContextBase;
-            if (controllerContext.Request.Properties.TryGetValue(HttpControllerHandler.HttpContextBaseKey, out httpContextBase))
+            if (request.Properties.TryGetValue(HttpControllerHandler.HttpContextBaseKey, out httpContextBase))
             {
-                HostedHttpRouteData routeData = controllerContext.RouteData as HostedHttpRouteData;
+                HostedHttpRouteData routeData = request.GetRouteData() as HostedHttpRouteData;
                 if (routeData != null)
                 {
                     RequestContext requestContext = new RequestContext(httpContextBase, routeData.OriginalRouteData);
-                    VirtualPathData virtualPathData = _route.GetVirtualPath(requestContext, new RouteValueDictionary(values));
+                    VirtualPathData virtualPathData = OriginalRoute.GetVirtualPath(requestContext, new RouteValueDictionary(values));
                     if (virtualPathData != null)
                     {
-                        return new HostedHttpVirtualPathData(virtualPathData);
+                        return new HostedHttpVirtualPathData(virtualPathData, routeData.Route);
                     }
                 }
             }

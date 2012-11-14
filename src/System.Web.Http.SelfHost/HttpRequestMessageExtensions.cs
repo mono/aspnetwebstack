@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ComponentModel;
 using System.ServiceModel.Security;
@@ -10,7 +10,7 @@ namespace System.Net.Http
     public static class HttpRequestMessageExtensions
     {
         private const string SecurityKey = "Security";
-
+        
         /// <summary>
         /// Gets the current <see cref="T:System.ServiceModel.Security.SecurityMessageProperty"/> 
         /// stored in <see cref="M:HttpRequestMessage.Properties"/> for the given request.

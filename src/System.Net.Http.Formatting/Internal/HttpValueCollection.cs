@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -39,12 +39,12 @@ namespace System.Net.Http.Formatting.Internal
                 string key = kv.Key;
                 if (key == null)
                 {
-                    key = string.Empty;
+                    key = String.Empty;
                 }
                 string value = kv.Value;
                 if (value == null)
                 {
-                    value = string.Empty;
+                    value = String.Empty;
                 }
                 nvc.Add(key, value);
             }

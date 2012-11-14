@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,7 +44,7 @@ namespace System.Web.Mvc
         {
             Type type = metadata.ModelType;
 
-            if (IsDateTimeType(type))
+            if (IsDateTimeType(type, metadata))
             {
                 yield return new DateModelValidator(metadata, context);
             }
@@ -60,9 +60,10 @@ namespace System.Web.Mvc
             return _numericTypes.Contains(GetTypeToValidate(type));
         }
 
-        private static bool IsDateTimeType(Type type)
+        private static bool IsDateTimeType(Type type, ModelMetadata metadata)
         {
-            return typeof(DateTime) == GetTypeToValidate(type);
+            return typeof(DateTime) == GetTypeToValidate(type)
+                && !String.Equals(metadata.DataTypeName, "Time", StringComparison.OrdinalIgnoreCase);
         }
 
         private static Type GetTypeToValidate(Type type)

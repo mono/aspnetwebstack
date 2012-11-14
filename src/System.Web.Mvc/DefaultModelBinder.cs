@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Web.Http;
 using System.Web.Mvc.Properties;
 
 namespace System.Web.Mvc
@@ -143,6 +144,8 @@ namespace System.Web.Mvc
 
         public virtual object BindModel(ControllerContext controllerContext, ModelBindingContext bindingContext)
         {
+            EnsureStackHelper.EnsureStack();
+
             if (bindingContext == null)
             {
                 throw new ArgumentNullException("bindingContext");

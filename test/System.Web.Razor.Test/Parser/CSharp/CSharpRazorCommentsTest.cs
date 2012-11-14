@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.CSharp
 {
@@ -56,9 +56,8 @@ namespace System.Web.Razor.Test.Parser.CSharp
         [Fact]
         public void RazorCommentInImplicitExpressionMethodCall()
         {
-            ParseDocumentTest(@"@foo(
-@**@
-",
+            ParseDocumentTest("@foo(" + Environment.NewLine
+                            + "@**@" + Environment.NewLine,
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new ExpressionBlock(
@@ -113,10 +112,10 @@ namespace System.Web.Razor.Test.Parser.CSharp
         [Fact]
         public void RazorCommentInVerbatimBlock()
         {
-            ParseDocumentTest(@"@{
-    <text
-    @**@
-}",
+            ParseDocumentTest("@{" + Environment.NewLine
+                            + "    <text" + Environment.NewLine
+                            + "    @**@" + Environment.NewLine
+                            + "}",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new StatementBlock(

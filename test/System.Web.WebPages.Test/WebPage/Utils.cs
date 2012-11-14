@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
@@ -105,6 +105,7 @@ namespace System.Web.WebPages.Test
         }
 
         // E.g. "default.aspx", "http://localhost/WebSite1/subfolder1/default.aspx"
+
         /// <summary>
         /// Creates an instance of HttpContext and assigns it to HttpContext.Current. Ensure that the returned value is disposed at the end of the test.
         /// </summary>

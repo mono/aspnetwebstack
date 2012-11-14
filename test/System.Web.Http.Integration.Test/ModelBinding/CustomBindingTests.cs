@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -16,14 +16,14 @@ namespace System.Web.Http.ModelBinding
             // Arrange
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(baseAddress + String.Format("ModelBinding/{0}", "GetIntCustom")),
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}", "GetIntCustom")),
                 Method = HttpMethod.Get
             };
 
             request.Headers.Add("value", "5");
 
             // Act
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
 
             // Assert
             string responseString = response.Content.ReadAsStringAsync().Result;

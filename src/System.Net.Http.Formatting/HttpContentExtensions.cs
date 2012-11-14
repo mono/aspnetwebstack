@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http
 {
@@ -104,15 +105,15 @@ namespace System.Net.Http
         {
             if (content == null)
             {
-                throw new ArgumentNullException("content");
+                throw Error.ArgumentNull("content");
             }
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
             if (formatters == null)
             {
-                throw new ArgumentNullException("formatters");
+                throw Error.ArgumentNull("formatters");
             }
 
             ObjectContent objectContent = content as ObjectContent;
@@ -127,17 +128,21 @@ namespace System.Net.Http
             {
                 formatter = new MediaTypeFormatterCollection(formatters).FindReader(type, mediaType);
             }
+            else
+            {
+                T defaultValue = (T)MediaTypeFormatter.GetDefaultValueForType(type);
+                return TaskHelpers.FromResult<T>(defaultValue);
+            }
 
             if (formatter == null)
             {
                 string mediaTypeAsString = mediaType != null ? mediaType.MediaType : Properties.Resources.UndefinedMediaType;
-                throw new InvalidOperationException(
-                    RS.Format(Properties.Resources.NoReadSerializerAvailable, type.Name, mediaTypeAsString));
+                throw Error.InvalidOperation(Properties.Resources.NoReadSerializerAvailable, type.Name, mediaTypeAsString);
             }
 
             return content.ReadAsStreamAsync()
-                          .Then(stream => formatter.ReadFromStreamAsync(type, stream, content.Headers, formatterLogger)
-                          .Then(value => (T)value));
+                          .Then(stream => formatter.ReadFromStreamAsync(type, stream, content, formatterLogger)
+                          .CastFromObject<T>());
         }
     }
 }

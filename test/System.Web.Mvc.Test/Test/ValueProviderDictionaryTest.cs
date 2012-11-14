@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Threading;
 using System.Web.Routing;
 using System.Web.TestUtil;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 #pragma warning disable 0618    // ValueProviderDictionary is now obsolete
 

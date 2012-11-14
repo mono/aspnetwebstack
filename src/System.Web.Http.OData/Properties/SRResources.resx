@@ -1,0 +1,492 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CannotSerializerNull" xml:space="preserve">
+    <value>Cannot serialize a null '{0}'.</value>
+  </data>
+  <data name="TypeCannotBeSerialized" xml:space="preserve">
+    <value>'{0}' cannot be serialized using the {1}.</value>
+  </data>
+  <data name="WriteObjectInlineNotSupported" xml:space="preserve">
+    <value>{0} does not support WriteObjectInline.</value>
+  </data>
+  <data name="PropertyMustHavePublicGetterAndSetter" xml:space="preserve">
+    <value>The PropertyInfo provided must have public 'get' and 'set' accessor methods.</value>
+  </data>
+  <data name="CreatePropertyNotSupported" xml:space="preserve">
+    <value>{0} does not support CreateProperty.</value>
+  </data>
+  <data name="TypeMustBeEntityCollection" xml:space="preserve">
+    <value>{0} is not a collection of type {1}. The ODataFeedSerializer can serialize only entity collections.</value>
+  </data>
+  <data name="WriteObjectNotSupported" xml:space="preserve">
+    <value>{0} does not support WriteObject.</value>
+  </data>
+  <data name="UriQueryStringInvalid" xml:space="preserve">
+    <value>The query specified in the URI is not valid.</value>
+  </data>
+  <data name="LambdaExpressionMustHaveExactlyOneParameter" xml:space="preserve">
+    <value>The LambdaExpression must have exactly one parameter.</value>
+  </data>
+  <data name="MemberExpressionsMustBeBoundToLambdaParameter" xml:space="preserve">
+    <value>MemberExpressions must be bound to the LambdaExpression parameter.</value>
+  </data>
+  <data name="MemberExpressionsMustBeProperties" xml:space="preserve">
+    <value>Member '{0}.{1}' is not a property.</value>
+  </data>
+  <data name="UnsupportedExpressionNodeType" xml:space="preserve">
+    <value>Unsupported Expression NodeType.</value>
+  </data>
+  <data name="EntitySetMustBeInTheModel" xml:space="preserve">
+    <value>The given entitySet must be in the given Entity Data Model.</value>
+  </data>
+  <data name="EntitySetNotFound" xml:space="preserve">
+    <value>No EntitySet exists in the EdmModel with EntityClrType '{0}'.</value>
+  </data>
+  <data name="FailedToBuildEdmModelBecauseReturnTypeIsNull" xml:space="preserve">
+    <value>Cannot create an EDM model as the action '{0}' on controller '{1}' has a void return type.</value>
+  </data>
+  <data name="FailedToRetrieveTypeToBuildEdmModel" xml:space="preserve">
+    <value>Cannot create an EDM model as the action '{0}' on controller '{1}' has a return type '{2}' that does not implement IEnumerable&lt;T&gt;.</value>
+  </data>
+  <data name="QueryParameterNotSupported" xml:space="preserve">
+    <value>The query parameter '{0}' is not supported.</value>
+  </data>
+  <data name="RequestMustContainConfiguration" xml:space="preserve">
+    <value>Request message does not contain an HttpConfiguration object.</value>
+  </data>
+  <data name="ActionContextMustHaveDescriptor" xml:space="preserve">
+    <value>The HttpActionContext.ActionDescriptor is null.</value>
+  </data>
+  <data name="ActionContextMustHaveRequest" xml:space="preserve">
+    <value>The HttpActionContext.Request is null.</value>
+  </data>
+  <data name="ActionExecutedContextMustHaveActionContext" xml:space="preserve">
+    <value>The HttpActionExecutedContext.ActionContext is null.</value>
+  </data>
+  <data name="ActionExecutedContextMustHaveRequest" xml:space="preserve">
+    <value>The HttpExecutedActionContext.Request is null.</value>
+  </data>
+  <data name="EntityClrTypeNotFound" xml:space="preserve">
+    <value>The model does not contain the entityClrType '{0}'.</value>
+  </data>
+  <data name="EntityClrTypeNotMatchEntitySetName" xml:space="preserve">
+    <value>The EntityClrType '{0}' does not match with the given entitySetName '{1}'.</value>
+  </data>
+  <data name="EntityClrTypeNotMatchEntitySet" xml:space="preserve">
+    <value>The EntityClrType '{0}' does not match with the given entitySet '{1}'.</value>
+  </data>
+  <data name="OrderByPropertyNotFound" xml:space="preserve">
+    <value>It is unsupported that the OrderByQueryNode.Expression is not an instance of PropertyAccessQueryNode type.</value>
+  </data>
+  <data name="CanNotParseInteger" xml:space="preserve">
+    <value>Failed to convert '{0}' to an integer.</value>
+  </data>
+  <data name="EntitySetNotFoundForName" xml:space="preserve">
+    <value>No EntitySet exists in the EdmModel with entitySetName '{0}'.</value>
+  </data>
+  <data name="MultipleEntitySetMatchedClrType" xml:space="preserve">
+    <value>There are multiple EntitySets found that match EntityClrType '{0}'.</value>
+  </data>
+  <data name="QueryCannotBeEmpty" xml:space="preserve">
+    <value>The value for OData query '{0}' cannot be empty.</value>
+  </data>
+  <data name="EdmTypeNotSupported" xml:space="preserve">
+    <value>{0} is not an supported edm type.</value>
+  </data>
+  <data name="MultipleMatchingClrTypesForEdmType" xml:space="preserve">
+    <value>More than one matching clr type found for the Edm type {0}.\nThe matching clr types are {1}.</value>
+  </data>
+  <data name="ODataFunctionNotSupported" xml:space="preserve">
+    <value>Unknown function '{0}'.</value>
+  </data>
+  <data name="QueryNodeBindingNotSupported" xml:space="preserve">
+    <value>Binding OData QueryNode of kind {0} is not supported by {1}.</value>
+  </data>
+  <data name="OrderByDuplicateProperty" xml:space="preserve">
+    <value>Duplicate property named '{0}' is not supported in the OrderByQueryNode.</value>
+  </data>
+  <data name="ErrorTypeMustBeODataErrorOrHttpError" xml:space="preserve">
+    <value>The type '{0}' is not supported by the ODataErrorSerializer. The type must be ODataError or HttpError.</value>
+  </data>
+  <data name="CannotAutoCreateMultipleCandidates" xml:space="preserve">
+    <value>Cannot automatically bind the navigation property '{0}' on entity type '{1}' for the source entity set '{2}' because there are two or more matching target entity sets. The matching entity sets are {3}.</value>
+  </data>
+  <data name="EntitySetHasNoBuildLinkAnnotation" xml:space="preserve">
+    <value>The entity set '{0}' is missing link generation configuration. Check that the self and edit links are configured during model building.</value>
+  </data>
+  <data name="PropertyDoesNotBelongToType" xml:space="preserve">
+    <value>The property '{0}' does not belong to the type '{1}'.</value>
+  </data>
+  <data name="EntitySetAlreadyConfiguredDifferentEntityType" xml:space="preserve">
+    <value>The entity set '{0}' was already configured with a different EntityType ('{1}').</value>
+  </data>
+  <data name="TypeCannotBeComplexWasEntity" xml:space="preserve">
+    <value>The type '{0}' cannot be configured as a ComplexType. It was previously configured as an EntityType.</value>
+  </data>
+  <data name="TypeCannotBeEntityWasComplex" xml:space="preserve">
+    <value>The type '{0}' cannot be configured as a EntityType. It was previously configured as an ComplexType.</value>
+  </data>
+  <data name="RecursiveComplexTypesNotAllowed" xml:space="preserve">
+    <value>The complex type '{0}' has a reference to itself through the property '{1}'. A recursive loop of complex types is not allowed.</value>
+  </data>
+  <data name="DeserializerDoesNotSupportRead" xml:space="preserve">
+    <value>'{0}' does not support Read.</value>
+  </data>
+  <data name="MappingDoesNotContainEntityType" xml:space="preserve">
+    <value>The provided mapping doesn't contain an entry for the entity type '{0}'.</value>
+  </data>
+  <data name="NoEditLinkFactoryFound" xml:space="preserve">
+    <value>No EditLink factory was found. Try calling HasEditLink on the EntitySetConfiguration for '{0}'.</value>
+  </data>
+  <data name="ManyToManyNavigationPropertyMustReturnCollection" xml:space="preserve">
+    <value>The property '{0}' on the type '{1}' is being configured as a Many-to-Many navigation property. Many to Many navigation properties must be collections.</value>
+  </data>
+  <data name="CreatingLinksByConventionNotSupported" xml:space="preserve">
+    <value>Creating Links by convention is not supported.</value>
+  </data>
+  <data name="DoesNotSupportReadInLine" xml:space="preserve">
+    <value>Type '{0}' does not support ReadInline.</value>
+  </data>
+  <data name="FormatterReadIsNotSupportedForType" xml:space="preserve">
+    <value>Reading type '{0}' is not supported by '{1}'.</value>
+  </data>
+  <data name="ItemMustBeOfType" xml:space="preserve">
+    <value>The item must be of type '{0}'.</value>
+  </data>
+  <data name="MustBeComplexProperty" xml:space="preserve">
+    <value>The property '{0}' on type '{1}' must be a Complex property.</value>
+  </data>
+  <data name="MustBeNavigationProperty" xml:space="preserve">
+    <value>The property  '{0}' on type '{1}' must be a Navigation property.</value>
+  </data>
+  <data name="MustBePrimitiveProperty" xml:space="preserve">
+    <value>The property '{0}'  on type '{1}' must be a Primitive property.</value>
+  </data>
+  <data name="MustHaveMatchingMultiplicity" xml:space="preserve">
+    <value>The multiplicity of the '{0}' property must be '{1}'.</value>
+  </data>
+  <data name="MustBePrimitiveType" xml:space="preserve">
+    <value>The type '{0}' must be a primitive type.</value>
+  </data>
+  <data name="RebindingNotSupported" xml:space="preserve">
+    <value>Rebinding is not supported.</value>
+  </data>
+  <data name="RecursionLimitExceeded" xml:space="preserve">
+    <value>The recursion limit has been exceeded.</value>
+  </data>
+  <data name="NoNavigationLinkFactoryFound" xml:space="preserve">
+    <value>No NavigationLink factory was found for the navigation property '{0}' from entity type '{1}' on entity set '{2}'. Try calling HasNavigationPropertyLink on the EntitySetConfiguration.</value>
+  </data>
+  <data name="NavigationPropertyRouteMissingOrIncorrect" xml:space="preserve">
+    <value>Link generation for the '{0}' NavigationProperty failed. Check that you have the '{1}' route correctly registered.</value>
+  </data>
+  <data name="GetByIdRouteMissingOrIncorrect" xml:space="preserve">
+    <value>EditLink generation failed. Check that you have the '{0}' route correctly registered.</value>
+  </data>
+  <data name="InvalidEntitySetName" xml:space="preserve">
+    <value>'{0}' is not a valid entity set name.</value>
+  </data>
+  <data name="CannotCastFilter" xml:space="preserve">
+    <value>Cannot cast $filter of type '{0}' to type '{1}'.</value>
+  </data>
+  <data name="OnlySkipAndTopSupported" xml:space="preserve">
+    <value>Only $skip and $top OData query options are supported for this type.</value>
+  </data>
+  <data name="PrimitiveTypeRequired" xml:space="preserve">
+    <value>The type '{0}' is not a primitive type.</value>
+  </data>
+  <data name="ComplexTypeRefersToEntityType" xml:space="preserve">
+    <value>The complex type '{0}' refers to the entity type '{1}' through the property '{2}'.</value>
+  </data>
+  <data name="MultipleAttributesFound" xml:space="preserve">
+    <value>The member '{0}' on type '{1}' contains multiple instances of the attribute '{2}'.</value>
+  </data>
+  <data name="GetEdmModelCalledMoreThanOnce" xml:space="preserve">
+    <value>GetEdmModel cannot be called more than once. Consider using a different instance of the model builder or reusing the model you have built earlier.</value>
+  </data>
+  <data name="CollectionPropertiesMustReturnIEnumerable" xml:space="preserve">
+    <value>CollectionProperties must implement IEnumerable&lt;&gt;. The Property '{0}' declared on '{1}' does not implement IEnumerable&lt;&gt;. </value>
+  </data>
+  <data name="MustBeCollectionProperty" xml:space="preserve">
+    <value>The '{0}' property on '{1}' must be a Collection property.</value>
+  </data>
+  <data name="CannotPatchNavigationProperties" xml:space="preserve">
+    <value>Cannot apply PATCH to navigation property '{0}' on entity type '{1}'.</value>
+  </data>
+  <data name="PropertyMustBeString" xml:space="preserve">
+    <value>The value must be a string.</value>
+  </data>
+  <data name="PropertyMustBeStringLengthOne" xml:space="preserve">
+    <value>The value must be a string with a length of 1.</value>
+  </data>
+  <data name="PropertyMustBeStringMaxLengthOne" xml:space="preserve">
+    <value>The value must be a string with a maximum length of 1.</value>
+  </data>
+  <data name="ArgumentMustBeOfType" xml:space="preserve">
+    <value>The argument must be of type '{0}'.</value>
+  </data>
+  <data name="CannotPatchKeyProperty" xml:space="preserve">
+    <value>Cannot apply PATCH on key property '{0}' on entity type '{1}' when '{2}' is '{3}'.</value>
+  </data>
+  <data name="DefaultRouteMissingOrIncorrect" xml:space="preserve">
+    <value>The feed self link could not be generated for the route named '{0}'.</value>
+  </data>
+  <data name="CollectionShouldHaveAddMethod" xml:space="preserve">
+    <value>The type '{0}' of the property '{1}' on type '{2}' does not have an Add method. Consider using a collection type that does have an Add method - for example IList&lt;T&gt; or ICollection&lt;T&gt;.</value>
+  </data>
+  <data name="InvalidBindingParameterType" xml:space="preserve">
+    <value>Invalid bindingParameter type '{0}'. A bindingParameter must be either an EntityType or a Collection of EntityTypes.</value>
+  </data>
+  <data name="InvalidParameterType" xml:space="preserve">
+    <value>Invalid parameter type '{0}'. A non-binding parameter type must be either Primitive, Complex, Collection of Primitive or a Collection of Complex.</value>
+  </data>
+  <data name="MoreThanOneProcedureFound" xml:space="preserve">
+    <value>More than one Procedure called '{0}' was found. Try using the other RemoveProcedure override.</value>
+  </data>
+  <data name="NoMatchingIEdmTypeFound" xml:space="preserve">
+    <value>No IEdmType could be found for '{0}'.</value>
+  </data>
+  <data name="UnsupportedEdmTypeKind" xml:space="preserve">
+    <value>Found unsupported EdmTypeKind '{0}' in list of available types.</value>
+  </data>
+  <data name="CannotDefineKeysOnDerivedTypes" xml:space="preserve">
+    <value>Cannot define keys on type '{0}' deriving from '{1}'. Only the root type in the entity inheritance hierarchy can contain keys.</value>
+  </data>
+  <data name="CannotRedefineBaseTypeProperty" xml:space="preserve">
+    <value>Cannot redefine property '{0}' already defined on the base type '{1}'.</value>
+  </data>
+  <data name="TypeDoesNotInheritFromBaseType" xml:space="preserve">
+    <value>'{0}' does not inherit from '{1}'.</value>
+  </data>
+  <data name="PropertyAlreadyDefinedInDerivedType" xml:space="preserve">
+    <value>Cannot define property '{0}' in the base entity type '{1}' as the derived type '{2}' already defines it.</value>
+  </data>
+  <data name="ConvertToEnumFailed" xml:space="preserve">
+    <value>Cannot compare an enum of type '{0}' to an expression of type '{1}'.</value>
+  </data>
+  <data name="FunctionNotSupportedOnEnum" xml:space="preserve">
+    <value>The '{0}' function cannot be applied to an enumeration-typed argument.</value>
+  </data>
+  <data name="CannotInstantiateAbstractEntityType" xml:space="preserve">
+    <value>An instance of the abstract entity type '{0}' was found. Abstract entity types cannot be instantiated.</value>
+  </data>
+  <data name="NullElementInCollection" xml:space="preserve">
+    <value>Collections cannot contain null elements.</value>
+  </data>
+  <data name="WriteToStreamAsyncMustHaveRequest" xml:space="preserve">
+    <value>The OData formatter does not support writing client requests. This formatter instance must have an associated request.</value>
+  </data>
+  <data name="ActionNotFound" xml:space="preserve">
+    <value>Action '{0}' was not found for RequestUri '{1}'.</value>
+  </data>
+  <data name="ActionResolutionFailed" xml:space="preserve">
+    <value>Action resolution failed. Multiple actions matching the action identifier '{0}' were found. The matching actions are: {1}.</value>
+  </data>
+  <data name="DefaultODataActionResolverRequirementsNotSatisfied" xml:space="preserve">
+    <value>DefaultODataActionResolver requires an ODataDeserializerContext with a non null Request and RequestUri.</value>
+  </data>
+  <data name="NoODataMediaTypeFormatterFound" xml:space="preserve">
+    <value>The ODataParameterBindingAttribute requires that an ODataMediaTypeFormatter be registered with the HttpConfiguration.</value>
+  </data>
+  <data name="ValueIsInvalid" xml:space="preserve">
+    <value>The value '{0}' is invalid. {1}</value>
+  </data>
+  <data name="ModelBinderUtil_ModelMetadataCannotBeNull" xml:space="preserve">
+    <value>The binding context cannot have a null ModelMetadata.</value>
+  </data>
+  <data name="EntityTypeMismatch" xml:space="preserve">
+    <value>The entity type '{0}' does not match the expected entity type '{1}' as set on the query context.</value>
+  </data>
+  <data name="CannotApplyODataQueryOptionsOfT" xml:space="preserve">
+    <value>Cannot apply {0} of '{1}' to {2} of '{3}'.</value>
+  </data>
+  <data name="HasActionLinkRequiresBindToEntity" xml:space="preserve">
+    <value>To register an action link factory, actions must be bindable to a single entity. Action '{0}' does not meet this requirement.</value>
+  </data>
+  <data name="NavigationPropertyNotInHierarchy" xml:space="preserve">
+    <value>The declaring entity type '{0}' of the given navigation property is not a part of the entity type '{1}' hierarchy of the entity set '{2}'.</value>
+  </data>
+  <data name="TargetEntityTypeMissing" xml:space="preserve">
+    <value>Could not find the target entity type for the navigation property '{0}' on entity type '{1}'.</value>
+  </data>
+  <data name="KeyValueCannotBeNull" xml:space="preserve">
+    <value>Key property '{0}' of type '{1}' is null. Key properties cannot have null values.</value>
+  </data>
+  <data name="BinaryOperatorNotSupported" xml:space="preserve">
+    <value>A binary operator with incompatible types was detected. Found operand types '{0}' and '{1}' for operator kind '{2}'.</value>
+  </data>
+  <data name="InvalidReturnTypeForQuerying" xml:space="preserve">
+    <value>The action '{0}' on controller '{1}' with return type '{2}' cannot support querying. Ensure the type of the returned content is IEnumerable, IQueryable, or a generic form of either interface.</value>
+  </data>
+  <data name="QueryingRequiresObjectContent" xml:space="preserve">
+    <value>Queries can not be applied to a response content of type '{0}'. The response content must be an ObjectContent.</value>
+  </data>
+  <data name="LambdaNestingLimitExceeded" xml:space="preserve">
+    <value>The Any/All nesting limit of {0} has been exceeded. LambdaNestingLimit can be configured on ODataQuerySettings or QueryableAttribute.</value>
+  </data>
+  <data name="NoODataFormatterForMetadata" xml:space="preserve">
+    <value>No OData formatter was found to write the OData metadata. Consider registering an appropriate ODataMediaTypeFormatter on the configuration's formatter collection.</value>
+  </data>
+  <data name="CannotAddToNullCollection" xml:space="preserve">
+    <value>The property '{0}' on type '{1}' returned a null value. The input stream contains collection items which cannot be added if the instance is null.</value>
+  </data>
+  <data name="PropertyIsNotCollection" xml:space="preserve">
+    <value>The type '{0}' of the property '{1}' on type '{2}' must be a collection.</value>
+  </data>
+  <data name="GetOnlyCollectionCannotBeArray" xml:space="preserve">
+    <value>The value of the property '{0}' on type '{1}' is an array. Consider adding a setter for the property.</value>
+  </data>
+  <data name="PreviousSegmentEdmTypeCannotBeNull" xml:space="preserve">
+    <value>The previous path segment cannot have a null value as its EdmType.</value>
+  </data>
+  <data name="PreviousTypeForKeyMustBeCollection" xml:space="preserve">
+    <value>The previous segment's EDM type '{0}' must be a collection type. Key segments can only be applied if the previous segment's type is a collection.</value>
+  </data>
+  <data name="InvalidPathSegment" xml:space="preserve">
+    <value>The URI segment '{0}' is invalid after the segment '{1}'.</value>
+  </data>
+  <data name="NoActionFoundForCollection" xml:space="preserve">
+    <value>Invalid action detected. '{0}' is not an action that can bind to 'Collection({1})'.</value>
+  </data>
+  <data name="ParserModelMustHaveOneContainer" xml:space="preserve">
+    <value>The parser requires an EDM model with exactly 1 entity container. {0} entity containers were found.</value>
+  </data>
+  <data name="PreviousSegmentMustBeCollectionType" xml:space="preserve">
+    <value>The previous segment's EDM type '{0}' must be a collection type.</value>
+  </data>
+  <data name="PreviousSegmentMustBeComplexType" xml:space="preserve">
+    <value>The previous segment's EDM type '{0}' must be a complex type.</value>
+  </data>
+  <data name="PreviousSegmentMustBeEntityCollectionType" xml:space="preserve">
+    <value>The previous segment's EDM type '{0}' must be an entity collection type.</value>
+  </data>
+  <data name="PreviousSegmentMustBeEntityType" xml:space="preserve">
+    <value>The previous segment's EDM type '{0}' must be an entity type.</value>
+  </data>
+  <data name="InvalidCastInPath" xml:space="preserve">
+    <value>Invalid cast encountered. Cast type '{0}' must be the same as or derive from the previous segment's type '{1}'.</value>
+  </data>
+  <data name="PreviousSegmentMustHaveEntitySet" xml:space="preserve">
+    <value>The previous path segment must have a defined EntitySet.</value>
+  </data>
+  <data name="SegmentNullOrEmpty" xml:space="preserve">
+    <value>The segment value must not be null or empty.</value>
+  </data>
+</root>

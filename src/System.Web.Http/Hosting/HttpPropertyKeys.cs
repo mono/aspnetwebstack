@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Threading;
@@ -38,9 +38,34 @@ namespace System.Web.Http.Hosting
         public static readonly string DependencyScope = "MS_DependencyScope";
 
         /// <summary>
+        /// Provides a key for the client certificate for this request.
+        /// </summary>
+        public static readonly string ClientCertificateKey = "MS_ClientCertificate";
+
+        /// <summary>
+        /// Provides a key for a delegate which can retrieve the client certificate for this request.
+        /// </summary>
+        public static readonly string RetrieveClientCertificateDelegateKey = "MS_RetrieveClientCertificateDelegate";
+
+        /// <summary>
         /// Provides a key for the <see cref="Guid"/> stored in <see cref="HttpRequestMessage.Properties"/>.
         /// This is the correlation id for that request.
         /// </summary>
         public static readonly string RequestCorrelationKey = "MS_RequestId";
+
+        /// <summary>
+        /// Provides a key that indicates whether the request originates from a local address.
+        /// </summary>
+        public static readonly string IsLocalKey = "MS_IsLocal";
+
+        /// <summary>
+        /// Provides a key that indicates whether error details are to be included in the response for this HTTP request.
+        /// </summary>
+        public static readonly string IncludeErrorDetailKey = "MS_IncludeErrorDetail";
+
+        /// <summary>
+        /// Provides a key for the parsed query string stored in <see cref="HttpRequestMessage.Properties"/>.
+        /// </summary>
+        public static readonly string RequestQueryNameValuePairsKey = "MS_QueryNameValuePairs";
     }
 }

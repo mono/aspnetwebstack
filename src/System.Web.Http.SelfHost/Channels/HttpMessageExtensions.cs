@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.ServiceModel.Channels;
@@ -44,39 +44,6 @@ namespace System.Web.Http.SelfHost.Channels
             if (httpMessage != null && httpMessage.IsRequest)
             {
                 return httpMessage.GetHttpRequestMessage(false);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Returns a reference to the <see cref="HttpRequestMessage"/> 
-        /// instance held by the given <see cref="Message"/> or null if the <see cref="Message"/> does not
-        /// hold a reference to an <see cref="HttpRequestMessage"/> 
-        /// instance.
-        /// </summary>
-        /// <remarks>The caller takes over the ownership of the associated <see cref="HttpRequestMessage"/> and is responsible for its disposal.</remarks>
-        /// <param name="message">The given <see cref="Message"/> that holds a reference to an 
-        /// <see cref="HttpRequestMessage"/> instance.
-        /// </param>
-        /// <returns>
-        /// A reference to the <see cref="HttpRequestMessage"/> 
-        /// instance held by the given <see cref="Message"/> or null if the <see cref="Message"/> does not
-        /// hold a reference to an <see cref="HttpRequestMessage"/> 
-        /// instance.
-        /// The caller is responsible for disposing any <see cref="HttpRequestMessage"/> instance returned.
-        /// </returns>
-        public static HttpRequestMessage ExtractHttpRequestMessage(this Message message)
-        {
-            if (message == null)
-            {
-                throw Error.ArgumentNull("message");
-            }
-
-            HttpMessage httpMessage = message as HttpMessage;
-            if (httpMessage != null && httpMessage.IsRequest)
-            {
-                return httpMessage.GetHttpRequestMessage(true);
             }
 
             return null;

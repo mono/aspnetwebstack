@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
@@ -32,7 +33,7 @@ namespace System.Net.Http.Formatting
         {
             if (source == null)
             {
-                throw new ArgumentNullException("source");
+                throw Error.ArgumentNull("source");
             }
             _source = source;
         }

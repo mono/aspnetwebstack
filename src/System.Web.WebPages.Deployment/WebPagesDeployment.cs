@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -17,6 +17,7 @@ using Microsoft.Win32;
 
 namespace System.Web.WebPages.Deployment
 {
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class WebPagesDeployment
     {
         private const string AppSettingsVersionKey = "webpages:Version";
@@ -37,34 +38,32 @@ namespace System.Web.WebPages.Deployment
         /// <remarks>
         /// In a non-hosted scenario, this method would only look at a web.config that is present at the current path. Any config settings at an
         /// ancestor directory would not be considered.
+        /// If we are unable to determine a version, we would assume that this is a v1 app.
         /// </remarks>
         public static Version GetVersionWithoutEnabledCheck(string path)
         {
-            if (String.IsNullOrEmpty(path))
-            {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("path");
-            }
+            return GetVersionWithoutEnabledCheckInternal(path, AssemblyUtils.WebPagesV1Version);
+        }
 
-            var binDirectory = GetBinDirectory(path);
-            var binVersion = AssemblyUtils.GetVersionFromBin(binDirectory, _fileSystem);
-            var maxVersion = AssemblyUtils.GetMaxWebPagesVersion();
-            return GetVersionInternal(GetAppSettings(path), binVersion, maxVersion);
+        public static Version GetExplicitWebPagesVersion(string path)
+        {
+            return GetVersionWithoutEnabledCheckInternal(path, defaultVersion: null);
         }
 
         [Obsolete("This method is obsolete and is meant for legacy code. Use GetVersionWithoutEnabled instead.")]
         public static Version GetVersion(string path)
         {
-            return GetObsoleteVersionInternal(path, GetAppSettings(path), new PhysicalFileSystem(), AssemblyUtils.GetMaxWebPagesVersion);
+            return GetObsoleteVersionInternal(path, GetAppSettings(path), new PhysicalFileSystem());
         }
 
         /// <remarks>
         /// This is meant to test an obsolete method. Don't use this!
         /// </remarks>
-        internal static Version GetObsoleteVersionInternal(string path, NameValueCollection configuration, IFileSystem fileSystem, Func<Version> getMaxWebPagesVersion)
+        internal static Version GetObsoleteVersionInternal(string path, NameValueCollection configuration, IFileSystem fileSystem)
         {
             if (String.IsNullOrEmpty(path))
             {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("path");
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "path");
             }
 
             var binDirectory = GetBinDirectory(path);
@@ -78,8 +77,8 @@ namespace System.Web.WebPages.Deployment
             }
             else if (AppRootContainsWebPagesFile(fileSystem, path))
             {
-                // If the path points to a WebPages site, return the highest version.
-                return getMaxWebPagesVersion();
+                // If the path points to a WebPages site, return v1 as a fixed version.
+                return AssemblyUtils.WebPagesV1Version;
             }
             return null;
         }
@@ -104,7 +103,7 @@ namespace System.Web.WebPages.Deployment
         {
             if (String.IsNullOrEmpty(path))
             {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("path");
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "path");
             }
 
             return IsEnabled(_fileSystem, path, GetAppSettings(path));
@@ -118,7 +117,7 @@ namespace System.Web.WebPages.Deployment
         {
             if (String.IsNullOrEmpty(path))
             {
-                throw ExceptionHelper.CreateArgumentNullOrEmptyException("path");
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "path");
             }
             return IsExplicitlyDisabled(GetAppSettings(path));
         }
@@ -182,6 +181,19 @@ namespace System.Web.WebPages.Deployment
             // 2) Version in bin
             // 3) defaultVersion.
             return GetVersionFromConfig(appSettings) ?? binVersion ?? defaultVersion;
+        }
+
+        private static Version GetVersionWithoutEnabledCheckInternal(string path, Version defaultVersion)
+        {
+            if (String.IsNullOrEmpty(path))
+            {
+                throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "path");
+            }
+
+            var binDirectory = GetBinDirectory(path);
+            var binVersion = AssemblyUtils.GetVersionFromBin(binDirectory, _fileSystem);
+
+            return GetVersionInternal(GetAppSettings(path), binVersion, defaultVersion);
         }
 
         /// <summary>

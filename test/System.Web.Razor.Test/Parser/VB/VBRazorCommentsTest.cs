@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.VB
 {
@@ -111,10 +111,10 @@ namespace System.Web.Razor.Test.Parser.VB
         [Fact]
         public void RazorCommentInVerbatimBlock()
         {
-            ParseDocumentTest(@"@Code
-    @<text
-    @**@
-End Code",
+            ParseDocumentTest("@Code" + Environment.NewLine
+                            + "    @<text" + Environment.NewLine
+                            + "    @**@" + Environment.NewLine
+                            + "End Code",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new StatementBlock(
@@ -149,8 +149,8 @@ End Code",
         [Fact]
         public void UnterminatedRazorCommentInVerbatimBlock()
         {
-            ParseDocumentTest(@"@Code
-@*",
+            ParseDocumentTest("@Code" + Environment.NewLine
+                            + "@*",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new StatementBlock(

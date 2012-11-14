@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Reflection;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.WebPages.TestUtils
 {
@@ -48,7 +48,9 @@ namespace System.Web.WebPages.TestUtils
         {
             using (StreamReader reader = new StreamReader(OpenRead()))
             {
-                return reader.ReadToEnd();
+                // The .Replace() calls normalize line endings, in case you get \n instead of \r\n
+                // since all the unit tests rely on the assumption that the files will have \r\n endings.
+                return reader.ReadToEnd().Replace("\r", "").Replace("\n", "\r\n");
             }
         }
 

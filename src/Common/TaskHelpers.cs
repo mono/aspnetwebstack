@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -11,7 +11,9 @@ namespace System.Threading.Tasks
     /// </summary>
     internal static class TaskHelpers
     {
-        private static Task _defaultCompleted = FromResult<AsyncVoid>(default(AsyncVoid));
+        private static readonly Task _defaultCompleted = FromResult<AsyncVoid>(default(AsyncVoid));
+
+        private static readonly Task<object> _completedTaskReturningNull = FromResult<object>(null);
 
         /// <summary>
         /// Returns a canceled Task. The task is completed, IsCanceled = True, IsFaulted = False.
@@ -84,15 +86,22 @@ namespace System.Threading.Tasks
             return tcs.Task;
         }
 
+        internal static Task<object> NullResult()
+        {
+            return _completedTaskReturningNull;
+        }
+
         /// <summary>
         /// Return a task that runs all the tasks inside the iterator sequentially. It stops as soon
         /// as one of the tasks fails or cancels, or after all the tasks have run succesfully.
         /// </summary>
         /// <param name="asyncIterator">collection of tasks to wait on</param>
         /// <param name="cancellationToken">cancellation token</param>
+        /// <param name="disposeEnumerator">whether or not to dispose the enumerator we get from <paramref name="asyncIterator"/>.
+        /// Only set to <c>false</c> if you can guarantee that <paramref name="asyncIterator"/>'s enumerator does not have any resources it needs to dispose.</param>
         /// <returns>a task that signals completed when all the incoming tasks are finished.</returns>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "The exception is propagated in a Task.")]
-        internal static Task Iterate(IEnumerable<Task> asyncIterator, CancellationToken cancellationToken = default(CancellationToken))
+        internal static Task Iterate(IEnumerable<Task> asyncIterator, CancellationToken cancellationToken = default(CancellationToken), bool disposeEnumerator = true)
         {
             Contract.Assert(asyncIterator != null);
 
@@ -101,7 +110,7 @@ namespace System.Threading.Tasks
             {
                 enumerator = asyncIterator.GetEnumerator();
                 Task task = IterateImpl(enumerator, cancellationToken);
-                return (enumerator != null) ? task.Finally(enumerator.Dispose) : task;
+                return (disposeEnumerator && enumerator != null) ? task.Finally(enumerator.Dispose, runSynchronously: true) : task;
             }
             catch (Exception ex)
             {
@@ -292,7 +301,7 @@ namespace System.Threading.Tasks
         /// <param name="tcs">completion source to set</param>
         /// <param name="source">Task to get values from.</param>
         /// <returns>true if this successfully sets the completion source.</returns>
-        [SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "This is a known safe usage of Task.Result, since it only occurs when we know the task's state to be completed.")]
+        [SuppressMessage("Microsoft.Web.FxCop", "MW1201:DoNotCallProblematicMethodsOnTask", Justification = "This is a known safe usage of Task.Result, since it only occurs when we know the task's state to be completed.")]
         internal static bool TrySetFromTask<TResult>(this TaskCompletionSource<TResult> tcs, Task source)
         {
             if (source.Status == TaskStatus.Canceled)
@@ -324,7 +333,7 @@ namespace System.Threading.Tasks
         /// <param name="tcs">completion source to set</param>
         /// <param name="source">Task to get values from.</param>
         /// <returns>true if this successfully sets the completion source.</returns>
-        [SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "This is a known safe usage of Task.Result, since it only occurs when we know the task's state to be completed.")]
+        [SuppressMessage("Microsoft.Web.FxCop", "MW1201:DoNotCallProblematicMethodsOnTask", Justification = "This is a known safe usage of Task.Result, since it only occurs when we know the task's state to be completed.")]
         internal static bool TrySetFromTask<TResult>(this TaskCompletionSource<Task<TResult>> tcs, Task source)
         {
             if (source.Status == TaskStatus.Canceled)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -55,7 +55,10 @@ namespace System.Web.Http.Dispatcher
             string controllerName = GetControllerName(request);
             if (String.IsNullOrEmpty(controllerName))
             {
-                throw new HttpResponseException(request.CreateResponse(HttpStatusCode.NotFound));
+                throw new HttpResponseException(request.CreateErrorResponse(
+                    HttpStatusCode.NotFound,
+                    Error.Format(SRResources.ResourceNotFound, request.RequestUri),
+                    Error.Format(SRResources.ControllerNameNotFound, request.RequestUri)));
             }
 
             HttpControllerDescriptor controllerDescriptor;
@@ -72,16 +75,15 @@ namespace System.Web.Http.Dispatcher
             if (matchingTypes.Count == 0)
             {
                 // no matching types
-                throw new HttpResponseException(request.CreateResponse(
+                throw new HttpResponseException(request.CreateErrorResponse(
                     HttpStatusCode.NotFound,
+                    Error.Format(SRResources.ResourceNotFound, request.RequestUri),
                     Error.Format(SRResources.DefaultControllerFactory_ControllerNameNotFound, controllerName)));
             }
             else
             {
                 // multiple matching types
-                throw new HttpResponseException(request.CreateResponse(
-                    HttpStatusCode.InternalServerError,
-                    CreateAmbiguousControllerExceptionMessage(request.GetRouteData().Route, controllerName, matchingTypes)));
+                throw CreateAmbiguousControllerException(request.GetRouteData().Route, controllerName, matchingTypes);
             }
         }
 
@@ -109,7 +111,7 @@ namespace System.Web.Http.Dispatcher
             return controllerName;
         }
 
-        private static string CreateAmbiguousControllerExceptionMessage(IHttpRoute route, string controllerName, ICollection<Type> matchingTypes)
+        private static Exception CreateAmbiguousControllerException(IHttpRoute route, string controllerName, ICollection<Type> matchingTypes)
         {
             Contract.Assert(route != null);
             Contract.Assert(controllerName != null);
@@ -123,7 +125,8 @@ namespace System.Web.Http.Dispatcher
                 typeList.Append(matchedType.FullName);
             }
 
-            return Error.Format(SRResources.DefaultControllerFactory_ControllerNameAmbiguous_WithRouteTemplate, controllerName, route.RouteTemplate, typeList);
+            string errorMessage = Error.Format(SRResources.DefaultControllerFactory_ControllerNameAmbiguous_WithRouteTemplate, controllerName, route.RouteTemplate, typeList, Environment.NewLine);
+            return new InvalidOperationException(errorMessage);
         }
 
         private ConcurrentDictionary<string, HttpControllerDescriptor> InitializeControllerInfoCache()

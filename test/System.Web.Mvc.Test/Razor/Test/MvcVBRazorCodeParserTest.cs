@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Mvc.Razor.Test
 {
@@ -173,8 +173,8 @@ namespace System.Web.Mvc.Razor.Test
             // Arrange + Act
             List<RazorError> errors = new List<RazorError>();
             var document =
-                @"@ModelType Foo
-@ModelType Bar";
+                "@ModelType Foo" + Environment.NewLine
+              + "@ModelType Bar";
             var spans = ParseDocument(document, errors);
 
             // Assert
@@ -211,8 +211,8 @@ namespace System.Web.Mvc.Razor.Test
             // Arrange + Act
             List<RazorError> errors = new List<RazorError>();
             var document =
-                @"@ModelType Foo
-@Inherits Bar";
+                "@ModelType Foo" + Environment.NewLine
+              + "@Inherits Bar";
             var spans = ParseDocument(document, errors);
 
             // Assert
@@ -249,8 +249,8 @@ namespace System.Web.Mvc.Razor.Test
             // Arrange + Act
             List<RazorError> errors = new List<RazorError>();
             var document =
-                @"@Inherits Bar
-@ModelType Foo";
+                "@Inherits Bar" + Environment.NewLine
+              + "@ModelType Foo";
             var spans = ParseDocument(document, errors);
 
             // Assert

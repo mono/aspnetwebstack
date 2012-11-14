@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Linq;
@@ -6,8 +6,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Web.WebPages.Scope;
 using System.Web.WebPages.TestUtils;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Helpers.Test
 {
@@ -183,7 +182,7 @@ namespace System.Web.Helpers.Test
             string body = "body1";
             string from = FromAddress;
             string cc = "cc@xyz.com";
-            string attachmentName = "HiRes.jpg";
+            string attachmentName = "NETLogo.png";
             string bcc = "foo@bar.com";
             string replyTo = "x@y.com,z@pqr.com";
             string contentEncoding = "utf-8";

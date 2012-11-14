@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Net.Http.Formatting.Parsers;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting
 {
@@ -17,11 +18,6 @@ namespace System.Net.Http.Formatting
         private const int MinBufferSize = 256;
         private const int DefaultBufferSize = 32 * 1024;
 
-        private static readonly MediaTypeHeaderValue[] _supportedMediaTypes = new MediaTypeHeaderValue[]
-        {
-            MediaTypeConstants.ApplicationFormUrlEncodedMediaType
-        };
-
         private int _readBufferSize = DefaultBufferSize;
         private int _maxDepth = FormattingUtilities.DefaultMaxDepth;
 
@@ -30,10 +26,7 @@ namespace System.Net.Http.Formatting
         /// </summary>
         public FormUrlEncodedMediaTypeFormatter()
         {
-            foreach (MediaTypeHeaderValue value in _supportedMediaTypes)
-            {
-                SupportedMediaTypes.Add(value);
-            }
+            SupportedMediaTypes.Add(MediaTypeConstants.ApplicationFormUrlEncodedMediaType);
         }
 
         /// <summary>
@@ -61,7 +54,7 @@ namespace System.Net.Http.Formatting
             {
                 if (value < FormattingUtilities.DefaultMinDepth)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, FormattingUtilities.DefaultMinDepth));
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, FormattingUtilities.DefaultMinDepth);
                 }
 
                 _maxDepth = value;
@@ -82,7 +75,7 @@ namespace System.Net.Http.Formatting
             {
                 if (value < MinBufferSize)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MinBufferSize));
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, MinBufferSize);
                 }
 
                 _readBufferSize = value;
@@ -99,7 +92,7 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             // Can't read arbitrary types. 
@@ -116,7 +109,7 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             return false;
@@ -124,28 +117,28 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Called during deserialization to read an object of the specified <paramref name="type"/>
-        /// from the specified <paramref name="stream"/>.
+        /// from the specified <paramref name="readStream"/>.
         /// </summary>
         /// <param name="type">The type of object to read.</param>
-        /// <param name="stream">The <see cref="Stream"/> from which to read.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> for the content being read.</param>
+        /// <param name="readStream">The <see cref="Stream"/> from which to read.</param>
+        /// <param name="content">The <see cref="HttpContent"/> for the content being read.</param>
         /// <param name="formatterLogger">The <see cref="IFormatterLogger"/> to log events to.</param>
         /// <returns>A <see cref="Task"/> whose result will be the object instance that has been read.</returns>
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (readStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("readStream");
             }
 
             return TaskHelpers.RunSynchronously<object>(() =>
             {
-                IEnumerable<KeyValuePair<string, string>> nameValuePairs = ReadFormUrlEncoded(stream, ReadBufferSize);
+                IEnumerable<KeyValuePair<string, string>> nameValuePairs = ReadFormUrlEncoded(readStream, ReadBufferSize);
 
                 if (type == typeof(FormDataCollection))
                 {
@@ -156,10 +149,9 @@ namespace System.Net.Http.Formatting
                 {
                     return FormUrlEncodedJson.Parse(nameValuePairs, _maxDepth);
                 }
-                
+
                 // Passed us an unsupported type. Should have called CanReadType() first.
-                throw new InvalidOperationException(
-                    RS.Format(Properties.Resources.SerializerCannotSerializeType, GetType().Name, type.Name));
+                throw Error.InvalidOperation(Properties.Resources.SerializerCannotSerializeType, GetType().Name, type.Name);
             });
         }
 
@@ -176,7 +168,7 @@ namespace System.Net.Http.Formatting
             Contract.Assert(bufferSize >= MinBufferSize, "buffer size cannot be less than MinBufferSize");
 
             byte[] data = new byte[bufferSize];
-            
+
             int bytesRead;
             bool isFinal = false;
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
@@ -195,14 +187,14 @@ namespace System.Net.Http.Formatting
                 }
                 catch (Exception e)
                 {
-                    throw new IOException(Properties.Resources.ErrorReadingFormUrlEncodedStream, e);
+                    throw Error.InvalidOperation(e, Properties.Resources.ErrorReadingFormUrlEncodedStream);
                 }
 
                 int bytesConsumed = 0;
                 state = parser.ParseBuffer(data, bytesRead, ref bytesConsumed, isFinal);
                 if (state != ParserState.NeedMoreData && state != ParserState.Done)
                 {
-                    throw new IOException(RS.Format(Properties.Resources.FormUrlEncodedParseError, bytesConsumed));
+                    throw Error.InvalidOperation(Properties.Resources.FormUrlEncodedParseError, bytesConsumed);
                 }
 
                 if (isFinal)

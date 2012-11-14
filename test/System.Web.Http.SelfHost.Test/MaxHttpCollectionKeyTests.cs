@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -9,9 +9,8 @@ using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Text;
+using Microsoft.TestCommon;
 using Newtonsoft.Json.Linq;
-using Xunit;
-using Xunit.Extensions;
 
 namespace System.Web.Http.SelfHost
 {
@@ -171,7 +170,7 @@ namespace System.Web.Http.SelfHost
                 HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.BadRequest);
                 ModelBinding.ModelState value = null;
                 ModelState.TryGetValue("a", out value);
-                response.Content = new StringContent(value.Errors[0].ErrorMessage);
+                response.Content = new StringContent(value.Errors[0].Exception.Message);
                 throw new HttpResponseException(response);
             }
 
@@ -214,10 +213,9 @@ namespace System.Web.Http.SelfHost
             return "success from PostCustomerFromUri";
         }
 
-        [Queryable]
         public IQueryable<string> GetWithQueryable()
         {
-            return new List<string>(){"success from GetWithQueryable"}.AsQueryable();
+            return new List<string>() { "success from GetWithQueryable" }.AsQueryable();
         }
 
         public string PostJToken(JToken token)

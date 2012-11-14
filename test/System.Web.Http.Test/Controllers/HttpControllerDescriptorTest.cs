@@ -1,13 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Net.Http.Formatting;
 using System.Web.Http.Controllers;
-using System.Web.Http.Dispatcher;
 using System.Web.Http.Filters;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http
 {
@@ -21,9 +20,6 @@ namespace System.Web.Http
             Assert.Null(controllerDescriptor.ControllerName);
             Assert.Null(controllerDescriptor.Configuration);
             Assert.Null(controllerDescriptor.ControllerType);
-            Assert.Null(controllerDescriptor.HttpActionInvoker);
-            Assert.Null(controllerDescriptor.HttpActionSelector);
-            Assert.Null(controllerDescriptor.HttpControllerActivator);
             Assert.NotNull(controllerDescriptor.Properties);
         }
 
@@ -38,9 +34,6 @@ namespace System.Web.Http
             Assert.NotNull(controllerDescriptor.ControllerName);
             Assert.NotNull(controllerDescriptor.Configuration);
             Assert.NotNull(controllerDescriptor.ControllerType);
-            Assert.NotNull(controllerDescriptor.HttpActionInvoker);
-            Assert.NotNull(controllerDescriptor.HttpActionSelector);
-            Assert.NotNull(controllerDescriptor.HttpControllerActivator);
             Assert.NotNull(controllerDescriptor.Properties);
             Assert.Equal(config, controllerDescriptor.Configuration);
             Assert.Equal(controllerName, controllerDescriptor.ControllerName);
@@ -114,62 +107,6 @@ namespace System.Web.Http
         }
 
         [Fact]
-        public void HttpActionInvoker_Property()
-        {
-            IHttpActionInvoker invoker = new ApiControllerActionInvoker();
-            HttpControllerDescriptor controllerDescriptor = new HttpControllerDescriptor();
-
-            Assert.Reflection.Property<HttpControllerDescriptor, IHttpActionInvoker>(
-                instance: controllerDescriptor,
-                propertyGetter: cd => cd.HttpActionInvoker,
-                expectedDefaultValue: null,
-                allowNull: false,
-                roundTripTestValue: invoker);
-        }
-
-        [Fact]
-        public void HttpActionSelector_Property()
-        {
-            IHttpActionSelector selector = new ApiControllerActionSelector();
-            HttpControllerDescriptor controllerDescriptor = new HttpControllerDescriptor();
-
-            Assert.Reflection.Property<HttpControllerDescriptor, IHttpActionSelector>(
-                instance: controllerDescriptor,
-                propertyGetter: cd => cd.HttpActionSelector,
-                expectedDefaultValue: null,
-                allowNull: false,
-                roundTripTestValue: selector);
-        }
-
-        [Fact]
-        public void HttpControllerActivator_Property()
-        {
-            IHttpControllerActivator activator = new Mock<IHttpControllerActivator>().Object;
-            HttpControllerDescriptor controllerDescriptor = new HttpControllerDescriptor();
-
-            Assert.Reflection.Property<HttpControllerDescriptor, IHttpControllerActivator>(
-                instance: controllerDescriptor,
-                propertyGetter: cd => cd.HttpControllerActivator,
-                expectedDefaultValue: null,
-                allowNull: false,
-                roundTripTestValue: activator);
-        }
-
-        [Fact]
-        public void ActionValueBinder_Property()
-        {
-            IActionValueBinder activator = new Mock<IActionValueBinder>().Object;
-            HttpControllerDescriptor controllerDescriptor = new HttpControllerDescriptor();
-
-            Assert.Reflection.Property<HttpControllerDescriptor, IActionValueBinder>(
-                instance: controllerDescriptor,
-                propertyGetter: cd => cd.ActionValueBinder,
-                expectedDefaultValue: null,
-                allowNull: false,
-                roundTripTestValue: activator);
-        }
-
-        [Fact]
         public void GetFilters_InvokesGetCustomAttributesMethod()
         {
             var descriptorMock = new Mock<HttpControllerDescriptor> { CallBase = true };
@@ -181,5 +118,183 @@ namespace System.Web.Http
             Assert.Same(filters, result);
             descriptorMock.Verify();
         }
+
+        [Fact]
+        public void Initialize_In_InheritenceHierarchy()
+        {
+            // Verifies that initialization is run in order with , and that they all mutate on the same descriptor object 
+            HttpConfiguration config = new HttpConfiguration();
+
+            // Act.
+            HttpControllerDescriptor desc = new HttpControllerDescriptor(config, "MyController", typeof(MyDerived2Controller));
+
+            // Assert
+            Assert.Same(MyDerived1Controller.SelectorBase, desc.Configuration.Services.GetActionSelector());
+            Assert.Same(MyDerived1Controller.ActionValueBinderDerived1, desc.Configuration.Services.GetActionValueBinder());
+            Assert.Same(config.Formatters, desc.Configuration.Formatters); // didn't override, stays the same
+            Assert.Same(config.ParameterBindingRules, desc.Configuration.ParameterBindingRules); // didn't override, stays the same
+        }
+
+        [Fact]
+        public void Initialize_In_InheritenceHierarchy_Branching()
+        {
+            // Verifies that initialization is run in order with, and that they all mutate on the same descriptor object 
+            HttpConfiguration config = new HttpConfiguration();
+
+            // Act.
+            HttpControllerDescriptor desc = new HttpControllerDescriptor(config, "MyController", typeof(MyDerived3Controller));
+
+            // Assert
+            Assert.Same(MyDerived1Controller.SelectorBase, desc.Configuration.Services.GetActionSelector());
+            Assert.Same(MyDerived3Controller.ActionValueBinderDerived3, desc.Configuration.Services.GetActionValueBinder());
+            Assert.Same(config.Formatters, desc.Configuration.Formatters); // didn't override, stays the same
+            Assert.Same(config.ParameterBindingRules, desc.Configuration.ParameterBindingRules); // didn't override, stays the same
+        }
+
+        [Fact]
+        public void Initialize_GetsTheActualControllerDescriptor_In_InheritenceHierarchy()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+
+            HttpControllerDescriptor desc = new HttpControllerDescriptor(config, "MyController", typeof(VerifyControllerDescriptorDerivedController));
+            Assert.Equal(typeof(VerifyControllerDescriptorDerivedController), VerifyControllerDescriptorAttribute.ControllerType);
+
+            desc = new HttpControllerDescriptor(config, "MyController", typeof(VerifyControllerDescriptorBaseController));
+            Assert.Equal(typeof(VerifyControllerDescriptorBaseController), VerifyControllerDescriptorAttribute.ControllerType);
+        }
+
+        [Fact]
+        public void EmptySetting_DoesNotChangeTheConfigurationInstance()
+        {
+            HttpConfiguration config = new HttpConfiguration();
+
+            HttpControllerDescriptor desc = new HttpControllerDescriptor(config, "MyController", typeof(NoopControllerConfigController));
+            Assert.Same(config, desc.Configuration); // didn't change anything, the config instance stays the same
+        }
+
+        class NoopControllerConfigAttribute : Attribute, IControllerConfiguration
+        {
+            public void Initialize(HttpControllerSettings controllerSettings, HttpControllerDescriptor controllerDescriptor)
+            {
+            }
+        }
+
+        [NoopControllerConfig]
+        class NoopControllerConfigController : ApiController
+        {
+        }
+
+        class VerifyControllerDescriptorAttribute : Attribute, IControllerConfiguration
+        {
+            public static Type ControllerType;
+            public void Initialize(HttpControllerSettings settings, HttpControllerDescriptor controllerDescriptor)
+            {
+                ControllerType = controllerDescriptor.ControllerType;
+            }
+        }
+
+        [VerifyControllerDescriptor]
+        class VerifyControllerDescriptorBaseController : ApiController
+        {
+        }
+
+        class VerifyControllerDescriptorDerivedController : VerifyControllerDescriptorBaseController
+        {
+        }
+
+        class MyConfigBaseAttribute : Attribute, IControllerConfiguration
+        {
+            public void Initialize(HttpControllerSettings settings, HttpControllerDescriptor controllerDescriptor)
+            {
+                settings.Services.Replace(typeof(IActionValueBinder), MyBaseController.ActionValueBinderBase);
+                settings.Services.Replace(typeof(IHttpActionSelector), MyBaseController.SelectorBase);
+            }
+        }
+
+        [MyConfigBase]
+        class MyBaseController : ApiController
+        {
+            public static IHttpActionSelector SelectorBase = new Mock<IHttpActionSelector>().Object;
+            public static IActionValueBinder ActionValueBinderBase = new Mock<IActionValueBinder>().Object;
+        }
+
+        class MyConfigDerived1Attribute : Attribute, IControllerConfiguration
+        {
+            public void Initialize(HttpControllerSettings settings, HttpControllerDescriptor controllerDescriptor)
+            {
+                // Base runs first, so we should be able to see changes from the base.
+                Assert.Same(MyBaseController.ActionValueBinderBase, settings.Services.GetActionValueBinder());
+
+                // Also overwrite them
+                settings.Services.Replace(typeof(IActionValueBinder), MyDerived1Controller.ActionValueBinderDerived1);
+            }
+        }
+
+        class MyConfigDerived3Attribute : Attribute, IControllerConfiguration
+        {
+            public void Initialize(HttpControllerSettings settings, HttpControllerDescriptor controllerDescriptor)
+            {
+                // MyConfigDerived1 runs first, so we should be able to see changes from the MyConfigDerived1.
+                Assert.Same(MyDerived1Controller.ActionValueBinderDerived1, settings.Services.GetActionValueBinder());
+
+                // Also overwrite them
+                settings.Services.Replace(typeof(IActionValueBinder), MyDerived3Controller.ActionValueBinderDerived3);
+            }
+        }
+
+        [MyConfigDerived1]
+        class MyDerived1Controller : MyBaseController
+        {
+            public static IActionValueBinder ActionValueBinderDerived1 = new Mock<IActionValueBinder>().Object;
+        }
+
+        class MyDerived2Controller : MyDerived1Controller
+        {
+        }
+
+        [MyConfigDerived3]
+        class MyDerived3Controller : MyDerived1Controller
+        {
+            public static IActionValueBinder ActionValueBinderDerived3 = new Mock<IActionValueBinder>().Object;
+        }
+
+
+        [Fact]
+        public void Initialize_Append_A_Formatter()
+        {
+            // Verifies that controller inherit the formatter list from the global config, and can mutate it. 
+            HttpConfiguration config = new HttpConfiguration();
+
+            MediaTypeFormatter globalFormatter = new Mock<MediaTypeFormatter>().Object;
+            config.Formatters.Clear();
+            config.Formatters.Add(globalFormatter);
+
+            // Act.
+            HttpControllerDescriptor desc = new HttpControllerDescriptor(config, "MyController", typeof(MyControllerWithCustomFormatter));
+
+            // Assert
+            Assert.Equal(2, desc.Configuration.Formatters.Count);
+            Assert.Same(globalFormatter, desc.Configuration.Formatters[0]);
+            Assert.Same(MyControllerWithCustomFormatter.CustomFormatter, desc.Configuration.Formatters[1]);
+        }
+
+
+        class MyControllerWithCustomFormatterConfigAttribute : Attribute, IControllerConfiguration
+        {
+            public void Initialize(HttpControllerSettings settings, HttpControllerDescriptor controllerDescriptor)
+            {
+                // Appends to existing list. Formatter list has copy-on-write semantics. 
+                Assert.Equal(1, settings.Formatters.Count); // the one we already set 
+                settings.Formatters.Add(MyControllerWithCustomFormatter.CustomFormatter);
+            }
+        }
+
+        [MyControllerWithCustomFormatterConfig]
+        class MyControllerWithCustomFormatter : ApiController
+        {
+            public static MediaTypeFormatter CustomFormatter = new Mock<MediaTypeFormatter>().Object;
+
+        }
+
     }
 }

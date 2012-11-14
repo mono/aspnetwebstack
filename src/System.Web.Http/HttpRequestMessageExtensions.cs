@@ -1,14 +1,17 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Web.Http;
 using System.Web.Http.Dependencies;
 using System.Web.Http.Hosting;
+using System.Web.Http.ModelBinding;
 using System.Web.Http.Properties;
 using System.Web.Http.Routing;
 
@@ -52,7 +55,12 @@ namespace System.Net.Http
             IDependencyScope result;
             if (!request.Properties.TryGetValue<IDependencyScope>(HttpPropertyKeys.DependencyScope, out result))
             {
-                result = request.GetConfiguration().DependencyResolver.BeginScope();
+                IDependencyResolver dependencyResolver = request.GetConfiguration().DependencyResolver;
+                result = dependencyResolver.BeginScope();
+                if (result == null)
+                {
+                    throw Error.InvalidOperation(SRResources.DependencyResolver_BeginScopeReturnsNull, dependencyResolver.GetType().Name);
+                }
                 request.Properties[HttpPropertyKeys.DependencyScope] = result;
                 request.RegisterForDispose(result);
             }
@@ -73,6 +81,39 @@ namespace System.Net.Http
             }
 
             return request.GetProperty<SynchronizationContext>(HttpPropertyKeys.SynchronizationContextKey);
+        }
+
+        /// <summary>
+        /// Gets the current <see cref="T:System.Security.Cryptography.X509Certificates.X509Certificate2"/> or null if not available.
+        /// </summary>
+        /// <param name="request">The HTTP request.</param>
+        /// <returns>The <see cref="T:System.Security.Cryptography.X509Certificates.X509Certificate2"/> or null.</returns>
+        public static X509Certificate2 GetClientCertificate(this HttpRequestMessage request)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            X509Certificate2 result = null;
+
+            if (!request.Properties.TryGetValue(HttpPropertyKeys.ClientCertificateKey, out result))
+            {
+                // now let us get out the delegate and try to invoke it
+                Func<HttpRequestMessage, X509Certificate2> retrieveCertificate;
+
+                if (request.Properties.TryGetValue(HttpPropertyKeys.RetrieveClientCertificateDelegateKey, out retrieveCertificate))
+                {
+                    result = retrieveCertificate(request);
+
+                    if (result != null)
+                    {
+                        request.Properties.Add(HttpPropertyKeys.ClientCertificateKey, result);
+                    }
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -98,8 +139,162 @@ namespace System.Net.Http
         }
 
         /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping an <see cref="HttpError"/> with message <paramref name="message"/>.
+        /// If no formatter is found, this method returns a response with status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of 
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="message">The error message.</param>
+        /// <returns>An error response with error message <paramref name="message"/> and status code <paramref name="statusCode"/>.</returns>
+        public static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, string message)
+        {
+            return request.CreateErrorResponse(statusCode, new HttpError(message));
+        }
+
+        /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping an <see cref="HttpError"/> with message <paramref name="message"/>
+        /// and message detail <paramref name="messageDetail"/>.If no formatter is found, this method returns a response with 
+        /// status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of 
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="message">The error message. This message will always be seen by clients.</param>
+        /// <param name="messageDetail">The error message detail. This message will only be seen by clients if we should include error detail.</param>
+        /// <returns>An error response with error message <paramref name="message"/> and message detail <paramref name="messageDetail"/>
+        /// and status code <paramref name="statusCode"/>.</returns>
+        internal static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, string message, string messageDetail)
+        {
+            return request.CreateErrorResponse(statusCode, includeErrorDetail => includeErrorDetail ? new HttpError(message, messageDetail) : new HttpError(message));
+        }
+
+        /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping an <see cref="HttpError"/> with error message <paramref name="message"/>
+        /// for exception <paramref name="exception"/>. If no formatter is found, this method returns a response with status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="message">The error message.</param>
+        /// <param name="exception">The exception.</param>
+        /// <returns>An error response for <paramref name="exception"/> with error message <paramref name="message"/>
+        /// and status code <paramref name="statusCode"/>.</returns>
+        public static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, string message, Exception exception)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            return request.CreateErrorResponse(statusCode, includeErrorDetail => new HttpError(exception, includeErrorDetail) { Message = message });
+        }
+
+        /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping an <see cref="HttpError"/> for exception <paramref name="exception"/>.
+        /// If no formatter is found, this method returns a response with status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="exception">The exception.</param>
+        /// <returns>An error response for <paramref name="exception"/> with status code <paramref name="statusCode"/>.</returns>
+        public static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, Exception exception)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            return request.CreateErrorResponse(statusCode, includeErrorDetail => new HttpError(exception, includeErrorDetail));
+        }
+
+        /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping an <see cref="HttpError"/> for model state <paramref name="modelState"/>.
+        /// If no formatter is found, this method returns a response with status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="modelState">The model state.</param>
+        /// <returns>An error response for <paramref name="modelState"/> with status code <paramref name="statusCode"/>.</returns>
+        public static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, ModelStateDictionary modelState)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            return request.CreateErrorResponse(statusCode, includeErrorDetail => new HttpError(modelState, includeErrorDetail));
+        }
+
+        /// <summary>
+        /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> representing an error 
+        /// with an instance of <see cref="ObjectContent{T}"/> wrapping <paramref name="error"/> as the content. If no formatter 
+        /// is found, this method returns a response with status 406 NotAcceptable.
+        /// </summary>
+        /// <remarks>
+        /// This method requires that <paramref name="request"/> has been associated with an instance of
+        /// <see cref="HttpConfiguration"/>.
+        /// </remarks>
+        /// <param name="request">The request.</param>
+        /// <param name="statusCode">The status code of the created response.</param>
+        /// <param name="error">The error to wrap.</param>
+        /// <returns>An error response wrapping <paramref name="error"/> with status code <paramref name="statusCode"/>.</returns>
+        public static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, HttpError error)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            return request.CreateErrorResponse(statusCode, includeErrorDetail => error);
+        }
+
+        private static HttpResponseMessage CreateErrorResponse(this HttpRequestMessage request, HttpStatusCode statusCode, Func<bool, HttpError> errorCreator)
+        {
+            HttpConfiguration configuration = request.GetConfiguration();
+
+            // CreateErrorResponse should never fail, even if there is no configuration associated with the request
+            // In that case, use the default HttpConfiguration to con-neg the response media type
+            if (configuration == null)
+            {
+                using (HttpConfiguration defaultConfig = new HttpConfiguration())
+                {
+                    HttpError error = errorCreator(defaultConfig.ShouldIncludeErrorDetail(request));
+                    return request.CreateResponse<HttpError>(statusCode, error, defaultConfig);
+                }
+            }
+            else
+            {
+                HttpError error = errorCreator(configuration.ShouldIncludeErrorDetail(request));
+                return request.CreateResponse<HttpError>(statusCode, error, configuration);
+            }
+        }
+
+        /// <summary>
         /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> with an instance
-        /// of <see cref="ObjectContent{T}"/> as the content if a formatter can be found. If no formatter is found that this
+        /// of <see cref="ObjectContent{T}"/> as the content if a formatter can be found. If no formatter is found, this
         /// method returns a response with status 406 NotAcceptable. This forwards the call to
         /// <see cref="CreateResponse{T}(HttpRequestMessage, HttpStatusCode, T, HttpConfiguration)"/> with a <c>null</c>
         /// configuration.
@@ -120,7 +315,7 @@ namespace System.Net.Http
 
         /// <summary>
         /// Helper method that performs content negotiation and creates a <see cref="HttpResponseMessage"/> with an instance
-        /// of <see cref="ObjectContent{T}"/> as the content if a formatter can be found. If no formatter is found that this
+        /// of <see cref="ObjectContent{T}"/> as the content if a formatter can be found. If no formatter is found, this
         /// method returns a response with status 406 NotAcceptable.
         /// </summary>
         /// <remarks>
@@ -132,7 +327,7 @@ namespace System.Net.Http
         /// <param name="statusCode">The status code of the created response.</param>
         /// <param name="value">The value to wrap. Can be <c>null</c>.</param>
         /// <param name="configuration">The configuration to use. Can be <c>null</c>.</param>
-        /// <returns>A response wrapping <paramref name="value"/> with <paramref name="statusCode"/>.</returns>
+        /// <returns>A response wrapping <paramref name="value"/> with <paramref name="statusCode"/>.</returns>   
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller will dispose")]
         public static HttpResponseMessage CreateResponse<T>(this HttpRequestMessage request, HttpStatusCode statusCode, T value, HttpConfiguration configuration)
         {
@@ -172,7 +367,8 @@ namespace System.Net.Http
                 MediaTypeHeaderValue mediaType = result.MediaType;
                 return new HttpResponseMessage
                 {
-                    Content = new ObjectContent<T>(value, result.Formatter, mediaType != null ? mediaType.ToString() : null),
+                    // At this point mediaType should be a cloned value (the content negotiator is responsible for returning a new copy)
+                    Content = new ObjectContent<T>(value, result.Formatter, mediaType),
                     StatusCode = statusCode,
                     RequestMessage = request
                 };
@@ -290,9 +486,7 @@ namespace System.Net.Http
             }
 
             HttpResponseMessage response = request.CreateResponse(statusCode);
-            // TODO pass in full mediaType when OC gets the right ctor overload.
-            string mediaTypeValue = mediaType != null ? mediaType.MediaType : null;
-            response.Content = new ObjectContent<T>(value, formatter, mediaTypeValue);
+            response.Content = new ObjectContent<T>(value, formatter, mediaType);
             return response;
         }
 
@@ -377,6 +571,49 @@ namespace System.Net.Http
             }
 
             return correlationId;
+        }
+
+        /// <summary>
+        /// Retrieves the parsed query string as a collection of key-value pairs.
+        /// </summary>
+        /// <param name="request">The <see cref="HttpRequestMessage"/></param>
+        /// <returns>The query string as a collection of key-value pairs.</returns>
+        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "NameValuePairsValueProvider takes an IEnumerable<KeyValuePair<string, string>>")]
+        public static IEnumerable<KeyValuePair<string, string>> GetQueryNameValuePairs(this HttpRequestMessage request)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            Uri uri = request.RequestUri;
+
+            // Unit tests may not always provide a Uri in the request
+            if (uri == null || String.IsNullOrEmpty(uri.Query))
+            {
+                return Enumerable.Empty<KeyValuePair<string, string>>();
+            }
+
+            IEnumerable<KeyValuePair<string, string>> queryString;
+            if (!request.Properties.TryGetValue<IEnumerable<KeyValuePair<string, string>>>(HttpPropertyKeys.RequestQueryNameValuePairsKey, out queryString))
+            {
+                // Uri --> FormData --> NVC
+                FormDataCollection formData = new FormDataCollection(uri);
+                queryString = formData.GetJQueryNameValuePairs();
+                request.Properties.Add(HttpPropertyKeys.RequestQueryNameValuePairsKey, queryString);
+            }
+
+            return queryString;
+        }
+
+        public static UrlHelper GetUrlHelper(this HttpRequestMessage request)
+        {
+            if (request == null)
+            {
+                throw Error.ArgumentNull("request");
+            }
+
+            return new UrlHelper(request);
         }
     }
 }

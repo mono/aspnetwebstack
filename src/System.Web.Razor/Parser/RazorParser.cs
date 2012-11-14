@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -25,15 +25,13 @@ namespace System.Web.Razor.Parser
 
             MarkupParser = markupParser;
             CodeParser = codeParser;
+
             Optimizers = new List<ISyntaxTreeRewriter>()
             {
                 // Move whitespace from start of expression block to markup
                 new WhiteSpaceRewriter(MarkupParser.BuildSpan),
                 // Collapse conditional attributes where the entire value is literal
                 new ConditionalAttributeCollapser(MarkupParser.BuildSpan),
-                // Collapse sibling Markup Spans
-                // TODO: Fix and restore Markup Collapser post-beta.
-                //new MarkupCollapser(MarkupParser.BuildSpan)
             };
         }
 
@@ -99,7 +97,7 @@ namespace System.Web.Razor.Parser
             });
         }
 
-        [SuppressMessage("Microsoft.WebAPI", "CR4002:DoNotConstructTaskInstances", Justification = "This rule is not applicable to this assembly.")]
+        [SuppressMessage("Microsoft.Web.FxCop", "MW1200:DoNotConstructTaskInstances", Justification = "This rule is not applicable to this assembly.")]
         public virtual Task CreateParseTask(TextReader input,
                                             ParserVisitor consumer)
         {
@@ -138,6 +136,18 @@ namespace System.Web.Razor.Parser
             foreach (ISyntaxTreeRewriter rewriter in Optimizers)
             {
                 current = rewriter.Rewrite(current);
+            }
+
+            // Link the leaf nodes into a chain
+            Span prev = null;
+            foreach (Span node in current.Flatten())
+            {
+                node.Previous = prev;
+                if (prev != null)
+                {
+                    prev.Next = node;
+                }
+                prev = node;
             }
 
             // Return the new result

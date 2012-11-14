@@ -1,14 +1,22 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Formatting;
+using System.Web.Http.Controllers;
 using System.Web.Http.Dependencies;
 using System.Web.Http.Filters;
+using System.Web.Http.Hosting;
+using System.Web.Http.Metadata;
 using System.Web.Http.ModelBinding;
 using System.Web.Http.Services;
+using System.Web.Http.Tracing;
+using System.Web.Http.Validation;
 
 namespace System.Web.Http
 {
@@ -24,6 +32,8 @@ namespace System.Web.Http
         private readonly HttpFilterCollection _filters = new HttpFilterCollection();
 
         private IDependencyResolver _dependencyResolver = EmptyResolver.Instance;
+        private Action<HttpConfiguration> _initializer = DefaultInitializer;
+        private List<IDisposable> _resourcesToDispose = new List<IDisposable>();
         private bool _disposed;
 
         /// <summary>
@@ -49,6 +59,66 @@ namespace System.Web.Http
 
             _routes = routes;
             Services = new DefaultServices(this);
+            ParameterBindingRules = DefaultActionValueBinder.GetDefaultParameterBinders();
+        }
+
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "We're registering the ValidationCache to be disposed by the HttpConfiguration.")]
+        private HttpConfiguration(HttpConfiguration configuration, HttpControllerSettings settings)
+        {
+            _routes = configuration.Routes;
+            _filters = configuration.Filters;
+            _messageHandlers = configuration.MessageHandlers;
+            _properties = configuration.Properties;
+            _dependencyResolver = configuration.DependencyResolver;
+            IncludeErrorDetailPolicy = configuration.IncludeErrorDetailPolicy;
+
+            // per-controller settings
+            Services = settings.IsServiceCollectionInitialized ? settings.Services : configuration.Services;
+            _formatters = settings.IsFormatterCollectionInitialized ? settings.Formatters : configuration.Formatters;
+            ParameterBindingRules = settings.IsParameterBindingRuleCollectionInitialized ? settings.ParameterBindingRules : configuration.ParameterBindingRules;
+
+            // Use the original configuration's initializer so that its Initialize()
+            // will perform the same logic on this clone as on the original.
+            Initializer = configuration.Initializer;
+
+            // create a new validator cache if the validator providers have changed
+            if (settings.IsServiceCollectionInitialized &&
+                !settings.Services.GetModelValidatorProviders().SequenceEqual(configuration.Services.GetModelValidatorProviders()))
+            {
+                ModelValidatorCache validatorCache = new ModelValidatorCache(new Lazy<IEnumerable<ModelValidatorProvider>>(() => Services.GetModelValidatorProviders()));
+                RegisterForDispose(validatorCache);
+                settings.Services.Replace(typeof(IModelValidatorCache), validatorCache);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the action that will perform final initialization
+        /// of the <see cref="HttpConfiguration"/> instance before it is used
+        /// to process requests.
+        /// </summary>
+        /// <remarks>The Action returned by this property will be called to perform
+        /// final initialization of an <see cref="HttpConfiguration"/> before it is
+        /// used to process a request.
+        /// <para>
+        /// The <see cref="HttpConfiguration"/> passed to this action should be
+        /// considered immutable after the action returns.
+        /// </para>
+        /// </remarks>
+        public Action<HttpConfiguration> Initializer
+        {
+            get
+            {
+                return _initializer;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    throw Error.ArgumentNull("value");
+                }
+
+                _initializer = value;
+            }
         }
 
         /// <summary>
@@ -62,8 +132,8 @@ namespace System.Web.Http
         /// <summary>
         /// Gets an ordered list of <see cref="DelegatingHandler"/> instances to be invoked as an
         /// <see cref="HttpRequestMessage"/> travels up the stack and an <see cref="HttpResponseMessage"/> travels down in
-        /// stack in return. The handlers are invoked in a bottom-up fashion in the incoming path and top-down in the outgoing 
-        /// path. That is, the last entry is called first for an incoming request message but invoked last for an outgoing 
+        /// stack in return. The handlers are invoked in a top-down fashion in the incoming path and bottom-up in the outgoing 
+        /// path. That is, the first entry is invoked first for an incoming request message but last for an outgoing 
         /// response message.
         /// </summary>
         /// <value>
@@ -124,7 +194,13 @@ namespace System.Web.Http
         /// Only supports the list of service types documented on <see cref="DefaultServices"/>. For general
         /// purpose types, please use <see cref="DependencyResolver"/>.
         /// </summary>
-        public DefaultServices Services { get; internal set; }
+        public ServicesContainer Services { get; internal set; }
+
+        /// <summary>
+        /// Top level hook for how parameters should be bound. 
+        /// This should be respected by the IActionValueBinder. If a parameter is not claimed by the list, the IActionValueBinder still binds it. 
+        /// </summary>
+        public ParameterBindingRulesCollection ParameterBindingRules { get; internal set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether error details should be included in error messages.
@@ -150,13 +226,73 @@ namespace System.Web.Http
             return formatters;
         }
 
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Caller owns the disposable object")]
+        internal static HttpConfiguration ApplyControllerSettings(HttpControllerSettings settings, HttpConfiguration configuration)
+        {
+            if (!settings.IsFormatterCollectionInitialized && !settings.IsParameterBindingRuleCollectionInitialized && !settings.IsServiceCollectionInitialized)
+            {
+                return configuration;
+            }
+
+            // Create a clone of the original configuration, including its initialization rules.
+            // Invoking Initialize therefore initializes the cloned config the same way as the original.
+            HttpConfiguration newConfiguration = new HttpConfiguration(configuration, settings);
+            newConfiguration.Initializer(newConfiguration);
+            return newConfiguration;
+        }
+
+        private static void DefaultInitializer(HttpConfiguration configuration)
+        {
+            // Register the default IRequiredMemberSelector for formatters that haven't been assigned one
+            ModelMetadataProvider metadataProvider = configuration.Services.GetModelMetadataProvider();
+            IEnumerable<ModelValidatorProvider> validatorProviders = configuration.Services.GetModelValidatorProviders();
+            IRequiredMemberSelector defaultRequiredMemberSelector = new ModelValidationRequiredMemberSelector(metadataProvider, validatorProviders);
+
+            foreach (MediaTypeFormatter formatter in configuration.Formatters)
+            {
+                if (formatter.RequiredMemberSelector == null)
+                {
+                    formatter.RequiredMemberSelector = defaultRequiredMemberSelector;
+                }
+            }
+
+            // Initialize the tracing layer.
+            // This must be the last initialization code to execute
+            // because it alters the configuration and expects no
+            // further changes.  As a default service, we know it
+            // must be present.
+            ITraceManager traceManager = configuration.Services.GetTraceManager();
+            Contract.Assert(traceManager != null);
+            traceManager.Initialize(configuration);
+        }
+
         internal bool ShouldIncludeErrorDetail(HttpRequestMessage request)
         {
             switch (IncludeErrorDetailPolicy)
             {
+                case IncludeErrorDetailPolicy.Default:
+                    Lazy<bool> includeErrorDetail;
+                    if (request.Properties.TryGetValue<Lazy<bool>>(HttpPropertyKeys.IncludeErrorDetailKey, out includeErrorDetail))
+                    {
+                        // If we are on webhost and the user hasn't changed the IncludeErrorDetailPolicy
+                        // look up into the ASP.NET CustomErrors property else default to LocalOnly.
+                        return includeErrorDetail.Value;
+                    }
+
+                    goto case IncludeErrorDetailPolicy.LocalOnly;
+
                 case IncludeErrorDetailPolicy.LocalOnly:
-                    Uri requestUri = request.RequestUri;
-                    return requestUri.IsAbsoluteUri && requestUri.IsLoopback;
+                    if (request == null)
+                    {
+                        return false;
+                    }
+
+                    Lazy<bool> isLocal;
+                    if (request.Properties.TryGetValue<Lazy<bool>>(HttpPropertyKeys.IsLocalKey, out isLocal))
+                    {
+                        return isLocal.Value;
+                    }
+                    return false;
 
                 case IncludeErrorDetailPolicy.Always:
                     return true;
@@ -165,6 +301,20 @@ namespace System.Web.Http
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="resource"/> to a list of resources that will be disposed once the configuration is disposed.
+        /// </summary>
+        /// <param name="resource">The resource to dispose. Can be <c>null</c>.</param>
+        internal void RegisterForDispose(IDisposable resource)
+        {
+            if (resource == null)
+            {
+                return;
+            }
+
+            _resourcesToDispose.Add(resource);
         }
 
         public void Dispose()
@@ -183,6 +333,11 @@ namespace System.Web.Http
                     _routes.Dispose();
                     Services.Dispose();
                     DependencyResolver.Dispose();
+
+                    foreach (IDisposable resource in _resourcesToDispose)
+                    {
+                        resource.Dispose();
+                    }
                 }
             }
         }

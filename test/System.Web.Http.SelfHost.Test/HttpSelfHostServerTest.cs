@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.IO;
@@ -8,107 +8,29 @@ using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.ServiceModel;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.SelfHost
 {
     public class HttpSelfHostServerTest : IDisposable
     {
-        private string machineName = Environment.MachineName;
-        private HttpSelfHostServer _bufferServer;
-        private HttpSelfHostServer _streamServer;
+        private const int testPort = 50231;
+        private const string machineName = "localhost";
 
-        public HttpSelfHostServerTest()
+        private HttpSelfHostServer server = null;
+
+        public static int TestPort
         {
-            SetupHosts();
+            get { return testPort; }
         }
 
         public void Dispose()
         {
-            CleanupHosts();
-        }
-
-        private void SetupHosts()
-        {
-            try
-            {
-                HttpSelfHostConfiguration config = new HttpSelfHostConfiguration(BaseUri(TransferMode.Buffered));
-                config.Routes.MapHttpRoute("Default", "{controller}/{action}");
-                _bufferServer = new HttpSelfHostServer(config);
-                SafeOpen(_bufferServer);
-
-                config = new HttpSelfHostConfiguration(BaseUri(TransferMode.Streamed));
-                config.Routes.MapHttpRoute("Default", "{controller}/{action}");
-                config.TransferMode = TransferMode.Streamed;
-                _streamServer = new HttpSelfHostServer(config);
-                SafeOpen(_streamServer);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("HttpSelfHostServerTests.SetupHosts failed: " + ex.GetBaseException());
-                throw;
-            }
-        }
-
-        private void CleanupHosts()
-        {
-            SafeClose(_bufferServer);
-            SafeClose(_streamServer);
-        }
-
-        // HttpSelfHostServer has a small latency between CloseAsync.Wait
-        // completing and other async tasks still running.  Theory driven
-        // tests run quickly enough they sometimes attempt to open when the
-        // prior test is still finishing those async tasks.
-        private static void SafeOpen(HttpSelfHostServer server)
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                try
-                {
-                    server.OpenAsync().Wait();
-                    return;
-                }
-                catch (Exception)
-                {
-                    if (i == 9)
-                    {
-                        System.Diagnostics.Debug.WriteLine("HttpSelfHostServerTests.SafeOpen failed to open server at " + server.Configuration.VirtualPathRoot);
-                        throw;
-                    }
-
-                    Thread.Sleep(200);
-                }
-            }
-        }
-
-        private void SafeClose(HttpSelfHostServer server)
-        {
-            try
+            if (server != null)
             {
                 server.CloseAsync().Wait();
             }
-            catch
-            {
-                System.Diagnostics.Debug.WriteLine("HttpSelfHostServerTests.SafeOpen failed to close server at " + server.Configuration.VirtualPathRoot);
-            }
-        }
-
-        private string BaseUri(TransferMode transferMode)
-        {
-            return transferMode == TransferMode.Streamed
-                ? String.Format("http://{0}:8081/stream", machineName)
-                : String.Format("http://{0}:8081", machineName);
-        }
-
-        private HttpSelfHostServer GetServer(TransferMode transferMode)
-        {
-            return transferMode == TransferMode.Streamed
-                       ? _streamServer
-                       : _bufferServer;
         }
 
         [Theory]
@@ -117,6 +39,7 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_Direct_Returns_OK_For_Successful_ObjectContent_Write(string uri, TransferMode transferMode)
         {
             // Arrange & Act
+            server = CreateServer(transferMode);
             HttpResponseMessage response = new HttpClient().GetAsync(BaseUri(transferMode) + uri).Result;
             string responseString = response.Content.ReadAsStringAsync().Result;
 
@@ -131,6 +54,7 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_ServiceModel_Returns_OK_For_Successful_ObjectContent_Write(string uri, TransferMode transferMode)
         {
             // Arrange
+            server = CreateServer(transferMode);
             bool shouldChunk = transferMode == TransferMode.Streamed;
 
             // Act
@@ -152,7 +76,8 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_Direct_Returns_OK_For_Successful_Stream_Write(string uri, TransferMode transferMode)
         {
             // Arrange & Act
-            HttpResponseMessage response = new HttpClient(GetServer(transferMode)).GetAsync(BaseUri(transferMode) + uri).Result;
+            server = CreateServer(transferMode);
+            HttpResponseMessage response = new HttpClient(server).GetAsync(BaseUri(transferMode) + uri).Result;
             string responseString = response.Content.ReadAsStringAsync().Result;
             IEnumerable<string> headerValues = null;
             bool isChunked = response.Headers.TryGetValues("Transfer-Encoding", out headerValues) && headerValues != null &&
@@ -169,6 +94,7 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_ServiceModel_Returns_OK_For_Successful_Stream_Write(string uri, TransferMode transferMode)
         {
             // Arrange & Act
+            server = CreateServer(transferMode);
             HttpResponseMessage response = new HttpClient().GetAsync(BaseUri(transferMode) + uri).Result;
             string responseString = response.Content.ReadAsStringAsync().Result;
 
@@ -187,8 +113,9 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_Direct_Throws_When_ObjectContent_CopyToAsync_Throws(string uri, TransferMode transferMode)
         {
             // Arrange & Act & Assert
+            server = CreateServer(transferMode);
             Assert.Throws<InvalidOperationException>(
-                () => new HttpClient(GetServer(transferMode)).GetAsync(BaseUri(transferMode) + uri).Wait());
+                () => new HttpClient(server).GetAsync(BaseUri(transferMode) + uri).Wait());
         }
 
         [Theory]
@@ -201,13 +128,14 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_ServiceModel_Closes_Connection_When_ObjectContent_CopyToAsync_Throws(string uri, TransferMode transferMode)
         {
             // Arrange
+            server = CreateServer(transferMode);
             Task<HttpResponseMessage> task = new HttpClient().GetAsync(BaseUri(transferMode) + uri);
 
             // Act & Assert
             Assert.Throws<HttpRequestException>(() => task.Wait());
         }
 
-        [Theory(Skip = "This currently fails on CI machine only")]
+        [Theory]
         [InlineData("/SelfHostServerTest/ThrowBeforeWriteStream", TransferMode.Buffered)]
         [InlineData("/SelfHostServerTest/ThrowBeforeWriteStream", TransferMode.Streamed)]
         [InlineData("/SelfHostServerTest/ThrowAfterWriteStream", TransferMode.Buffered)]
@@ -215,8 +143,9 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_Direct_Throws_When_StreamContent_Throws(string uri, TransferMode transferMode)
         {
             // Arrange & Act & Assert
+            server = CreateServer(transferMode);
             Assert.Throws<InvalidOperationException>(
-                () => new HttpClient(GetServer(transferMode)).GetAsync(BaseUri(transferMode) + uri).Wait());
+                () => new HttpClient(server).GetAsync(BaseUri(transferMode) + uri).Wait());
         }
 
         [Theory]
@@ -227,6 +156,7 @@ namespace System.Web.Http.SelfHost
         public void SendAsync_ServiceModel_Throws_When_StreamContent_Throws(string uri, TransferMode transferMode)
         {
             // Arrange
+            server = CreateServer(transferMode);
             Task task = new HttpClient().GetAsync(BaseUri(transferMode) + uri);
 
             // Act & Assert
@@ -235,7 +165,8 @@ namespace System.Web.Http.SelfHost
 
         internal class ThrowsBeforeTaskObjectContent : ObjectContent
         {
-            public ThrowsBeforeTaskObjectContent() : base(typeof(string), "testContent", new JsonMediaTypeFormatter())
+            public ThrowsBeforeTaskObjectContent()
+                : base(typeof(string), "testContent", new JsonMediaTypeFormatter())
             {
             }
 
@@ -283,7 +214,8 @@ namespace System.Web.Http.SelfHost
 
         internal class ThrowBeforeWriteStream : StreamContent
         {
-            public ThrowBeforeWriteStream() : base(new MemoryStream(Encoding.UTF8.GetBytes("ThrowBeforeWriteStream")))
+            public ThrowBeforeWriteStream()
+                : base(new MemoryStream(Encoding.UTF8.GetBytes("ThrowBeforeWriteStream")))
             {
             }
 
@@ -295,7 +227,8 @@ namespace System.Web.Http.SelfHost
 
         internal class ThrowAfterWriteStream : StreamContent
         {
-            public ThrowAfterWriteStream() : base(new MemoryStream(Encoding.UTF8.GetBytes("ThrowAfterWriteStream")))
+            public ThrowAfterWriteStream()
+                : base(new MemoryStream(Encoding.UTF8.GetBytes("ThrowAfterWriteStream")))
             {
             }
 
@@ -304,6 +237,25 @@ namespace System.Web.Http.SelfHost
                 base.SerializeToStreamAsync(stream, context).Wait();
                 throw new InvalidOperationException("ThrowAfterWriteStream");
             }
+        }
+
+        private static HttpSelfHostServer CreateServer(TransferMode transferMode)
+        {
+            HttpSelfHostConfiguration config = new HttpSelfHostConfiguration(BaseUri(transferMode));
+            config.HostNameComparisonMode = HostNameComparisonMode.Exact;
+            config.Routes.MapHttpRoute("Default", "{controller}/{action}");
+            config.TransferMode = transferMode;
+
+            HttpSelfHostServer server = new HttpSelfHostServer(config);
+            server.OpenAsync().Wait();
+            return server;
+        }
+
+        private static string BaseUri(TransferMode transferMode)
+        {
+            return transferMode == TransferMode.Streamed
+                ? String.Format("http://{0}:{1}/stream", machineName, TestPort)
+                : String.Format("http://{0}:{1}", machineName, TestPort);
         }
     }
 

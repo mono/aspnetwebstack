@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.CSharp
 {
@@ -37,8 +37,8 @@ namespace System.Web.Razor.Test.Parser.CSharp
         [Fact]
         public void InheritsBlockOutputsErrorIfInheritsNotFollowedByTypeButAcceptsEntireLineAsCode()
         {
-            ParseBlockTest(@"inherits                
-foo",
+            ParseBlockTest("inherits                " + Environment.NewLine
+                         + "foo",
                            new DirectiveBlock(
                                Factory.MetaCode("inherits ").Accepts(AcceptedCharacters.None),
                                Factory.Code("               \r\n")
@@ -89,9 +89,9 @@ foo",
         [Fact]
         public void NonKeywordStatementInCodeBlockIsHandledCorrectly()
         {
-            ParseBlockTest(@"{
-    List<dynamic> photos = gallery.Photo.ToList();
-}",
+            ParseBlockTest("{" + Environment.NewLine
+                         + "    List<dynamic> photos = gallery.Photo.ToList();" + Environment.NewLine
+                         + "}",
                            new StatementBlock(
                                Factory.MetaCode("{").Accepts(AcceptedCharacters.None),
                                Factory.Code("\r\n    List<dynamic> photos = gallery.Photo.ToList();\r\n").AsStatement(),
@@ -181,14 +181,14 @@ foo",
         [Fact]
         public void ParseBlockTerminatesSingleLineCommentAtEndOfLine()
         {
-            ParseBlockTest(@"if(!false) {
-    // Foo
-	<p>A real tag!</p>
-}",
+            ParseBlockTest("if(!false) {" + Environment.NewLine
+                         + "    // Foo" + Environment.NewLine
+                         + "\t<p>A real tag!</p>" + Environment.NewLine
+                         + "}",
                            new StatementBlock(
                                Factory.Code("if(!false) {\r\n    // Foo\r\n").AsStatement(),
                                new MarkupBlock(
-                                   Factory.Markup("	<p>A real tag!</p>\r\n")
+                                   Factory.Markup("\t<p>A real tag!</p>\r\n")
                                        .Accepts(AcceptedCharacters.None)),
                                Factory.Code("}").AsStatement()
                                ));

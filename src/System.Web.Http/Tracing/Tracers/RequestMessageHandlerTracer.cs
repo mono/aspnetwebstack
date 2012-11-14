@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -19,18 +20,19 @@ namespace System.Web.Http.Tracing.Tracers
 
         public RequestMessageHandlerTracer(ITraceWriter traceWriter)
         {
+            Contract.Assert(traceWriter != null);
+
             _traceWriter = traceWriter;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.WebAPI", "CR4001:DoNotCallProblematicMethodsOnTask", Justification = "Tracing layer needs to observer all Task completion paths")]
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return _traceWriter.TraceBeginEndAsync<HttpResponseMessage>(
                 request,
                 TraceCategories.RequestCategory,
                 TraceLevel.Info,
-                string.Empty,
-                string.Empty,
+                String.Empty,
+                String.Empty,
                 beginTrace: (tr) =>
                 {
                     tr.Message = request.RequestUri == null ? SRResources.TraceNoneObjectMessage : request.RequestUri.ToString();

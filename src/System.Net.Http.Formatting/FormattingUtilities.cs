@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
-using System.Text;
+using System.Runtime.Serialization;
 using System.Xml;
 using Newtonsoft.Json.Linq;
 
@@ -44,6 +43,16 @@ namespace System.Net.Http
         private const string NonTokenChars = "()<>@,;:\\\"/[]?={}";
 
         /// <summary>
+        /// Quality factor to indicate a perfect match.
+        /// </summary>
+        public const double Match = 1.0;
+
+        /// <summary>
+        /// Quality factor to indicate no match.
+        /// </summary>
+        public const double NoMatch = 0.0;
+
+        /// <summary>
         /// The default max depth for our formatter is 256
         /// </summary>
         public const int DefaultMaxDepth = 256;
@@ -61,7 +70,7 @@ namespace System.Net.Http
         /// <summary>
         /// HTTP X-Requested-With header field value
         /// </summary>
-        public const string HttpRequestedWithHeaderValue = @"xmlhttprequest";
+        public const string HttpRequestedWithHeaderValue = @"XMLHttpRequest";
 
         /// <summary>
         /// HTTP Host header field name
@@ -72,16 +81,6 @@ namespace System.Net.Http
         /// HTTP Version token
         /// </summary>
         public const string HttpVersionToken = "HTTP";
-
-        /// <summary>
-        /// A <see cref="Type"/> representing <see cref="UTF8Encoding"/>.
-        /// </summary>
-        public static readonly Type Utf8EncodingType = typeof(UTF8Encoding);
-
-        /// <summary>
-        /// A <see cref="Type"/> representing <see cref="UnicodeEncoding"/>.
-        /// </summary>
-        public static readonly Type Utf16EncodingType = typeof(UnicodeEncoding);
 
         /// <summary>
         /// A <see cref="Type"/> representing <see cref="HttpRequestMessage"/>.
@@ -112,6 +111,13 @@ namespace System.Net.Http
         /// A <see cref="Type"/> representing <see cref="IQueryable{T}"/>.
         /// </summary>
         public static readonly Type QueryableInterfaceGenericType = typeof(IQueryable<>);
+
+#if !NETFX_CORE
+        /// <summary>
+        /// An instance of <see cref="XsdDataContractExporter"/>.
+        /// </summary>
+        public static readonly XsdDataContractExporter XsdDataContractExporter = new XsdDataContractExporter();
+#endif
 
         /// <summary>
         /// Determines whether <paramref name="type"/> is a <see cref="JToken"/> type.
@@ -153,35 +159,14 @@ namespace System.Net.Http
         }
 
         /// <summary>
-        /// Ensure the actual collection is identical to the expected one
-        /// </summary>
-        /// <param name="actual">The actual collection of the instance</param>
-        /// <param name="expected">The expected collection of the instance</param>
-        /// <returns>Returns true if they are identical</returns>
-        public static bool ValidateCollection(Collection<MediaTypeHeaderValue> actual, MediaTypeHeaderValue[] expected)
-        {
-            if (actual.Count != expected.Length)
-            {
-                return false;
-            }
-
-            foreach (MediaTypeHeaderValue value in expected)
-            {
-                if (!actual.Contains(value))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Create a default reader quotas with a default depth quota of 1K
         /// </summary>
         /// <returns></returns>
         public static XmlDictionaryReaderQuotas CreateDefaultReaderQuotas()
         {
+#if NETFX_CORE
+            return XmlDictionaryReaderQuotas.Max;
+#else
             return new XmlDictionaryReaderQuotas()
             {
                 MaxArrayLength = Int32.MaxValue,
@@ -190,6 +175,7 @@ namespace System.Net.Http
                 MaxNameTableCharCount = Int32.MaxValue,
                 MaxStringContentLength = Int32.MaxValue
             };
+#endif
         }
 
         /// <summary>
@@ -214,7 +200,20 @@ namespace System.Net.Http
 
         public static bool ValidateHeaderToken(string token)
         {
-            return token != null && !token.Any(c => c < 0x21 || c > 0x7E || NonTokenChars.IndexOf(c) != -1);
+            if (token == null)
+            {
+                return false;
+            }
+
+            foreach (char c in token)
+            {
+                if (c < 0x21 || c > 0x7E || NonTokenChars.IndexOf(c) != -1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static string DateToString(DateTimeOffset dateTime)

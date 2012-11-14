@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Threading;
@@ -12,7 +12,7 @@ namespace System.Web.Http
             Action<HttpResponseMessage> assert, Action<HttpConfiguration> configurer = null)
         {
             // Arrange
-            HttpConfiguration config = new HttpConfiguration();
+            HttpConfiguration config = new HttpConfiguration() { IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always };
 
             config.Routes.MapHttpRoute("Default", "{controller}" + routeSuffix, new { controller = controllerName });
             if (configurer != null)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Net;
@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Web.WebPages;
 using System.Xml;
 using System.Xml.Resolvers;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Helpers.Test
 {

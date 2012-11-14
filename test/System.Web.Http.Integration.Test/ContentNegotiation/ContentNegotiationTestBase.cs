@@ -1,48 +1,17 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
-
-using System.Net.Http;
-using System.Web.Http.SelfHost;
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 namespace System.Web.Http.ContentNegotiation
 {
-    public class ContentNegotiationTestBase : IDisposable
+    public abstract class ContentNegotiationTestBase : HttpServerTestBase
     {
-        protected readonly string baseUri = "http://localhost:8080/Conneg";
-        protected HttpSelfHostServer server = null;
-        protected HttpSelfHostConfiguration configuration = null;
-        protected HttpClient httpClient = null;
-
-        public ContentNegotiationTestBase()
+        protected ContentNegotiationTestBase()
+            : base("http://localhost/Conneg")
         {
-            this.SetupHost();
         }
 
-        public void Dispose()
+        protected override void ApplyConfiguration(HttpConfiguration configuration)
         {
-            this.CleanupHost();
-        }
-
-        public void SetupHost()
-        {
-            configuration = new HttpSelfHostConfiguration(baseUri);
             configuration.Routes.MapHttpRoute("Default", "{controller}", new { controller = "Conneg" });
-            server = new HttpSelfHostServer(configuration);
-            server.OpenAsync().Wait();
-
-            httpClient = new HttpClient();
-        }
-
-        public void CleanupHost()
-        {
-            if (server != null)
-            {
-                server.CloseAsync().Wait();
-            }
-
-            if (httpClient != null)
-            {
-                httpClient.Dispose();
-            }
         }
     }
 }

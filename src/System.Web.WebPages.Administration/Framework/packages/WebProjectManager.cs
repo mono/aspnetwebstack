@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -91,7 +91,7 @@ namespace System.Web.WebPages.Administration.PackageManager
             var packagesToUpdate = GetPackages(LocalRepository, searchTerms);
             if (filterPreferredPackages)
             {
-                packagesToUpdate = packagesToUpdate.Where(p => p.Tags.ToLower().Contains(WebPagesPreferredTag));
+                packagesToUpdate = packagesToUpdate.Where(p => !String.IsNullOrEmpty(p.Tags) && p.Tags.ToLower().Contains(WebPagesPreferredTag));
             }
             return SourceRepository.GetUpdates(packagesToUpdate, includePrerelease: false).AsQueryable();
         }

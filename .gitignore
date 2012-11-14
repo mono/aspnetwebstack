@@ -1,5 +1,6 @@
 [Bb]in
 [Oo]bj
+[Tt]est[Rr]esults
 *.suo
 *.user
 *.[Cc]ache
@@ -10,3 +11,8 @@ _[Ss]cripts
 *.exe
 *.dll
 *.nupkg
+*.ncrunchsolution
+*.dot[Cc]over
+*.vsp
+*.psess
+*.orig

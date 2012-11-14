@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections;
 using System.Collections.Concurrent;
@@ -18,9 +18,6 @@ namespace System.Web.Http.Validation
     /// </summary>
     public class DefaultBodyModelValidator : IBodyModelValidator
     {
-        // Keyed on (Type, propertyName) tuple
-        private ConcurrentDictionary<Tuple<Type, string>, IEnumerable<ModelValidator>> _validatorCache = new ConcurrentDictionary<Tuple<Type, string>, IEnumerable<ModelValidator>>();
-
         private interface IKeyBuilder
         {
             string AppendTo(string prefix);
@@ -69,7 +66,8 @@ namespace System.Web.Http.Validation
             ValidationContext validationContext = new ValidationContext()
             {
                 MetadataProvider = metadataProvider,
-                ValidatorProviders = validatorProviders,
+                ActionContext = actionContext,
+                ValidatorCache = actionContext.GetValidatorCache(),
                 ModelState = actionContext.ModelState,
                 Visited = new HashSet<object>(),
                 KeyBuilders = new Stack<IKeyBuilder>(),
@@ -158,11 +156,11 @@ namespace System.Web.Http.Validation
 
         // Validates a single node (not including children)
         // Returns true if validation passes successfully
-        private bool ShallowValidate(ModelMetadata metadata, ValidationContext validationContext, object container)
+        private static bool ShallowValidate(ModelMetadata metadata, ValidationContext validationContext, object container)
         {
             bool isValid = true;
             string key = null;
-            foreach (ModelValidator validator in GetValidators(validationContext.ValidatorProviders, metadata))
+            foreach (ModelValidator validator in validationContext.ActionContext.GetValidators(metadata, validationContext.ValidatorCache))
             {
                 foreach (ModelValidationResult error in validator.Validate(metadata, container))
                 {
@@ -173,29 +171,19 @@ namespace System.Web.Http.Validation
                         {
                             key = keyBuilder.AppendTo(key);
                         }
+
+                        // Avoid adding model errors if the model state already contains model errors for that key
+                        // We can't perform this check earlier because we compute the key string only when we detect an error
+                        if (!validationContext.ModelState.IsValidField(key))
+                        {
+                            return false;
+                        }
                     }
                     validationContext.ModelState.AddModelError(key, error.Message);
                     isValid = false;
                 }
             }
             return isValid;
-        }
-
-        private IEnumerable<ModelValidator> GetValidators(IEnumerable<ModelValidatorProvider> validatorProviders, ModelMetadata metadata)
-        {
-            // If metadata is for a property then containerType != null && propertyName != null
-            // If metadata is for a type then containerType == null && propertyName == null, so we have to use modelType for the cache key.
-            Type typeForCache = metadata.ContainerType ?? metadata.ModelType;
-            Tuple<Type, string> cacheKey = Tuple.Create(typeForCache, metadata.PropertyName);
-
-            // This retrieval is implemented as a TryGetValue/TryAdd instead of a GetOrAdd to avoid the performance cost of creating delegates
-            IEnumerable<ModelValidator> validators;
-            if (!_validatorCache.TryGetValue(cacheKey, out validators))
-            {
-                validators = metadata.GetValidators(validatorProviders).ToArray();
-                _validatorCache.TryAdd(cacheKey, validators);
-            }
-            return validators;
         }
 
         private static Type GetElementType(Type type)
@@ -240,7 +228,8 @@ namespace System.Web.Http.Validation
         private class ValidationContext
         {
             public ModelMetadataProvider MetadataProvider { get; set; }
-            public IEnumerable<ModelValidatorProvider> ValidatorProviders { get; set; }
+            public HttpActionContext ActionContext { get; set; }
+            public IModelValidatorCache ValidatorCache { get; set; }
             public ModelStateDictionary ModelState { get; set; }
             public HashSet<object> Visited { get; set; }
             public Stack<IKeyBuilder> KeyBuilders { get; set; }

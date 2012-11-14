@@ -1,8 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Http;
 using Microsoft.Web.Http.Data.Test.Models;
 
 namespace Microsoft.Web.Http.Data.Test
@@ -27,21 +26,6 @@ namespace Microsoft.Web.Http.Data.Test
             };
         }
 
-        [Queryable(ResultLimit = 9)]
-        public IQueryable<Product> GetProducts()
-        {
-            return this.products.AsQueryable();
-        }
-
-        [Queryable]
-        public IQueryable<Order> GetOrders()
-        {
-            return new Order[] { 
-                new Order { OrderID = 1, CustomerID = "ALFKI" },
-                new Order { OrderID = 2, CustomerID = "CHOPS" }
-            }.AsQueryable();
-        }
-
         public IEnumerable<Order_Detail> GetDetails(int orderId)
         {
             return Enumerable.Empty<Order_Detail>();
@@ -49,7 +33,6 @@ namespace Microsoft.Web.Http.Data.Test
 
         public void InsertOrder(Order order)
         {
-
         }
 
         public void UpdateProduct(Product product)

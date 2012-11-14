@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -12,12 +12,6 @@ namespace System.Web.Helpers.AntiXsrf
         private const byte TokenVersion = 0x01;
         private readonly ICryptoSystem _cryptoSystem;
 
-        public AntiForgeryTokenSerializer()
-            : this(new MachineKeyCryptoSystem())
-        {
-        }
-
-        // for unit testing
         internal AntiForgeryTokenSerializer(ICryptoSystem cryptoSystem)
         {
             _cryptoSystem = cryptoSystem;

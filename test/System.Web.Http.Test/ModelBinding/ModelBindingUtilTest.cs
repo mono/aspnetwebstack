@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
 using System.Web.Http.Metadata.Providers;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -260,10 +259,10 @@ namespace System.Web.Http.ModelBinding
             bindingContext.ModelMetadata.Model = 42;
 
             // Act & assert
-            Assert.Throws<ArgumentException>(
-                () => ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(string), true),
-                @"The binding context has a Model of type 'System.Int32', but this binder can only operate on models of type 'System.String'.
-Parameter name: bindingContext");
+            Assert.ThrowsArgument(
+                () => ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(string), allowNullModel: true),
+                "bindingContext",
+                "The binding context has a Model of type 'System.Int32', but this binder can only operate on models of type 'System.String'.");
         }
 
         [Fact]
@@ -276,10 +275,10 @@ Parameter name: bindingContext");
             };
 
             // Act & assert
-            Assert.Throws<ArgumentException>(
+            Assert.ThrowsArgument(
                 () => ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(string), false),
-                @"The binding context has a null Model, but this binder requires a non-null model of type 'System.String'.
-Parameter name: bindingContext");
+                "bindingContext",
+                "The binding context has a null Model, but this binder requires a non-null model of type 'System.String'.");
         }
 
         [Fact]
@@ -289,10 +288,10 @@ Parameter name: bindingContext");
             ModelBindingContext bindingContext = new ModelBindingContext();
 
             // Act & assert
-            Assert.Throws<ArgumentException>(
+            Assert.ThrowsArgument(
                 () => ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(string), true),
-                @"The binding context cannot have a null ModelMetadata.
-Parameter name: bindingContext");
+                "bindingContext",
+                "The binding context cannot have a null ModelMetadata.");
         }
 
         [Fact]
@@ -305,10 +304,10 @@ Parameter name: bindingContext");
             };
 
             // Act & assert
-            Assert.Throws<ArgumentException>(
+            Assert.ThrowsArgument(
                 () => ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(string), true),
-                @"The binding context has a ModelType of 'System.Object', but this binder can only operate on models of type 'System.String'.
-Parameter name: bindingContext");
+                "bindingContext",
+                "The binding context has a ModelType of 'System.Object', but this binder can only operate on models of type 'System.String'.");
         }
 
         private static ModelMetadata GetMetadata(Type modelType)

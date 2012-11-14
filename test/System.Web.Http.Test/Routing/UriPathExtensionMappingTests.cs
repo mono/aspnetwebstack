@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http.Formatting.DataSets;
 using System.Net.Http.Headers;
@@ -6,9 +6,6 @@ using System.Web.Http.Hosting;
 using System.Web.Http.Routing;
 using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Net.Http.Formatting
 {
@@ -25,8 +22,8 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeStrings")]
         public void ConstructorMediaType_Initialises_MediaTypeAndUriPathExtension(string uriPathExtension, string mediaType)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension, mediaType);
@@ -37,7 +34,7 @@ namespace System.Net.Http.Formatting
         [Theory]
         [TestDataSet(
             typeof(CommonUnitTestDataSets), "EmptyStrings",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings")]
+            typeof(HttpTestData), "LegalMediaTypeStrings")]
         public void ConstructorMediaType_ThrowsWithEmptyUriPathExtension(string uriPathExtension, string mediaType)
         {
             Assert.ThrowsArgumentNull(() => new UriPathExtensionMapping(uriPathExtension, mediaType), "uriPathExtension");
@@ -45,7 +42,7 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalUriPathExtensions",
             typeof(CommonUnitTestDataSets), "EmptyStrings")]
         public void ConstructorMediaType_ThrowsWithEmptyMediaType(string uriPathExtension, string mediaType)
         {
@@ -54,8 +51,8 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeHeaderValues")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeHeaderValues")]
         public void ConstructorMediaTypeHeaderValue_Initialises_MediaTypeAndUriPathExtension(string uriPathExtension, MediaTypeHeaderValue mediaType)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension, mediaType);
@@ -66,8 +63,7 @@ namespace System.Net.Http.Formatting
         [Theory]
         [TestDataSet(
             typeof(CommonUnitTestDataSets), "EmptyStrings",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeHeaderValues")]
-        [Trait("Description", "UriPathExtensionMapping(string, MediaTypeHeaderValue) throws if the UriPathExtensions parameter is null.")]
+            typeof(HttpTestData), "LegalMediaTypeHeaderValues")]
         public void ConstructorMediaTypeHeaderValue_ThrowsWithEmptyUriPathExtension(string uriPathExtension, MediaTypeHeaderValue mediaType)
         {
             Assert.ThrowsArgumentNull(() => new UriPathExtensionMapping(uriPathExtension, mediaType), "uriPathExtension");
@@ -75,8 +71,7 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions")]
-        [Trait("Description", "UriPathExtensionMapping(string, MediaTypeHeaderValue) constructor throws if the mediaType parameter is null.")]
+            typeof(HttpTestData), "LegalUriPathExtensions")]
         public void ConstructorMediaTypeHeaderValue_ThrowsWithEmptyMediaType(string uriPathExtension)
         {
             Assert.ThrowsArgumentNull(() => new UriPathExtensionMapping(uriPathExtension, (MediaTypeHeaderValue)null), "mediaType");
@@ -84,10 +79,9 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings",
-            typeof(HttpUnitTestDataSets), "UriStrings")]
-        [Trait("Description", "TryMatchMediaType(HttpRequestMessage) returns 1.0 when the extension is in the Uri.")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeStrings",
+            typeof(HttpTestData), "UriTestDataStrings")]
         public void TryMatchMediaType_Returns_MatchWithExtensionInRouteData(string uriPathExtension, string mediaType, string baseUriString)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension, mediaType);
@@ -97,10 +91,9 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings",
-            typeof(HttpUnitTestDataSets), "UriStrings")]
-        [Trait("Description", "TryMatchMediaType(HttpRequestMessage) returns 1.0 when the extension is in the Uri but differs in case")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeStrings",
+            typeof(HttpTestData), "UriTestDataStrings")]
         public void TryMatchMediaType_Returns_MatchWithExtensionInRouteData_DifferCase(string uriPathExtension, string mediaType, string baseUriString)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension.ToUpperInvariant(), mediaType);
@@ -110,10 +103,9 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings",
-            typeof(HttpUnitTestDataSets), "UriStrings")]
-        [Trait("Description", "TryMatchMediaType(HttpRequestMessage) returns 0.0 when the extension is not in the Uri.")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeStrings",
+            typeof(HttpTestData), "UriTestDataStrings")]
         public void TryMatchMediaType_Returns_ZeroWithExtensionNotInRouteData(string uriPathExtension, string mediaType, string baseUriString)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension, mediaType);
@@ -124,9 +116,8 @@ namespace System.Net.Http.Formatting
 
         [Theory]
         [TestDataSet(
-            typeof(HttpUnitTestDataSets), "LegalUriPathExtensions",
-            typeof(HttpUnitTestDataSets), "LegalMediaTypeStrings")]
-        [Trait("Description", "TryMatchMediaType(HttpRequestMessage) throws if the request is null.")]
+            typeof(HttpTestData), "LegalUriPathExtensions",
+            typeof(HttpTestData), "LegalMediaTypeStrings")]
         public void TryMatchMediaType_Throws_WithNullHttpRequestMessage(string uriPathExtension, string mediaType)
         {
             UriPathExtensionMapping mapping = new UriPathExtensionMapping(uriPathExtension, mediaType);

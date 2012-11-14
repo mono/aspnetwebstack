@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -54,6 +54,7 @@ namespace System.Net.Http.Formatting
             get { return Items.OfType<JsonMediaTypeFormatter>().FirstOrDefault(); }
         }
 
+#if !NETFX_CORE
         /// <summary>
         /// Gets the <see cref="MediaTypeFormatter"/> to use for <c>application/x-www-form-urlencoded</c> data.
         /// </summary>
@@ -61,6 +62,7 @@ namespace System.Net.Http.Formatting
         {
             get { return Items.OfType<FormUrlEncodedMediaTypeFormatter>().FirstOrDefault(); }
         }
+#endif
 
         /// <summary>
         /// Helper to search a collection for a formatter that can read the .NET type in the given mediaType.
@@ -79,11 +81,17 @@ namespace System.Net.Http.Formatting
                 throw Error.ArgumentNull("mediaType");
             }
 
-            foreach (MediaTypeFormatter formatter in this.Items)
+            foreach (MediaTypeFormatter formatter in Items)
             {
-                if (formatter.CanReadAs(type, mediaType))
+                if (formatter != null && formatter.CanReadType(type))
                 {
-                    return formatter;
+                    foreach (MediaTypeHeaderValue supportedMediaType in formatter.SupportedMediaTypes)
+                    {
+                        if (supportedMediaType != null && supportedMediaType.IsSubsetOf(mediaType))
+                        {
+                            return formatter;
+                        }
+                    }
                 }
             }
 
@@ -109,10 +117,15 @@ namespace System.Net.Http.Formatting
 
             foreach (MediaTypeFormatter formatter in Items)
             {
-                MediaTypeHeaderValue match;
-                if (formatter.CanWriteAs(type, mediaType, out match))
+                if (formatter != null && formatter.CanWriteType(type))
                 {
-                    return formatter;
+                    foreach (MediaTypeHeaderValue supportedMediaType in formatter.SupportedMediaTypes)
+                    {
+                        if (supportedMediaType != null && supportedMediaType.IsSubsetOf(mediaType))
+                        {
+                            return formatter;
+                        }
+                    }
                 }
             }
 
@@ -126,8 +139,11 @@ namespace System.Net.Http.Formatting
         /// <returns><c>true</c> if the type should be excluded.</returns>
         public static bool IsTypeExcludedFromValidation(Type type)
         {
-            return FormattingUtilities.IsJTokenType(type) || typeof(XObject).IsAssignableFrom(type) || typeof(XmlNode).IsAssignableFrom(type) 
-                || typeof(FormDataCollection).IsAssignableFrom(type);
+            return
+#if !NETFX_CORE
+                typeof(XmlNode).IsAssignableFrom(type) || typeof(FormDataCollection).IsAssignableFrom(type) ||
+#endif
+                FormattingUtilities.IsJTokenType(type) || typeof(XObject).IsAssignableFrom(type);
         }
 
         /// <summary>
@@ -140,7 +156,9 @@ namespace System.Net.Http.Formatting
             {
                 new JsonMediaTypeFormatter(),
                 new XmlMediaTypeFormatter(),
+#if !NETFX_CORE
                 new FormUrlEncodedMediaTypeFormatter()
+#endif
             };
         }
 
@@ -148,14 +166,14 @@ namespace System.Net.Http.Formatting
         {
             if (formatters == null)
             {
-                throw new ArgumentNullException("formatters");
+                throw Error.ArgumentNull("formatters");
             }
 
             foreach (MediaTypeFormatter formatter in formatters)
             {
                 if (formatter == null)
                 {
-                    throw new ArgumentException(RS.Format(Properties.Resources.CannotHaveNullInList, _mediaTypeFormatterType.Name), "formatters");
+                    throw Error.Argument("formatters", Properties.Resources.CannotHaveNullInList, _mediaTypeFormatterType.Name);
                 }
 
                 Add(formatter);

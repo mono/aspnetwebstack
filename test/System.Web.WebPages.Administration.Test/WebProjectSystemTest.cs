@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.IO;
@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Web.WebPages.Administration.PackageManager;
 using System.Xml.Linq;
+using Microsoft.TestCommon;
 using Moq;
 using NuGet;
-using Xunit;
 
 namespace System.Web.WebPages.Administration.Test
 {

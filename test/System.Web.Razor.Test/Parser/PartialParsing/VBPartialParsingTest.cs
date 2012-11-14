@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
 using System.Web.WebPages.TestUtils;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.PartialParsing
 {
@@ -152,12 +152,12 @@ namespace System.Web.Razor.Test.Parser.PartialParsing
         public void ImplicitExpressionAcceptsIdentifierExpansionAtEndOfNonWhitespaceCharacters()
         {
             var factory = SpanFactory.CreateVbHtml();
-            StringTextBuffer changed = new StringTextBuffer(@"@Code
-    @food
-End Code");
-            StringTextBuffer old = new StringTextBuffer(@"@Code
-    @foo
-End Code");
+            StringTextBuffer changed = new StringTextBuffer("@Code" + Environment.NewLine
+                                                          + "    @food" + Environment.NewLine
+                                                          + "End Code");
+            StringTextBuffer old = new StringTextBuffer("@Code" + Environment.NewLine
+                                                      + "    @foo" + Environment.NewLine
+                                                      + "End Code");
             RunPartialParseTest(new TextChange(15, 0, old, 1, changed),
                 new MarkupBlock(
                     factory.EmptyHtml(),

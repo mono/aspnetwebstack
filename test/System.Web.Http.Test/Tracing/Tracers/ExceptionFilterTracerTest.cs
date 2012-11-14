@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Tracing.Tracers
 {
@@ -19,9 +18,8 @@ namespace System.Web.Http.Tracing.Tracers
             HttpRequestMessage request = new HttpRequestMessage();
             HttpResponseMessage response = new HttpResponseMessage();
             Mock<IExceptionFilter> mockFilter = new Mock<IExceptionFilter>() { CallBase = true };
-            mockFilter.Setup(
-                f => f.ExecuteExceptionFilterAsync(It.IsAny<HttpActionExecutedContext>(), It.IsAny<CancellationToken>())).
-                Returns(TaskHelpers.Completed());
+            mockFilter.Setup(f => f.ExecuteExceptionFilterAsync(It.IsAny<HttpActionExecutedContext>(), It.IsAny<CancellationToken>()))
+                .Returns(TaskHelpers.Completed());
             HttpActionExecutedContext actionExecutedContext = ContextUtil.GetActionExecutedContext(request, response);
             TestTraceWriter traceWriter = new TestTraceWriter();
             ExceptionFilterTracer tracer = new ExceptionFilterTracer(mockFilter.Object, traceWriter);

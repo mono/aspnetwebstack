@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
@@ -12,20 +12,20 @@ namespace System.Web.Http.Tracing
     {
         private List<TraceRecord> _traceRecords = new List<TraceRecord>();
 
-        public IList<TraceRecord> Traces { get { return _traceRecords;  } }
+        public Func<HttpRequestMessage, string, TraceLevel, bool> TraceSelector { get; set; }
 
-        public bool IsEnabled(string category, TraceLevel level)
-        {
-            return true;
-        }
+        public IList<TraceRecord> Traces { get { return _traceRecords;  } }
 
         public void Trace(HttpRequestMessage request, string category, TraceLevel level, Action<TraceRecord> traceAction)
         {
-            TraceRecord traceRecord = new TraceRecord(request, category, level);
-            traceAction(traceRecord);
-            lock (_traceRecords)
+            if (TraceSelector == null || TraceSelector(request, category, level))
             {
-                _traceRecords.Add(traceRecord);
+                TraceRecord traceRecord = new TraceRecord(request, category, level);
+                traceAction(traceRecord);
+                lock (_traceRecords)
+                {
+                    _traceRecords.Add(traceRecord);
+                }
             }
         }
     }

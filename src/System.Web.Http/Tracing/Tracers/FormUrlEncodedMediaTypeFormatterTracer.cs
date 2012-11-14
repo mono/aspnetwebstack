@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Net;
@@ -16,9 +16,14 @@ namespace System.Web.Http.Tracing.Tracers
     internal class FormUrlEncodedMediaTypeFormatterTracer : FormUrlEncodedMediaTypeFormatter, IFormatterTracer
     {
         private MediaTypeFormatterTracer _innerTracer;
-        public FormUrlEncodedMediaTypeFormatterTracer(MediaTypeFormatter innerFormatter, ITraceWriter traceWriter, HttpRequestMessage request)
+        public FormUrlEncodedMediaTypeFormatterTracer(FormUrlEncodedMediaTypeFormatter innerFormatter, ITraceWriter traceWriter, HttpRequestMessage request)
         {
             _innerTracer = new MediaTypeFormatterTracer(innerFormatter, traceWriter, request);
+
+            // copy non-overridable members from inner formatter
+            _innerTracer.CopyNonOverriableMembersFromInner(this);
+            MaxDepth = innerFormatter.MaxDepth;
+            ReadBufferSize = innerFormatter.ReadBufferSize;
         }
 
         HttpRequestMessage IFormatterTracer.Request
@@ -26,7 +31,7 @@ namespace System.Web.Http.Tracing.Tracers
             get { return _innerTracer.Request; }
         }
 
-        MediaTypeFormatter IFormatterTracer.InnerFormatter
+        public MediaTypeFormatter InnerFormatter
         {
             get { return _innerTracer.InnerFormatter; }
         }
@@ -46,17 +51,17 @@ namespace System.Web.Http.Tracing.Tracers
             return _innerTracer.GetPerRequestFormatterInstance(type, request, mediaType);
         }
 
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            return _innerTracer.ReadFromStreamAsync(type, stream, contentHeaders, formatterLogger);
+            return _innerTracer.ReadFromStreamAsync(type, readStream, content, formatterLogger);
         }
 
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
-            return _innerTracer.WriteToStreamAsync(type, value, stream, contentHeaders, transportContext);
+            return _innerTracer.WriteToStreamAsync(type, value, writeStream, content, transportContext);
         }
 
-        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, string mediaType)
+        public override void SetDefaultContentHeaders(Type type, HttpContentHeaders headers, MediaTypeHeaderValue mediaType)
         {
             _innerTracer.SetDefaultContentHeaders(type, headers, mediaType);
         }

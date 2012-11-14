@@ -1,8 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Helpers.Test
 {
@@ -101,7 +100,7 @@ namespace System.Web.Helpers.Test
         {
             string key = DateTime.UtcNow.Ticks.ToString() + "_SetWithSlidingExpirationForMoreThanYear_SetTest";
             object expected = new object();
-            Assert.ThrowsArgumentLessThanOrEqualTo(() => WebCache.Set(key, expected, 365 * 24 * 60 + 1, true), "minutesToCache", (365 * 24 * 60).ToString());
+            Assert.ThrowsArgumentLessThanOrEqualTo(() => WebCache.Set(key, expected, (365 * 24 * 60) + 1, true), "minutesToCache", (365 * 24 * 60).ToString());
         }
 
         [Fact]

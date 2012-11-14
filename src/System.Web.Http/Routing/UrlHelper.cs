@@ -1,51 +1,52 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Web.Http.Controllers;
+using System.Net.Http;
+using System.Web.Http.Properties;
 
 namespace System.Web.Http.Routing
 {
     public class UrlHelper
     {
-        private HttpControllerContext _controllerContext;
+        private HttpRequestMessage _request;
 
-        public UrlHelper(HttpControllerContext controllerContext)
+        public UrlHelper(HttpRequestMessage request)
         {
-            if (controllerContext == null)
+            if (request == null)
             {
-                throw Error.ArgumentNull("controllerContext");
+                throw Error.ArgumentNull("request");
             }
 
-            ControllerContext = controllerContext;
+            Request = request;
         }
 
         /// <summary>
-        /// Gets the <see cref="HttpControllerContext"/> of the current <see cref="ApiController"/>.
+        /// Gets the <see cref="HttpRequestMessage"/> of the current <see cref="UrlHelper"/>.
         /// The setter is not intended to be used other than for unit testing purpose. 
         /// </summary>
-        public HttpControllerContext ControllerContext
+        public HttpRequestMessage Request
         {
-            get { return _controllerContext; }
+            get { return _request; }
             set
             {
                 if (value == null)
                 {
-                    throw Error.ArgumentNull("value");
+                    throw Error.PropertyNull();
                 }
 
-                _controllerContext = value;
+                _request = value;
             }
         }
 
         public string Route(string routeName, object routeValues)
         {
-            return GetHttpRouteHelper(ControllerContext, routeName, routeValues);
+            return GetHttpRouteHelper(Request, routeName, routeValues);
         }
 
         public string Route(string routeName, IDictionary<string, object> routeValues)
         {
-            return GetHttpRouteHelper(ControllerContext, routeName, routeValues);
+            return GetHttpRouteHelper(Request, routeName, routeValues);
         }
 
         [SuppressMessage("Microsoft.Usage", "CA2234:PassSystemUriObjectsInsteadOfStrings", Justification = "It is safe to pass string here")]
@@ -54,7 +55,7 @@ namespace System.Web.Http.Routing
             string link = Route(routeName, routeValues);
             if (!String.IsNullOrEmpty(link))
             {
-                link = new Uri(ControllerContext.Request.RequestUri, link).AbsoluteUri;
+                link = new Uri(Request.RequestUri, link).AbsoluteUri;
             }
 
             return link;
@@ -66,40 +67,46 @@ namespace System.Web.Http.Routing
             string link = Route(routeName, routeValues);
             if (!String.IsNullOrEmpty(link))
             {
-                link = new Uri(ControllerContext.Request.RequestUri, link).AbsoluteUri;
+                link = new Uri(Request.RequestUri, link).AbsoluteUri;
             }
 
             return link;
         }
 
-        private static string GetHttpRouteHelper(HttpControllerContext controllerContext, string routeName, object routeValues)
+        private static string GetHttpRouteHelper(HttpRequestMessage request, string routeName, object routeValues)
         {
-            IDictionary<string, object> routeValuesDictionary = HttpRouteCollection.GetTypeProperties(routeValues);
-            return GetHttpRouteHelper(controllerContext, routeName, routeValuesDictionary);
+            HttpRouteValueDictionary routeValuesDictionary = new HttpRouteValueDictionary(routeValues);
+            return GetHttpRouteHelper(request, routeName, routeValuesDictionary);
         }
 
-        private static string GetHttpRouteHelper(HttpControllerContext controllerContext, string routeName, IDictionary<string, object> routeValues)
+        private static string GetHttpRouteHelper(HttpRequestMessage request, string routeName, IDictionary<string, object> routeValues)
         {
             if (routeValues == null)
             {
                 // If no route values were passed in at all we have to create a new dictionary
                 // so that we can add the extra "httproute" key.
-                routeValues = new Dictionary<string, object>();
+                routeValues = new HttpRouteValueDictionary();
                 routeValues.Add(HttpRoute.HttpRouteKey, true);
             }
             else
             {
+                // Copy the dictionary so that we can guarantee that routeValues uses an OrdinalIgnoreCase comparer
+                // and to add the extra "httproute" key used by all Web API routes to disambiguate them from other MVC routes.
+                routeValues = new HttpRouteValueDictionary(routeValues);
                 if (!routeValues.ContainsKey(HttpRoute.HttpRouteKey))
                 {
-                    // Copy the dictionary so that we can add the extra "httproute" key used by all Web API routes to
-                    // disambiguate them from other MVC routes.
-                    routeValues = new Dictionary<string, object>(routeValues);
                     routeValues.Add(HttpRoute.HttpRouteKey, true);
                 }
             }
 
-            IHttpVirtualPathData vpd = controllerContext.Configuration.Routes.GetVirtualPath(
-                controllerContext: controllerContext,
+            HttpConfiguration configuration = request.GetConfiguration();
+            if (configuration == null)
+            {
+                throw Error.InvalidOperation(SRResources.HttpRequestMessageExtensions_NoConfiguration);
+            }
+
+            IHttpVirtualPathData vpd = configuration.Routes.GetVirtualPath(
+                request: request,
                 name: routeName,
                 values: routeValues);
             if (vpd == null)

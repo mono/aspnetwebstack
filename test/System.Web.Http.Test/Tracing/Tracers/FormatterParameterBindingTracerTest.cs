@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Net.Http.Formatting;
@@ -9,14 +9,88 @@ using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
 using System.Web.Http.Metadata.Providers;
 using System.Web.Http.ModelBinding;
+using System.Web.Http.Validation;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Tracing.Tracers
 {
     public class FormatterParameterBindingTracerTest
     {
+        [Fact]
+        public void ErrorMessage_Calls_Inner()
+        {
+            // Arrange
+            Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
+            mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
+            Mock<FormatterParameterBinding> mockBinding = new Mock<FormatterParameterBinding>(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), null);
+            mockBinding.Setup(b => b.ErrorMessage).Returns("errorMessage").Verifiable();
+            FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(mockBinding.Object, new TestTraceWriter());
+
+            // Act & Assert
+            Assert.Equal("errorMessage", tracer.ErrorMessage);
+            mockBinding.Verify();
+        }
+
+        [Fact]
+        public void WillReadBody_Calls_Inner()
+        {
+            // Arrange
+            Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
+            mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
+            Mock<FormatterParameterBinding> mockBinding = new Mock<FormatterParameterBinding>(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), null);
+            mockBinding.Setup(b => b.WillReadBody).Returns(true).Verifiable();
+            FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(mockBinding.Object, new TestTraceWriter());
+
+            // Act & Assert
+            Assert.True(tracer.WillReadBody);
+            mockBinding.Verify();
+        }
+
+        [Fact]
+        public void Descriptor_Uses_Inners()
+        {
+            // Arrange
+            Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
+            mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
+            Mock<FormatterParameterBinding> mockBinding = new Mock<FormatterParameterBinding>(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), null) { CallBase = true };
+            FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(mockBinding.Object, new TestTraceWriter());
+
+            // Act & Assert
+            Assert.Same(mockBinding.Object.Descriptor, tracer.Descriptor);
+        }
+
+        [Fact]
+        public void Formatters_Uses_Inners()
+        {
+            // Arrange
+            Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
+            mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
+            Mock<FormatterParameterBinding> mockBinding = new Mock<FormatterParameterBinding>(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), null) { CallBase = true };
+            FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(mockBinding.Object, new TestTraceWriter());
+
+            // Act & Assert
+            Assert.Equal(mockBinding.Object.Formatters, tracer.Formatters);
+        }
+
+        [Fact]
+        public void BodyModelValidator_Uses_Inners()
+        {
+            // Arrange
+            Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
+            mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
+            Mock<IBodyModelValidator> mockValidator = new Mock<IBodyModelValidator>();
+            Mock<FormatterParameterBinding> mockBinding = new Mock<FormatterParameterBinding>(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), mockValidator.Object) { CallBase = true };
+            FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(mockBinding.Object, new TestTraceWriter());
+
+            // Act & Assert
+            Assert.Equal(mockBinding.Object.BodyModelValidator, tracer.BodyModelValidator);
+        }
 
         /// <summary>
         /// This test verifies that our <see cref="FormatterParameterBindingTracer"/>
@@ -29,7 +103,7 @@ namespace System.Web.Http.Tracing.Tracers
             // Arrange
             Mock<HttpParameterDescriptor> mockParamDescriptor = new Mock<HttpParameterDescriptor>() { CallBase = true };
             mockParamDescriptor.Setup(d => d.ParameterName).Returns("paramName");
-            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof (string));
+            mockParamDescriptor.Setup(d => d.ParameterType).Returns(typeof(string));
             FormatterParameterBinding binding = new FormatterParameterBinding(mockParamDescriptor.Object, new MediaTypeFormatterCollection(), null);
             TestTraceWriter traceWriter = new TestTraceWriter();
             FormatterParameterBindingTracer tracer = new FormatterParameterBindingTracer(binding, traceWriter);

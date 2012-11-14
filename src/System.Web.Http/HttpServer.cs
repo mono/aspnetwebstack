@@ -1,19 +1,14 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Dispatcher;
 using System.Web.Http.Hosting;
-using System.Web.Http.Metadata;
-using System.Web.Http.Tracing;
-using System.Web.Http.Validation;
+using System.Web.Http.Properties;
 
 namespace System.Web.Http
 {
@@ -48,7 +43,7 @@ namespace System.Web.Http
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
             Justification = "The configuration object is disposed as part of this class.")]
         public HttpServer(HttpConfiguration configuration)
-            : this(configuration, new HttpControllerDispatcher(configuration))
+            : this(configuration, new HttpRoutingDispatcher(configuration))
         {
         }
 
@@ -58,7 +53,7 @@ namespace System.Web.Http
         /// <param name="dispatcher">Http dispatcher responsible for handling incoming requests.</param>
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope",
             Justification = "The configuration object is disposed as part of this class.")]
-        public HttpServer(HttpControllerDispatcher dispatcher)
+        public HttpServer(HttpMessageHandler dispatcher)
             : this(new HttpConfiguration(), dispatcher)
         {
         }
@@ -134,7 +129,7 @@ namespace System.Web.Http
 
             if (_disposed)
             {
-                return TaskHelpers.FromResult(request.CreateResponse(HttpStatusCode.ServiceUnavailable));
+                return TaskHelpers.FromResult(request.CreateErrorResponse(HttpStatusCode.ServiceUnavailable, SRResources.HttpServerDisposed));
             }
 
             // The first request initializes the server
@@ -158,7 +153,7 @@ namespace System.Web.Http
             }
 
             return base.SendAsync(request, cancellationToken)
-                       .Finally(() => Thread.CurrentPrincipal = originalPrincipal);
+                       .Finally(() => Thread.CurrentPrincipal = originalPrincipal, runSynchronously: true);
         }
 
         private void EnsureInitialized()
@@ -166,15 +161,6 @@ namespace System.Web.Http
             LazyInitializer.EnsureInitialized(ref _initializationTarget, ref _initialized, ref _initializationLock, () =>
             {
                 Initialize();
-
-                // Attach tracing before creating pipeline to allow injection of message handlers
-                ITraceManager traceManager = _configuration.Services.GetTraceManager();
-                Contract.Assert(traceManager != null);
-                traceManager.Initialize(_configuration);
-
-                // Create pipeline
-                InnerHandler = HttpPipelineFactory.Create(_configuration.MessageHandlers, _dispatcher);
-
                 return null;
             });
         }
@@ -188,18 +174,12 @@ namespace System.Web.Http
         /// </remarks>
         protected virtual void Initialize()
         {
-            // Register the default IRequiredMemberSelector for formatters that haven't been assigned one
-            ModelMetadataProvider metadataProvider = _configuration.Services.GetModelMetadataProvider();
-            IEnumerable<ModelValidatorProvider> validatorProviders = _configuration.Services.GetModelValidatorProviders();
-            IRequiredMemberSelector defaultRequiredMemberSelector = new ModelValidationRequiredMemberSelector(metadataProvider, validatorProviders);
+            // Do final initialization of the configuration.
+            // It is considered immutable from this point forward.
+            _configuration.Initializer(_configuration);
 
-            foreach (MediaTypeFormatter formatter in _configuration.Formatters)
-            {
-                if (formatter.RequiredMemberSelector == null)
-                {
-                    formatter.RequiredMemberSelector = defaultRequiredMemberSelector;
-                }
-            }
+            // Create pipeline
+            InnerHandler = HttpClientFactory.CreatePipeline(_dispatcher, _configuration.MessageHandlers);
         }
     }
 }

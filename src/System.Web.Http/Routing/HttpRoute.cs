@@ -1,12 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Web.Http.Controllers;
-using System.Web.Http.Internal;
 using System.Web.Http.Properties;
 
 namespace System.Web.Http.Routing
@@ -35,34 +33,40 @@ namespace System.Web.Http.Routing
         private HttpRouteValueDictionary _dataTokens;
 
         public HttpRoute()
-            : this(null, null, null, null)
+            : this(routeTemplate: null, defaults: null, constraints: null, dataTokens: null, handler: null)
         {
         }
 
         public HttpRoute(string routeTemplate)
-            : this(routeTemplate, null, null, null)
+            : this(routeTemplate, defaults: null, constraints: null, dataTokens: null, handler: null)
         {
         }
 
         public HttpRoute(string routeTemplate, HttpRouteValueDictionary defaults)
-            : this(routeTemplate, defaults, null, null)
+            : this(routeTemplate, defaults, constraints: null, dataTokens: null, handler: null)
         {
         }
 
         public HttpRoute(string routeTemplate, HttpRouteValueDictionary defaults, HttpRouteValueDictionary constraints)
-            : this(routeTemplate, defaults, constraints, null)
+            : this(routeTemplate, defaults, constraints, dataTokens: null, handler: null)
         {
         }
 
         public HttpRoute(string routeTemplate, HttpRouteValueDictionary defaults, HttpRouteValueDictionary constraints, HttpRouteValueDictionary dataTokens)
+            : this(routeTemplate, defaults, constraints, dataTokens, handler: null)
+        {
+        }
+
+        public HttpRoute(string routeTemplate, HttpRouteValueDictionary defaults, HttpRouteValueDictionary constraints, HttpRouteValueDictionary dataTokens, HttpMessageHandler handler)
         {
             _routeTemplate = String.IsNullOrWhiteSpace(routeTemplate) ? String.Empty : routeTemplate;
             _defaults = defaults ?? new HttpRouteValueDictionary();
             _constraints = constraints ?? new HttpRouteValueDictionary();
             _dataTokens = dataTokens ?? new HttpRouteValueDictionary();
+            Handler = handler;
 
             // The parser will throw for invalid routes. 
-            _parsedRoute = HttpRouteParser.Parse(_routeTemplate);
+            _parsedRoute = HttpRouteParser.Parse(RouteTemplate);
         }
 
         public IDictionary<string, object> Defaults
@@ -79,6 +83,8 @@ namespace System.Web.Http.Routing
         {
             get { return _dataTokens; }
         }
+
+        public HttpMessageHandler Handler { get; private set; }
 
         public string RouteTemplate
         {
@@ -136,14 +142,14 @@ namespace System.Web.Http.Routing
         /// Attempt to generate a URI that represents the values passed in based on current
         /// values from the <see cref="HttpRouteData"/> and new values using the specified <see cref="HttpRoute"/>.
         /// </summary>
-        /// <param name="controllerContext">The HTTP execution context.</param>
+        /// <param name="request">The HTTP request message.</param>
         /// <param name="values">The route values.</param>
         /// <returns>A <see cref="HttpVirtualPathData"/> instance or null if URI cannot be generated.</returns>
-        public virtual IHttpVirtualPathData GetVirtualPath(HttpControllerContext controllerContext, IDictionary<string, object> values)
+        public virtual IHttpVirtualPathData GetVirtualPath(HttpRequestMessage request, IDictionary<string, object> values)
         {
-            if (controllerContext == null)
+            if (request == null)
             {
-                throw Error.ArgumentNull("controllerContext");
+                throw Error.ArgumentNull("request");
             }
 
             // Only perform URL generation if the "httproute" key was specified. This allows these
@@ -157,14 +163,20 @@ namespace System.Web.Http.Routing
             // Remove the value from the collection so that it doesn't affect the generated URL
             var newValues = GetRouteDictionaryWithoutHttpRouteKey(values);
 
-            BoundRouteTemplate result = _parsedRoute.Bind(controllerContext.RouteData.Values, newValues, _defaults, _constraints);
+            IHttpRouteData routeData = request.GetRouteData();
+            if (routeData == null)
+            {
+                return null;
+            }
+
+            BoundRouteTemplate result = _parsedRoute.Bind(routeData.Values, newValues, _defaults, _constraints);
             if (result == null)
             {
                 return null;
             }
 
             // Verify that the route matches the validation rules
-            if (!ProcessConstraints(controllerContext.Request, result.Values, HttpRouteDirection.UriGeneration))
+            if (!ProcessConstraints(request, result.Values, HttpRouteDirection.UriGeneration))
             {
                 return null;
             }

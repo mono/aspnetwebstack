@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ServiceModel;
 
@@ -35,7 +35,6 @@ namespace System.Web.Http.SelfHost.Channels
             set
             {
                 HttpBindingSecurityModeHelper.Validate(value, "value");
-                IsModeSet = true;
                 _mode = value;
             }
         }
@@ -50,7 +49,5 @@ namespace System.Web.Http.SelfHost.Channels
 
             set { _transportSecurity = value ?? new HttpTransportSecurity(); }
         }
-
-        internal bool IsModeSet { get; private set; }
     }
 }

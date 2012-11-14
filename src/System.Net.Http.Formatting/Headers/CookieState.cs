@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Specialized;
 using System.Diagnostics.Contracts;
@@ -85,7 +85,7 @@ namespace System.Net.Http.Headers
         }
 
         /// <summary>
-        /// If the cookie data is structured then use the <see cref="Values"/> property for setting and getting individual values.
+        /// If the cookie data is structured then use the <see cref="Values"/> property for setting and getting individual sub-name/value pairs.
         /// If the cookie data is a simple string value then set or retrieve it using the <see cref="Value"/> property.
         /// </summary>
         public NameValueCollection Values
@@ -93,10 +93,10 @@ namespace System.Net.Http.Headers
             get { return _values; }
         }
 
-        public string this[string name]
+        public string this[string subName]
         {
-            get { return Values[name]; }
-            set { Values[name] = value; }
+            get { return Values[subName]; }
+            set { Values[subName] = value; }
         }
 
         public override string ToString()
@@ -111,6 +111,11 @@ namespace System.Net.Http.Headers
 
         private static void CheckNameFormat(string name, string parameterName)
         {
+            if (name == null)
+            {
+                throw Error.ArgumentNull("name");
+            }
+
             if (!FormattingUtilities.ValidateHeaderToken(name))
             {
                 throw Error.Argument(parameterName, Properties.Resources.CookieInvalidName);

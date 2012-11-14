@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting.Parsers
 {
@@ -10,8 +11,8 @@ namespace System.Net.Http.Formatting.Parsers
     /// </summary>
     internal class HttpRequestHeaderParser
     {
-        private const int DefaultMaxRequestLineSize = 2 * 1024;
-        private const int DefaultMaxHeaderSize = 16 * 1024; // Same default size as IIS has for regular requests
+        internal const int DefaultMaxRequestLineSize = 2 * 1024;
+        internal const int DefaultMaxHeaderSize = 16 * 1024; // Same default size as IIS has for regular requests
 
         private HttpUnsortedRequest _httpRequest;
         private HttpRequestState _requestStatus = HttpRequestState.RequestLine;
@@ -38,7 +39,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (httpRequest == null)
             {
-                throw new ArgumentNullException("httpRequest");
+                throw Error.ArgumentNull("httpRequest");
             }
 
             _httpRequest = httpRequest;
@@ -71,7 +72,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("buffer");
+                throw Error.ArgumentNull("buffer");
             }
 
             ParserState parseStatus = ParserState.NeedMoreData;

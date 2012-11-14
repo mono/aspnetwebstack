@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,9 +13,6 @@ using System.Web.Http.ValueProviders;
 using System.Web.Http.ValueProviders.Providers;
 using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Tracing
 {
@@ -55,8 +52,8 @@ namespace System.Web.Http.Tracing
                                                            {"p2", true}
                                                        };
 
-            string expected = String.Format("p1={0}, p2={1}", 
-                                    FormattingUtilities.ValueToString(arguments["p1"], CultureInfo.CurrentCulture), 
+            string expected = String.Format("p1={0}, p2={1}",
+                                    FormattingUtilities.ValueToString(arguments["p1"], CultureInfo.CurrentCulture),
                                     FormattingUtilities.ValueToString(arguments["p2"], CultureInfo.CurrentCulture));
 
             // Act
@@ -164,8 +161,8 @@ namespace System.Web.Http.Tracing
         public void ModelBinderToString_Formats()
         {
             // Arrange
-            ModelBinderProvider provider = new SimpleModelBinderProvider(typeof (int), () => null);
-            string expected = typeof (SimpleModelBinderProvider).Name;
+            ModelBinderProvider provider = new SimpleModelBinderProvider(typeof(int), () => null);
+            string expected = typeof(SimpleModelBinderProvider).Name;
 
             // Act
             string actual = FormattingUtilities.ModelBinderToString(provider);
@@ -182,8 +179,8 @@ namespace System.Web.Http.Tracing
             ModelBinderProvider innerProvider2 = new ArrayModelBinderProvider();
             CompositeModelBinderProvider compositeProvider = new CompositeModelBinderProvider(new ModelBinderProvider[] { innerProvider1, innerProvider2 });
             string expected = String.Format(
-                                "{0}({1}, {2})", 
-                                typeof(CompositeModelBinderProvider).Name, 
+                                "{0}({1}, {2})",
+                                typeof(CompositeModelBinderProvider).Name,
                                 typeof(SimpleModelBinderProvider).Name,
                                 typeof(ArrayModelBinderProvider).Name);
 
@@ -215,15 +212,15 @@ namespace System.Web.Http.Tracing
             List<IValueProvider> providers = new List<IValueProvider>()
                                                  {
                                                     new ElementalValueProvider("unused", 1, CultureInfo.CurrentCulture),
-                                                    new NameValueCollectionValueProvider(() => null, CultureInfo.CurrentCulture)
+                                                    new NameValuePairsValueProvider(() => null, CultureInfo.CurrentCulture)
                                                  };
 
             CompositeValueProvider compositeProvider = new CompositeValueProvider(providers);
             string expected = String.Format(
-                                "{0}({1}, {2})", 
-                                typeof(CompositeValueProvider).Name, 
+                                "{0}({1}, {2})",
+                                typeof(CompositeValueProvider).Name,
                                 typeof(ElementalValueProvider).Name,
-                                typeof(NameValueCollectionValueProvider).Name);
+                                typeof(NameValuePairsValueProvider).Name);
 
             // Act
             string actual = FormattingUtilities.ValueProviderToString(compositeProvider);
@@ -241,7 +238,7 @@ namespace System.Web.Http.Tracing
                                                                  {"r1", "c1"},
                                                                  {"r2", "c2"}
                                                              };
-            Mock<IHttpRouteData> mockRouteData = new Mock<IHttpRouteData>() { CallBase = true};
+            Mock<IHttpRouteData> mockRouteData = new Mock<IHttpRouteData>() { CallBase = true };
             mockRouteData.Setup(r => r.Values).Returns(routeDictionary);
             string expected = "r1:c1,r2:c2";
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Web.Http;
 using Newtonsoft.Json.Linq;
 
 namespace System.Net.Http.Formatting
@@ -34,7 +35,6 @@ namespace System.Net.Http.Formatting
         /// <param name="nameValuePairs">The collection of query string name-value pairs parsed in lexical order. Both names
         /// and values must be un-escaped so that they don't contain any <see cref="Uri"/> encoding.</param>
         /// <returns>The <see cref="JObject"/> corresponding to the given query string values.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "This is a low-level API used by other APIs to provide end-user functionality.")]
         public static JObject Parse(IEnumerable<KeyValuePair<string, string>> nameValuePairs)
         {
             return ParseInternal(nameValuePairs, Int32.MaxValue, true);
@@ -49,7 +49,6 @@ namespace System.Net.Http.Formatting
         /// and values must be un-escaped so that they don't contain any <see cref="Uri"/> encoding.</param>
         /// <param name="maxDepth">The maximum depth of object graph encoded as <c>x-www-form-urlencoded</c>.</param>
         /// <returns>The <see cref="JObject"/> corresponding to the given query string values.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "This is a low-level API used by other APIs to provide end-user functionality.")]
         public static JObject Parse(IEnumerable<KeyValuePair<string, string>> nameValuePairs, int maxDepth)
         {
             return ParseInternal(nameValuePairs, maxDepth, true);
@@ -64,7 +63,6 @@ namespace System.Net.Http.Formatting
         /// and values must be un-escaped so that they don't contain any <see cref="Uri"/> encoding.</param>
         /// <param name="value">The parsed result or null if parsing failed.</param>
         /// <returns><c>true</c> if <paramref name="nameValuePairs"/> was parsed successfully; otherwise false.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "This is a low-level API used by other APIs to provide end-user functionality.")]
         public static bool TryParse(IEnumerable<KeyValuePair<string, string>> nameValuePairs, out JObject value)
         {
             return (value = ParseInternal(nameValuePairs, Int32.MaxValue, false)) != null;
@@ -80,7 +78,6 @@ namespace System.Net.Http.Formatting
         /// <param name="maxDepth">The maximum depth of object graph encoded as <c>x-www-form-urlencoded</c>.</param>
         /// <param name="value">The parsed result or null if parsing failed.</param>
         /// <returns><c>true</c> if <paramref name="nameValuePairs"/> was parsed successfully; otherwise false.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "This is a low-level API used by other APIs to provide end-user functionality.")]
         public static bool TryParse(IEnumerable<KeyValuePair<string, string>> nameValuePairs, int maxDepth, out JObject value)
         {
             return (value = ParseInternal(nameValuePairs, maxDepth, false)) != null;
@@ -96,17 +93,16 @@ namespace System.Net.Http.Formatting
         /// <param name="maxDepth">The maximum depth of object graph encoded as <c>x-www-form-urlencoded</c>.</param>
         /// <param name="throwOnError">Indicates whether to throw an exception on error or return false</param>
         /// <returns>The <see cref="JObject"/> corresponding to the given query string values.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "This is a low-level API used by other APIs to provide end-user functionality.")]
         private static JObject ParseInternal(IEnumerable<KeyValuePair<string, string>> nameValuePairs, int maxDepth, bool throwOnError)
         {
             if (nameValuePairs == null)
             {
-                throw new ArgumentNullException("nameValuePairs");
+                throw Error.ArgumentNull("nameValuePairs");
             }
 
             if (maxDepth <= MinDepth)
             {
-                throw new ArgumentOutOfRangeException("maxDepth", maxDepth, RS.Format(Properties.Resources.ArgumentMustBeGreaterThan, MinDepth));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxDepth", maxDepth, MinDepth + 1);
             }
 
             JObject result = new JObject();
@@ -114,7 +110,7 @@ namespace System.Net.Http.Formatting
             {
                 string key = nameValuePair.Key;
                 string value = nameValuePair.Value;
-                
+
                 // value is preserved, even if it's null, "undefined", "null", String.Empty, etc when converting to JToken. 
 
                 if (key == null)
@@ -123,7 +119,7 @@ namespace System.Net.Http.Formatting
                     {
                         if (throwOnError)
                         {
-                            throw new ArgumentException(Properties.Resources.QueryStringNameShouldNotNull, "nameValuePairs");
+                            throw Error.Argument("nameValuePairs", Properties.Resources.QueryStringNameShouldNotNull);
                         }
 
                         return null;
@@ -180,7 +176,7 @@ namespace System.Net.Http.Formatting
             {
                 if (throwOnError)
                 {
-                    throw new ArgumentException(RS.Format(Properties.Resources.MaxDepthExceeded, maxDepth));
+                    throw Error.Argument(Properties.Resources.MaxDepthExceeded, maxDepth);
                 }
 
                 return null;
@@ -205,7 +201,7 @@ namespace System.Net.Http.Formatting
                         {
                             if (throwOnError)
                             {
-                                throw new ArgumentException(RS.Format(Properties.Resources.NestedBracketNotValid, ApplicationFormUrlEncoded, i));
+                                throw Error.Argument(Properties.Resources.NestedBracketNotValid, ApplicationFormUrlEncoded, i);
                             }
 
                             return false;
@@ -221,7 +217,7 @@ namespace System.Net.Http.Formatting
                         {
                             if (throwOnError)
                             {
-                                throw new ArgumentException(RS.Format(Properties.Resources.UnMatchedBracketNotValid, ApplicationFormUrlEncoded, i));
+                                throw Error.Argument(Properties.Resources.UnMatchedBracketNotValid, ApplicationFormUrlEncoded, i);
                             }
 
                             return false;
@@ -235,7 +231,7 @@ namespace System.Net.Http.Formatting
             {
                 if (throwOnError)
                 {
-                    throw new ArgumentException(RS.Format(Properties.Resources.NestedBracketNotValid, ApplicationFormUrlEncoded, key.LastIndexOf('[')));
+                    throw Error.Argument(Properties.Resources.NestedBracketNotValid, ApplicationFormUrlEncoded, key.LastIndexOf('['));
                 }
 
                 return false;
@@ -258,7 +254,7 @@ namespace System.Net.Http.Formatting
                 {
                     if (throwOnError)
                     {
-                        throw new ArgumentException(RS.Format(Properties.Resources.InvalidArrayInsert, BuildPathString(path, i)));
+                        throw Error.Argument(Properties.Resources.InvalidArrayInsert, BuildPathString(path, i));
                     }
 
                     return false;
@@ -276,7 +272,7 @@ namespace System.Net.Http.Formatting
                     {
                         if (throwOnError)
                         {
-                            throw new ArgumentException(RS.Format(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, i)));
+                            throw Error.Argument(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, i));
                         }
 
                         return false;
@@ -301,7 +297,7 @@ namespace System.Net.Http.Formatting
                 {
                     if (throwOnError)
                     {
-                        throw new ArgumentException(RS.Format(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, path.Length - 1)));
+                        throw Error.Argument(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, path.Length - 1));
                     }
 
                     return false;
@@ -329,7 +325,7 @@ namespace System.Net.Http.Formatting
                 {
                     if (throwOnError)
                     {
-                        throw new ArgumentException(RS.Format(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, pathIndex)));
+                        throw Error.Argument(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, pathIndex));
                     }
 
                     return false;
@@ -364,7 +360,7 @@ namespace System.Net.Http.Formatting
                 {
                     if (throwOnError)
                     {
-                        throw new ArgumentException(RS.Format(Properties.Resources.JQuery13CompatModeNotSupportNestedJson, BuildPathString(path, pathIndex)));
+                        throw Error.Argument(Properties.Resources.JQuery13CompatModeNotSupportNestedJson, BuildPathString(path, pathIndex));
                     }
 
                     return false;
@@ -403,7 +399,7 @@ namespace System.Net.Http.Formatting
                 // a[b][c]=1&a[b][]=2 => invalid
                 if (throwOnError)
                 {
-                    throw new ArgumentException(RS.Format(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, path.Length - 1)));
+                    throw Error.Argument(Properties.Resources.FormUrlEncodedMismatchingTypes, BuildPathString(path, path.Length - 1));
                 }
 
                 return false;
@@ -440,7 +436,7 @@ namespace System.Net.Http.Formatting
                     {
                         if (throwOnError)
                         {
-                            throw new ArgumentException(RS.Format(Properties.Resources.FormUrlEncodedMismatchingTypes, key));
+                            throw Error.Argument(Properties.Resources.FormUrlEncodedMismatchingTypes, key);
                         }
 
                         return null;

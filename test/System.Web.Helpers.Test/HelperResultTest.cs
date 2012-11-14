@@ -1,16 +1,15 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Web.WebPages;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Helpers.Test
 {
     /// <summary>
-    ///This is a test class for Util is intended
-    ///to contain all HelperResult Unit Tests
-    ///</summary>
+    /// This is a test class for Util is intended
+    /// to contain all HelperResult Unit Tests
+    /// </summary>
     public class HelperResultTest
     {
         [Fact]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.ServiceModel;
 
@@ -14,21 +14,11 @@ namespace System.Web.Http.SelfHost.ServiceModel
                    transferMode == TransferMode.StreamedResponse;
         }
 
-        public static bool IsRequestStreamed(TransferMode transferMode)
-        {
-            return transferMode == TransferMode.StreamedRequest || transferMode == TransferMode.Streamed;
-        }
-
-        public static bool IsResponseStreamed(TransferMode transferMode)
-        {
-            return transferMode == TransferMode.StreamedResponse || transferMode == TransferMode.Streamed;
-        }
-
-        public static void Validate(TransferMode value)
+        public static void Validate(TransferMode value, string parameterValue)
         {
             if (!IsDefined(value))
             {
-                throw Error.InvalidEnumArgument("value", (int)value, typeof(TransferMode));
+                throw Error.InvalidEnumArgument(parameterValue, (int)value, typeof(TransferMode));
             }
         }
     }

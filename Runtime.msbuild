@@ -1,45 +1,49 @@
 <Project DefaultTargets="UnitTest" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
+        <!-- build.cmd sets /p:Desktop=true. The CI server does not; instead, it does an additional step with /p:Configuration=CodeAnalysis. -->
+        <Configuration Condition=" '$(Configuration)' == '' and '$(Desktop)' == 'true' ">CodeAnalysis</Configuration>
         <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
-
-        <!-- TODO: CodeAnalysis is off by default in VS11 because FxCop cannot load custom rules built against Dev10 -->
-        <CodeAnalysis Condition=" '$(CodeAnalysis)' == '' and '$(VS110COMNTOOLS)' == ''">true</CodeAnalysis>
-
+        <CodeAnalysis Condition=" '$(CodeAnalysis)' == '' and '$(Configuration)' != 'Release' ">true</CodeAnalysis>
         <StyleCopEnabled Condition=" '$(StyleCopEnabled)' == '' ">true</StyleCopEnabled>
         <BuildInParallel Condition=" '$(BuildInParallel)' == '' And $(MSBuildNodeCount) &gt; 1 ">true</BuildInParallel>
         <BuildInParallel Condition=" '$(BuildInParallel)' == '' ">false</BuildInParallel>
         <TestResultsDirectory>$(MSBuildThisFileDirectory)bin\$(Configuration)\test\TestResults\</TestResultsDirectory>
+        <ExtensionsTestResultsDirectory>$(MSBuildThisFileDirectory)bin\Extensions\$(Configuration)\test\TestResults\</ExtensionsTestResultsDirectory>
+        <VS2012WindowsXamlInstallPath>$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v11.0</VS2012WindowsXamlInstallPath>
+        <!-- Check for the Windows XAML msbuild extensions to determine VS version to use, if both 2010 and 2012 are installed -->
+        <ConfigurationSuffix/>
+        <ConfigurationSuffix Condition="!Exists($(VS2012WindowsXamlInstallPath))">VS2010</ConfigurationSuffix>
+        <VisualStudioVersion Condition=" '$(ConfigurationSuffix)' == '' ">11.0</VisualStudioVersion>
+        <VisualStudioVersion Condition=" '$(ConfigurationSuffix)' == 'VS2010' ">10.0</VisualStudioVersion>
     </PropertyGroup>
+    
+    <ItemGroup>            
+        <SolutionsToBuild Include="Runtime.sln">
+            <ReleaseRoot>.</ReleaseRoot>
+            <BuildInParallel>$(BuildInParallel)</BuildInParallel>
+        </SolutionsToBuild>    
+        <SolutionsToBuild Include="Extensions.sln">
+            <ReleaseRoot>Extensions</ReleaseRoot>
+            <BuildInParallel>false</BuildInParallel>
+        </SolutionsToBuild>
+    </ItemGroup>    
 
     <Target Name="Integration" DependsOnTargets="Clean;Build;UnitTest" />
 
     <Target Name="Clean">
         <MSBuild
-            Projects="Runtime.sln"
+            Projects="@(SolutionsToBuild)"
             Targets="Clean"
-            Properties="Configuration=$(Configuration)" />
-        <RemoveDir Directories="bin\$(Configuration)" />
+            Properties="Configuration=$(Configuration)$(ConfigurationSuffix);VisualStudioVersion=$(VisualStudioVersion)" />
+        <RemoveDir Directories="bin\%(SolutionsToBuild.ReleaseRoot)\$(Configuration)" />
     </Target>
 
-    <Target Name="Prereq">
-        <MSBuild
-            Projects="tools\WebStack.NuGet.targets"
-            Targets="VerifyPackages"
-            Properties="CompactMessage=false"
-            Condition=" '$(EnableNuGetPackageRestore)' != 'true' " />
-        <CallTarget Targets="RestorePackages" Condition=" '$(EnableNuGetPackageRestore)' == 'true' " />
+    <Target Name="Prereq" DependsOnTargets="PreRestorePackages">
+        <MSBuild Projects="@(RestoreCsProjFiles)" Targets="RestorePackages" StopOnFirstFailure="true" />
+        <MSBuild Projects=".nuget\nuget.targets" Targets="RestoreBinaryDependencies" />
     </Target>
 
-    <Target Name="RestorePackages">
-        <!--
-        This can't build in parallel because of NuGet package restore race conditions.
-        When this is fixed in NuGet, we can remove the CSPROJ part of this target
-        (we will continue to need the NuGet install for StyleCop and FxCop tasks).
-
-        NOTE: These projects are hand selected to be the minimum # of CSPROJ files that
-              ensure we've restored every remote package. If another collision is found,
-              please review the project list as appropriate.
-        -->
+    <Target Name="PreRestorePackages">
         <ItemGroup>
             <RestoreCsProjFiles
                 Include="test\Microsoft.Web.Http.Data.Test\*.csproj;
@@ -48,38 +52,37 @@
                          src\Microsoft.Web.WebPages.OAuth\*.csproj" />
         </ItemGroup>
         <Message Text="Restoring NuGet packages..." Importance="High" />
-        <!-- Download NuGet.exe -->
-        <MSBuild
-            Projects="tools\WebStack.NuGet.targets"
-            Targets="CheckPrerequisites" />
-        <!-- Restore the things the CSPROJ files need -->
-        <MSBuild
-            Projects="@(RestoreCsProjFiles)"
-            BuildInParallel="false"
-            Targets="RestorePackages" />
-        <!-- Hand restore packages with binaries that this MSBuild process needs -->
-        <MSBuild
-            Projects="tools\WebStack.NuGet.targets"
-            Targets="RestoreBinaryDependencies" />
+    </Target>
+
+    <Target Name="RestorePackages" DependsOnTargets="PreRestorePackages">
+        <MSBuild Projects="@(RestoreCsProjFiles)" Targets="EnableRestore;RestorePackages" StopOnFirstFailure="true" />
+        <MSBuild Projects=".nuget\nuget.targets" Targets="EnableRestore;RestoreBinaryDependencies" />
     </Target>
 
     <Target Name="Build" DependsOnTargets="Prereq">
-        <MakeDir Directories="bin\$(Configuration)" />
-        <MSBuild
-            Projects="Runtime.sln"
-            BuildInParallel="$(BuildInParallel)"
+        <!-- we need to batch the solution files since they both build Microsoft.TestCommon -->
+      <Error Condition=" '$(CodeAnalysis)' == 'true' and '$(Configuration)' == 'Release' " Text="Unable to run code analysis in Release configuration. Release assemblies do not include SuppressMessage attributes (so code analysis would always fail with the errors that are normally suppressed)." />
+      <MakeDir Directories="bin\%(SolutionsToBuild.ReleaseRoot)\$(Configuration)" />
+      <MSBuild
+            Projects="%(SolutionsToBuild.Identity)"
+            BuildInParallel="%(SolutionsToBuild.BuildInParallel)"
             Targets="Build"
-            Properties="Configuration=$(Configuration);CodeAnalysis=$(CodeAnalysis);StyleCopEnabled=$(StyleCopEnabled)" />
+            Properties="Configuration=$(Configuration)$(ConfigurationSuffix);CodeAnalysis=$(CodeAnalysis);StyleCopEnabled=$(StyleCopEnabled);VisualStudioVersion=$(VisualStudioVersion)" />
     </Target>
 
     <Target Name="UnitTest" DependsOnTargets="Build">
         <ItemGroup>            
-            <TestDLLsXunit Include="bin\$(Configuration)\test\*.Test.dll;bin\$(Configuration)\test\*.Test.*.dll" Exclude="**\SPA.Test.dll" />
+            <TestDLLsXunit Include="bin\$(Configuration)\test\*.Test.dll;bin\$(Configuration)\test\*.Test.*.dll" Exclude="**\SPA.Test.dll">
+                <ResultsDirectory>$(TestResultsDirectory)</ResultsDirectory>
+            </TestDLLsXunit>
+            <TestDLLsXunit Include="bin\Extensions\$(Configuration)\test\*.Test.dll">
+                <ResultsDirectory>$(ExtensionsTestResultsDirectory)</ResultsDirectory>
+            </TestDLLsXunit>
             <XunitProject Include="tools\WebStack.xunit.targets">
-                <Properties>TestAssembly=%(TestDLLsXunit.FullPath);XmlPath=$(TestResultsDirectory)%(TestDLLsXunit.FileName)-XunitResults.xml</Properties>
+                <Properties>TestAssembly=%(TestDLLsXunit.FullPath);XmlPath=%(TestDLLsXunit.ResultsDirectory)%(TestDLLsXunit.FileName)-XunitResults.xml</Properties>
             </XunitProject>
         </ItemGroup>
-        <MakeDir Directories="$(TestResultsDirectory)" />
+        <MakeDir Directories="%(TestDLLsXunit.ResultsDirectory)" />
         <MSBuild Projects="@(XunitProject)" BuildInParallel="$(BuildInParallel)" Targets="Xunit" />
     </Target>
 </Project>

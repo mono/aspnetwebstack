@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting.Parsers
 {
@@ -32,12 +33,12 @@ namespace System.Net.Http.Formatting.Parsers
             // The minimum length which would be an empty header terminated by CRLF
             if (maxHeaderSize < InternetMessageFormatHeaderParser.MinHeaderSize)
             {
-                throw new ArgumentOutOfRangeException("maxHeaderSize", maxHeaderSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, InternetMessageFormatHeaderParser.MinHeaderSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxHeaderSize", maxHeaderSize, MinHeaderSize);
             }
 
             if (headers == null)
             {
-                throw new ArgumentNullException("headers");
+                throw Error.ArgumentNull("headers");
             }
 
             _headers = headers;
@@ -70,7 +71,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("buffer");
+                throw Error.ArgumentNull("buffer");
             }
 
             ParserState parseStatus = ParserState.NeedMoreData;

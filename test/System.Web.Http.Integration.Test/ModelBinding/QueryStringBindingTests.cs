@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
+using System.Linq;
 using System.Net.Http;
-using Xunit;
-using Xunit.Extensions;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -18,20 +18,23 @@ namespace System.Web.Http.ModelBinding
         [InlineData("GetBool", "?value=true", "true")]
         [InlineData("GetIntWithDefault", "?value=99", "99")]    // action has default, but we provide value
         [InlineData("GetIntWithDefault", "", "-1")]             // action has default, we provide no value
+        [InlineData("GetStringWithDefault", "", "null")]        // action has null default, we provide no value
         [InlineData("GetIntFromUri", "?value=99", "99")]        // [FromUri]
         [InlineData("GetIntPrefixed", "?somePrefix=99", "99")]  // [FromUri(Prefix=somePrefix)]
         [InlineData("GetIntAsync", "?value=5", "5")]
+        [InlineData("GetOptionalNullableInt", "", "null")]
+        [InlineData("GetOptionalNullableInt", "?value=6", "6")]
         public void Query_String_Binds_Simple_Types_Get(string action, string queryString, string expectedResponse)
         {
             // Arrange
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(baseAddress + String.Format("ModelBinding/{0}{1}", action, queryString)),
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}{1}", action, queryString)),
                 Method = HttpMethod.Get
             };
 
             // Act
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
 
             // Assert
             string responseString = response.Content.ReadAsStringAsync().Result;
@@ -51,12 +54,12 @@ namespace System.Web.Http.ModelBinding
             // Arrange
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(baseAddress + String.Format("ModelBinding/{0}{1}", action, queryString)),
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}{1}", action, queryString)),
                 Method = HttpMethod.Post
             };
 
             // Act
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
 
             // Assert
             string responseString = response.Content.ReadAsStringAsync().Result;
@@ -70,7 +73,7 @@ namespace System.Web.Http.ModelBinding
             // Arrange
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(baseAddress + String.Format("ModelBinding/{0}?{1}", action, queryString)),
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}?{1}", action, queryString)),
                 Method = HttpMethod.Get
             };
 
@@ -82,7 +85,7 @@ namespace System.Web.Http.ModelBinding
             };
 
             // Act
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
 
             // Assert
             ModelBindOrder actualItem = response.Content.ReadAsAsync<ModelBindOrder>().Result;
@@ -96,7 +99,7 @@ namespace System.Web.Http.ModelBinding
             // Arrange
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                RequestUri = new Uri(baseAddress + String.Format("ModelBinding/{0}?{1}", action, queryString)),
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}?{1}", action, queryString)),
                 Method = HttpMethod.Post
             };
             ModelBindOrder expectedItem = new ModelBindOrder()
@@ -107,11 +110,35 @@ namespace System.Web.Http.ModelBinding
             };
 
             // Act
-            HttpResponseMessage response = httpClient.SendAsync(request).Result;
+            HttpResponseMessage response = Client.SendAsync(request).Result;
 
             // Assert
             ModelBindOrder actualItem = response.Content.ReadAsAsync<ModelBindOrder>().Result;
             Assert.Equal<ModelBindOrder>(expectedItem, actualItem, new ModelBindOrderEqualityComparer());
+        }
+
+        [Theory]
+        [InlineData("PostComplexTypeFromUriWithNestedCollection", "value.Numbers[0]=1&value.Numbers[1]=2", new[] { 1, 2 })]
+        public void Query_String_ComplexType_Type_Post_NestedCollection(string action, string queryString, int[] expectedValues)
+        {
+            // Arrange
+            HttpRequestMessage request = new HttpRequestMessage()
+            {
+                RequestUri = new Uri(BaseAddress + String.Format("ModelBinding/{0}?{1}", action, queryString)),
+                Method = HttpMethod.Post
+            };
+
+            // Act
+            HttpResponseMessage response = Client.SendAsync(request).Result;
+
+            // Assert
+            ComplexTypeWithNestedCollection actualResult = response.Content.ReadAsAsync<ComplexTypeWithNestedCollection>().Result;
+            int[] actualValues = actualResult.Numbers.ToArray();
+            Assert.Equal(expectedValues.Length, actualValues.Length);
+            for (int i = 0; i < expectedValues.Length; i++)
+            {
+                Assert.Equal(expectedValues[i], actualValues[i]);
+            }
         }
     }
 }

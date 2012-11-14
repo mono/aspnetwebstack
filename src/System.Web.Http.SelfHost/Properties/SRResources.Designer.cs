@@ -88,11 +88,22 @@ namespace System.Web.Http.SelfHost.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The UseWindowsAuthentication option cannot be enabled when a UserNamePasswordValidator is specified on the HttpSelfHostConfiguration.&quot;.
+        ///   Looks up a localized string similar to ClientCredentialType must be set to Certificate when a X509CertificateValidator is specified on the HttpSelfHostConfiguration..
         /// </summary>
-        internal static string CannotUseWindowsAuthWithUserNamePasswordValidator {
+        internal static string CannotUseOtherClientCredentialTypeWithX509CertificateValidator {
             get {
-                return ResourceManager.GetString("CannotUseWindowsAuthWithUserNamePasswordValidator", resourceCulture);
+                return ResourceManager.GetString("CannotUseOtherClientCredentialTypeWithX509CertificateValidator", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to ClientCredentialType must be set to Certificate when a UserNamePasswordValidator is specified on the HttpSelfHostConfiguration..
+        /// </summary>
+        internal static string CannotUseOtherClientCredentialTypeWithUserNamePasswordValidator
+        {
+            get
+            {
+                return ResourceManager.GetString("CannotUseOtherClientCredentialTypeWithUserNamePasswordValidator", resourceCulture);
             }
         }
         
@@ -318,6 +329,15 @@ namespace System.Web.Http.SelfHost.Properties {
         internal static string ReadNotSupported {
             get {
                 return ResourceManager.GetString("ReadNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Processing of the request was cancelled..
+        /// </summary>
+        internal static string RequestCancelled {
+            get {
+                return ResourceManager.GetString("RequestCancelled", resourceCulture);
             }
         }
         

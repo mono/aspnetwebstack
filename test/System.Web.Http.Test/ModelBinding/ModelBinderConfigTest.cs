@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
 using System.Web.TestUtil;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace System.Web.Http.ModelBinding
 {
@@ -18,46 +18,6 @@ namespace System.Web.Http.ModelBinding
 
             // Assert
             Assert.Null(customResourceString);
-        }
-
-        [Fact(Skip = "This functionality isn't enabled yet")]
-        public void GetUserResourceString_NullHttpContext_ReturnsNull()
-        {
-            Mock<HttpActionContext> context = new Mock<HttpActionContext>();
-            //context.Setup(o => o.HttpContext).Returns((HttpContextBase)null);
-
-            // Act
-            string customResourceString = ModelBinderConfig.GetUserResourceString(context.Object, "someResourceName", "someResourceClassKey");
-
-            // Assert
-            Assert.Null(customResourceString);
-        }
-
-        [Fact(Skip = "This functionality isn't enabled yet")]
-        public void GetUserResourceString_NullResourceKey_ReturnsNull()
-        {
-            Mock<HttpActionContext> context = new Mock<HttpActionContext>();
-
-            // Act
-            string customResourceString = ModelBinderConfig.GetUserResourceString(context.Object, "someResourceName", null /* resourceClassKey */);
-
-            // Assert
-            //context.Verify(o => o.HttpContext, Times.Never());
-            Assert.Null(customResourceString);
-        }
-
-        [Fact(Skip = "This functionality isn't enabled yet")]
-        public void GetUserResourceString_ValidResourceObject_ReturnsResourceString()
-        {
-            Mock<HttpActionContext> context = new Mock<HttpActionContext>();
-            //context.Setup(o => o.HttpContext.GetGlobalResourceObject("someResourceClassKey", "someResourceName", CultureInfo.CurrentUICulture))
-            //       .Returns("My custom resource string");
-
-            // Act
-            string customResourceString = ModelBinderConfig.GetUserResourceString(context.Object, "someResourceName", "someResourceClassKey");
-
-            // Assert
-            Assert.Equal("My custom resource string", customResourceString);
         }
 
         [Fact]

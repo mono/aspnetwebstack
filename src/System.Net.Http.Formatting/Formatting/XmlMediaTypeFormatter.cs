@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -10,6 +10,7 @@ using System.Net.Http.Internal;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -20,12 +21,6 @@ namespace System.Net.Http.Formatting
     /// </summary>
     public class XmlMediaTypeFormatter : MediaTypeFormatter
     {
-        private static readonly MediaTypeHeaderValue[] _supportedMediaTypes = new MediaTypeHeaderValue[]
-        {
-            MediaTypeConstants.ApplicationXmlMediaType,
-            MediaTypeConstants.TextXmlMediaType
-        };
-
         private ConcurrentDictionary<Type, object> _serializerCache = new ConcurrentDictionary<Type, object>();
         private XmlDictionaryReaderQuotas _readerQuotas = FormattingUtilities.CreateDefaultReaderQuotas();
 
@@ -35,10 +30,8 @@ namespace System.Net.Http.Formatting
         public XmlMediaTypeFormatter()
         {
             // Set default supported media types
-            foreach (MediaTypeHeaderValue value in _supportedMediaTypes)
-            {
-                SupportedMediaTypes.Add(value);
-            }
+            SupportedMediaTypes.Add(MediaTypeConstants.ApplicationXmlMediaType);
+            SupportedMediaTypes.Add(MediaTypeConstants.TextXmlMediaType);
 
             // Set default supported character encodings
             SupportedEncodings.Add(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true));
@@ -76,6 +69,7 @@ namespace System.Net.Http.Formatting
         /// </summary>
         public bool Indent { get; set; }
 
+#if !NETFX_CORE
         /// <summary>
         /// Gets or sets the maximum depth allowed by this formatter.
         /// </summary>
@@ -89,12 +83,13 @@ namespace System.Net.Http.Formatting
             {
                 if (value < FormattingUtilities.DefaultMinDepth)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, FormattingUtilities.DefaultMinDepth));
+                    throw Error.ArgumentMustBeGreaterThanOrEqualTo("value", value, FormattingUtilities.DefaultMinDepth);
                 }
 
                 _readerQuotas.MaxDepth = value;
             }
         }
+#endif
 
         /// <summary>
         /// Registers the <see cref="XmlObjectSerializer"/> to use to read or write
@@ -154,16 +149,11 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             object value;
             return _serializerCache.TryRemove(type, out value);
-        }
-
-        internal bool ContainsSerializerForType(Type type)
-        {
-            return _serializerCache.ContainsKey(type);
         }
 
         /// <summary>
@@ -176,7 +166,7 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             // If there is a registered non-null serializer, we can support this type.
@@ -199,7 +189,7 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             if (UseXmlSerializer)
@@ -222,27 +212,29 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Called during deserialization to read an object of the specified <paramref name="type"/>
-        /// from the specified <paramref name="stream"/>.
+        /// from the specified <paramref name="readStream"/>.
         /// </summary>
         /// <param name="type">The type of object to read.</param>
-        /// <param name="stream">The <see cref="Stream"/> from which to read.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> for the content being read.</param>
+        /// <param name="readStream">The <see cref="Stream"/> from which to read.</param>
+        /// <param name="content">The <see cref="HttpContent"/> for the content being read.</param>
         /// <param name="formatterLogger">The <see cref="IFormatterLogger"/> to log events to.</param>
         /// <returns>A <see cref="Task"/> whose result will be the object instance that has been read.</returns>
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (readStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("readStream");
             }
 
             return TaskHelpers.RunSynchronously<object>(() =>
             {
+                HttpContentHeaders contentHeaders = content == null ? null : content.Headers;
+
                 // If content length is 0 then return default value for this type
                 if (contentHeaders != null && contentHeaders.ContentLength == 0)
                 {
@@ -251,12 +243,16 @@ namespace System.Net.Http.Formatting
 
                 // Get the character encoding for the content
                 Encoding effectiveEncoding = SelectCharacterEncoding(contentHeaders);
-
                 object serializer = GetSerializerForType(type);
 
                 try
                 {
-                    using (XmlReader reader = XmlDictionaryReader.CreateTextReader(new NonClosingDelegatingStream(stream), effectiveEncoding, _readerQuotas, null))
+#if NETFX_CORE
+                    // Force a preamble into the stream, since CreateTextReader in WinRT only supports auto-detecting encoding.
+                    using (XmlReader reader = XmlDictionaryReader.CreateTextReader(new ReadOnlyStreamWithEncodingPreamble(readStream, effectiveEncoding), _readerQuotas))
+#else
+                    using (XmlReader reader = XmlDictionaryReader.CreateTextReader(new NonClosingDelegatingStream(readStream), effectiveEncoding, _readerQuotas, null))
+#endif
                     {
                         XmlSerializer xmlSerializer = serializer as XmlSerializer;
                         if (xmlSerializer != null)
@@ -276,7 +272,7 @@ namespace System.Net.Http.Formatting
                     {
                         throw;
                     }
-                    formatterLogger.LogError(String.Empty, e.Message);
+                    formatterLogger.LogError(String.Empty, e);
                     return GetDefaultValueForType(type);
                 }
             });
@@ -284,24 +280,24 @@ namespace System.Net.Http.Formatting
 
         /// <summary>
         /// Called during serialization to write an object of the specified <paramref name="type"/>
-        /// to the specified <paramref name="stream"/>.
+        /// to the specified <paramref name="writeStream"/>.
         /// </summary>
         /// <param name="type">The type of object to write.</param>
         /// <param name="value">The object to write.</param>
-        /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
-        /// <param name="contentHeaders">The <see cref="HttpContentHeaders"/> for the content being written.</param>
+        /// <param name="writeStream">The <see cref="Stream"/> to which to write.</param>
+        /// <param name="content">The <see cref="HttpContent"/> for the content being written.</param>
         /// <param name="transportContext">The <see cref="TransportContext"/>.</param>
         /// <returns>A <see cref="Task"/> that will write the value to the stream.</returns>
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
-            if (stream == null)
+            if (writeStream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw Error.ArgumentNull("writeStream");
             }
 
             return TaskHelpers.RunSynchronously(() =>
@@ -321,7 +317,7 @@ namespace System.Net.Http.Formatting
                     value = MediaTypeFormatter.GetTypeRemappingConstructor(type).Invoke(new object[] { value });
                 }
 
-                Encoding effectiveEncoding = SelectCharacterEncoding(contentHeaders);
+                Encoding effectiveEncoding = SelectCharacterEncoding(content != null ? content.Headers : null);
                 XmlWriterSettings writerSettings = new XmlWriterSettings
                 {
                     OmitXmlDeclaration = true,
@@ -332,7 +328,7 @@ namespace System.Net.Http.Formatting
 
                 object serializer = GetSerializerForType(type);
 
-                using (XmlWriter writer = XmlWriter.Create(stream, writerSettings))
+                using (XmlWriter writer = XmlWriter.Create(writeStream, writerSettings))
                 {
                     XmlSerializer xmlSerializer = serializer as XmlSerializer;
                     if (xmlSerializer != null)
@@ -362,6 +358,11 @@ namespace System.Net.Http.Formatting
                 }
                 else
                 {
+#if !NETFX_CORE
+                    // REVIEW: Is there something comparable in WinRT?
+                    // Verify that type is a valid data contract by forcing the serializer to try to create a data contract
+                    FormattingUtilities.XsdDataContractExporter.GetRootElementName(type);
+#endif
                     serializer = new DataContractSerializer(type);
                 }
             }
@@ -373,18 +374,18 @@ namespace System.Net.Http.Formatting
             {
                 exception = notSupportedException;
             }
+            catch (InvalidDataContractException invalidDataContractException)
+            {
+                exception = invalidDataContractException;
+            }
 
-            // The serializer throws one of the exceptions above if it cannot
-            // support this type.
             if (exception != null)
             {
                 if (throwOnError)
                 {
-                    throw new InvalidOperationException(
-                        RS.Format(Properties.Resources.SerializerCannotSerializeType,
+                    throw Error.InvalidOperation(exception, Properties.Resources.SerializerCannotSerializeType,
                                   UseXmlSerializer ? typeof(XmlSerializer).Name : typeof(DataContractSerializer).Name,
-                                  type.Name),
-                        exception);
+                                  type.Name);
                 }
             }
 
@@ -395,12 +396,12 @@ namespace System.Net.Http.Formatting
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw Error.ArgumentNull("type");
             }
 
             if (serializer == null)
             {
-                throw new ArgumentNullException("serializer");
+                throw Error.ArgumentNull("serializer");
             }
 
             SetSerializerInternal(type, serializer);
@@ -423,10 +424,9 @@ namespace System.Net.Http.Formatting
             {
                 // A null serializer indicates the type has already been tested
                 // and found unsupportable.
-                throw new InvalidOperationException(
-                    RS.Format(Properties.Resources.SerializerCannotSerializeType,
+                throw Error.InvalidOperation(Properties.Resources.SerializerCannotSerializeType,
                               UseXmlSerializer ? typeof(XmlSerializer).Name : typeof(DataContractSerializer).Name,
-                              type.Name));
+                              type.Name);
             }
 
             Contract.Assert(serializer is XmlSerializer || serializer is XmlObjectSerializer, "Only XmlSerializer or XmlObjectSerializer are supported.");

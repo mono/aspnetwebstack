@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 
@@ -15,7 +15,7 @@ namespace System.Web.Http.WebHost.Routing
                 throw Error.ArgumentNull("context");
             }
 
-            if (!context.Items.Contains(HttpRequestMessageKey))
+            if (context.Items == null || !context.Items.Contains(HttpRequestMessageKey))
             {
                 return null;
             }
@@ -25,7 +25,27 @@ namespace System.Web.Http.WebHost.Routing
 
         public static void SetHttpRequestMessage(this HttpContextBase context, HttpRequestMessage request)
         {
-            context.Items.Add(HttpRequestMessageKey, request);
+            if (context.Items != null)
+            {
+                context.Items.Add(HttpRequestMessageKey, request);
+            }
+        }
+
+        public static HttpRequestMessage GetOrCreateHttpRequestMessage(this HttpContextBase context)
+        {
+            if (context == null)
+            {
+                throw Error.ArgumentNull("context");
+            }
+
+            HttpRequestMessage request = context.GetHttpRequestMessage();
+            if (request == null)
+            {
+                request = HttpControllerHandler.ConvertRequest(context);
+                context.SetHttpRequestMessage(request);
+            }
+
+            return request;
         }
     }
 }

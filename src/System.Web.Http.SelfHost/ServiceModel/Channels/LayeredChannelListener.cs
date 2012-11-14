@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.ServiceModel;
@@ -74,7 +74,6 @@ namespace System.Web.Http.SelfHost.ServiceModel.Channels
             get { return _sharedInnerListener; }
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "Existing public API")]
         public override T GetProperty<T>()
         {
             T baseProperty = base.GetProperty<T>();

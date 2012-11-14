@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.ObjectModel;
 using System.Reflection;
@@ -56,6 +56,17 @@ namespace System.Web.Http.Controllers
                 }
                 _parameterInfo = value;
             }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the parameter is optional.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if the parameter is optional; otherwise, <c>false</c>.
+        /// </value>
+        public override bool IsOptional
+        {
+            get { return ParameterInfo.IsOptional; }
         }
 
         public override string ParameterName

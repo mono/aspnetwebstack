@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Text;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting.Parsers
 {
@@ -31,12 +32,12 @@ namespace System.Net.Http.Formatting.Parsers
             // The minimum length which would be an empty header terminated by CRLF
             if (maxRequestLineSize < MinRequestLineSize)
             {
-                throw new ArgumentOutOfRangeException("maxRequestLineSize", maxRequestLineSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MinRequestLineSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxRequestLineSize", maxRequestLineSize, MinRequestLineSize);
             }
 
             if (httpRequest == null)
             {
-                throw new ArgumentNullException("httpRequest");
+                throw Error.ArgumentNull("httpRequest");
             }
 
             _httpRequest = httpRequest;
@@ -70,7 +71,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("buffer");
+                throw Error.ArgumentNull("buffer");
             }
 
             ParserState parseStatus = ParserState.NeedMoreData;
@@ -240,7 +241,7 @@ namespace System.Net.Http.Formatting.Parsers
                     string version = currentToken.ToString();
                     if (String.CompareOrdinal(FormattingUtilities.HttpVersionToken, version) != 0)
                     {
-                        throw new FormatException(RS.Format(Properties.Resources.HttpInvalidVersion, version, FormattingUtilities.HttpVersionToken));
+                        throw new FormatException(Error.Format(Properties.Resources.HttpInvalidVersion, version, FormattingUtilities.HttpVersionToken));
                     }
 
                     currentToken.Clear();

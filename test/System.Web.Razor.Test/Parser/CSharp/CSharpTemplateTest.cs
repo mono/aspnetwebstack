@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Editor;
 using System.Web.Razor.Parser;
@@ -7,7 +7,7 @@ using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.CSharp
 {
@@ -69,8 +69,8 @@ namespace System.Web.Razor.Test.Parser.CSharp
         [Fact]
         public void ParseBlockHandlesSingleLineTemplate()
         {
-            ParseBlockTest(@"{ var foo = @: bar
-; }",
+            ParseBlockTest("{ var foo = @: bar" + Environment.NewLine
+                         + "; }",
                            new StatementBlock(
                                Factory.MetaCode("{").Accepts(AcceptedCharacters.None),
                                Factory.Code(" var foo = ").AsStatement(),
@@ -91,8 +91,8 @@ namespace System.Web.Razor.Test.Parser.CSharp
         [Fact]
         public void ParseBlockHandlesSingleLineImmediatelyFollowingStatementChar()
         {
-            ParseBlockTest(@"{i@: bar
-}",
+            ParseBlockTest("{i@: bar" + Environment.NewLine
+                         + "}",
                            new StatementBlock(
                                Factory.MetaCode("{").Accepts(AcceptedCharacters.None),
                                Factory.Code("i").AsStatement(),

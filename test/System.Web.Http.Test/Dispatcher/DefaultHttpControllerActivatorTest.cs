@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Net.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Dependencies;
 using System.Web.Http.Hosting;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Dispatcher
 {
@@ -74,6 +73,89 @@ namespace System.Web.Http.Dispatcher
             // Assert
             Assert.Same(controller, result);
             mockScope.Verify();
+        }
+
+        [Fact]
+        public void Create_DoesnotCacheControllerFromRequestLevelDependencyScope()
+        {
+            // Arrange
+            int count = 0;
+            var controller = new ControllerWithCtorParams(42);
+            var mockScope = new Mock<IDependencyScope>();
+            mockScope.Setup(r => r.GetService(typeof(ControllerWithCtorParams))).Returns(() =>
+            {
+                count++;
+                return new ControllerWithCtorParams(42);
+            }).Verifiable();
+            var config = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.Properties[HttpPropertyKeys.HttpConfigurationKey] = config;
+            request.Properties[HttpPropertyKeys.DependencyScope] = mockScope.Object;
+            var descriptor = new HttpControllerDescriptor(config, "Name", typeof(ControllerWithCtorParams));
+            var activator = new DefaultHttpControllerActivator();
+
+            // Act
+            IHttpController result1 = activator.Create(request, descriptor, typeof(ControllerWithCtorParams));
+            IHttpController result2 = activator.Create(request, descriptor, typeof(ControllerWithCtorParams));
+
+            // Assert
+            Assert.NotEqual(result1, result2);
+            mockScope.Verify();
+            Assert.Equal(2, count);
+        }
+
+        [Fact]
+        public void Create_MixupInstanceCreationAndDependencyScope()
+        {
+            // Arrange
+            var controller = new ControllerWithCtorParams(42);
+            var mockScope = new Mock<IDependencyScope>();
+            mockScope.Setup(r => r.GetService(typeof(ControllerWithCtorParams))).Returns(controller).Verifiable();
+            var config = new HttpConfiguration();
+            var request = new HttpRequestMessage();
+            request.Properties[HttpPropertyKeys.HttpConfigurationKey] = config;
+            request.Properties[HttpPropertyKeys.DependencyScope] = mockScope.Object;
+            var descriptorControllerWithCtorParamsResult = new HttpControllerDescriptor(config, "Name", typeof(ControllerWithCtorParams));
+            var descriptorSimpleController = new HttpControllerDescriptor(config, "Simple", typeof(SimpleController));
+            var activator = new DefaultHttpControllerActivator();
+
+            // Act
+            IHttpController simpleController = activator.Create(request, descriptorSimpleController, typeof(SimpleController));
+            IHttpController controllerWithCtorParamsResult = activator.Create(request, descriptorControllerWithCtorParamsResult, typeof(ControllerWithCtorParams));
+
+            // Assert
+            Assert.NotNull(simpleController);
+            Assert.IsType<SimpleController>(simpleController);
+            Assert.Same(controller, controllerWithCtorParamsResult);
+            mockScope.Verify();
+        }
+
+        [Fact]
+        public void Create_ThrowsForNullDependencyScope()
+        {
+            // Arrange
+            var config = new HttpConfiguration();
+            var mockResolver = new Mock<IDependencyResolver>();
+            mockResolver.Setup(resolver => resolver.BeginScope()).Returns((IDependencyScope)null).Verifiable();
+            config.DependencyResolver = mockResolver.Object;
+            var request = new HttpRequestMessage();
+            request.Properties[HttpPropertyKeys.HttpConfigurationKey] = config;
+            var descriptorSimpleController = new HttpControllerDescriptor(config, "Simple", typeof(SimpleController));
+            var activator = new DefaultHttpControllerActivator();
+
+            // Act & Assert
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => activator.Create(request, descriptorSimpleController, typeof(SimpleController)));
+
+            Assert.Equal(
+                "An error occurred when trying to create a controller of type 'SimpleController'. Make sure that the controller has a parameterless public constructor.",
+                exception.Message);
+            Assert.NotNull(exception.InnerException);
+            Assert.Equal(
+                "A dependency resolver of type 'IDependencyResolverProxy' returned an invalid value of null from its BeginScope method. If the container does not have a concept of scope, consider returning a scope that resolves in the root of the container instead.",
+                exception.InnerException.Message);
+
+            mockResolver.Verify();
         }
 
         // Helper classes

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Http.Controllers;
 
@@ -10,9 +10,9 @@ namespace System.Web.Http.ModelBinding.Binders
         // This is really just a simple binder.
         private static readonly SimpleModelBinderProvider _underlyingProvider = GetUnderlyingProvider();
 
-        public override IModelBinder GetBinder(HttpActionContext actionContext, ModelBindingContext bindingContext)
+        public override IModelBinder GetBinder(HttpConfiguration configuration, Type modelType)
         {
-            return _underlyingProvider.GetBinder(actionContext, bindingContext);
+            return _underlyingProvider.GetBinder(configuration, modelType);
         }
 
         private static SimpleModelBinderProvider GetUnderlyingProvider()

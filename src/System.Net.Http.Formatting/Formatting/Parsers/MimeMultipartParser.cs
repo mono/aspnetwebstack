@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Text;
+using System.Web.Http;
 
 namespace System.Net.Http.Formatting.Parsers
 {
@@ -12,6 +13,8 @@ namespace System.Net.Http.Formatting.Parsers
     internal class MimeMultipartParser
     {
         internal const int MinMessageSize = 10;
+
+        private const int MaxBoundarySize = 256;
 
         private const byte HTAB = 0x09;
         private const byte SP = 0x20;
@@ -37,17 +40,22 @@ namespace System.Net.Http.Formatting.Parsers
             // The minimum length which would be an empty message terminated by CRLF
             if (maxMessageSize < MimeMultipartParser.MinMessageSize)
             {
-                throw new ArgumentOutOfRangeException("maxMessageSize", maxMessageSize, RS.Format(Properties.Resources.ArgumentMustBeGreaterThanOrEqualTo, MimeMultipartParser.MinMessageSize));
+                throw Error.ArgumentMustBeGreaterThanOrEqualTo("maxMessageSize", maxMessageSize, MinMessageSize);
             }
 
             if (String.IsNullOrWhiteSpace(boundary))
             {
-                throw new ArgumentNullException("boundary");
+                throw Error.ArgumentNull("boundary");
+            }
+
+            if (boundary.Length > MaxBoundarySize - 10)
+            {
+                throw Error.ArgumentMustBeLessThanOrEqualTo("boundary", boundary.Length, MaxBoundarySize - 10);
             }
 
             if (boundary.EndsWith(" ", StringComparison.Ordinal))
             {
-                throw new ArgumentException(Properties.Resources.MimeMultipartParserBadBoundary, "boundary");
+                throw Error.Argument("boundary", Properties.Resources.MimeMultipartParserBadBoundary);
             }
 
             _maxMessageSize = maxMessageSize;
@@ -124,7 +132,7 @@ namespace System.Net.Http.Formatting.Parsers
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("buffer");
+                throw Error.ArgumentNull("buffer");
             }
 
             State parseStatus = State.NeedMoreData;
@@ -227,11 +235,6 @@ namespace System.Net.Http.Formatting.Parsers
                     {
                         currentBodyPart.ResetBoundary();
                         bodyPartState = BodyPartState.BodyPart;
-                        if (++bytesConsumed == effectiveMax)
-                        {
-                            goto quit;
-                        }
-
                         goto case BodyPartState.BodyPart;
                     }
 
@@ -268,11 +271,6 @@ namespace System.Net.Http.Formatting.Parsers
                     {
                         currentBodyPart.ResetBoundary();
                         bodyPartState = BodyPartState.BodyPart;
-                        if (++bytesConsumed == effectiveMax)
-                        {
-                            goto quit;
-                        }
-
                         goto case BodyPartState.BodyPart;
                     }
 
@@ -293,11 +291,6 @@ namespace System.Net.Http.Formatting.Parsers
                     {
                         currentBodyPart.ResetBoundary();
                         bodyPartState = BodyPartState.BodyPart;
-                        if (++bytesConsumed == effectiveMax)
-                        {
-                            goto quit;
-                        }
-
                         goto case BodyPartState.BodyPart;
                     }
 
@@ -319,14 +312,23 @@ namespace System.Net.Http.Formatting.Parsers
                     {
                         if (++bytesConsumed == effectiveMax)
                         {
-                            currentBodyPart.AppendBoundary(buffer, segmentStart, bytesConsumed - segmentStart);
+                            if (!currentBodyPart.AppendBoundary(buffer, segmentStart, bytesConsumed - segmentStart))
+                            {
+                                currentBodyPart.ResetBoundary();
+                                bodyPartState = BodyPartState.BodyPart;
+                            }
                             goto quit;
                         }
                     }
 
                     if (bytesConsumed > segmentStart)
                     {
-                        currentBodyPart.AppendBoundary(buffer, segmentStart, bytesConsumed - segmentStart);
+                        if (!currentBodyPart.AppendBoundary(buffer, segmentStart, bytesConsumed - segmentStart))
+                        {
+                            currentBodyPart.ResetBoundary();
+                            bodyPartState = BodyPartState.BodyPart;
+                            goto case BodyPartState.BodyPart;
+                        }
                     }
 
                     // Remember potential boundary
@@ -346,11 +348,6 @@ namespace System.Net.Http.Formatting.Parsers
                     {
                         currentBodyPart.ResetBoundary();
                         bodyPartState = BodyPartState.BodyPart;
-                        if (++bytesConsumed == effectiveMax)
-                        {
-                            goto quit;
-                        }
-
                         goto case BodyPartState.BodyPart;
                     }
 
@@ -402,16 +399,15 @@ namespace System.Net.Http.Formatting.Parsers
         /// </summary>
         private class CurrentBodyPartStore
         {
-            private const int MaxBoundarySize = 256;
             private const int InitialOffset = 2;
 
-            private byte[] _boundaryStore = new byte[CurrentBodyPartStore.MaxBoundarySize];
+            private byte[] _boundaryStore = new byte[MaxBoundarySize];
             private int _boundaryStoreLength;
 
-            private byte[] _referenceBoundary = new byte[CurrentBodyPartStore.MaxBoundarySize];
+            private byte[] _referenceBoundary = new byte[MaxBoundarySize];
             private int _referenceBoundaryLength;
 
-            private byte[] _boundary = new byte[CurrentBodyPartStore.MaxBoundarySize];
+            private byte[] _boundary = new byte[MaxBoundarySize];
             private int _boundaryLength = 0;
 
             private ArraySegment<byte> _bodyPart = MimeMultipartParser._emptyBodyPart;
@@ -426,6 +422,8 @@ namespace System.Net.Http.Formatting.Parsers
             /// <param name="referenceBoundary">The reference boundary.</param>
             public CurrentBodyPartStore(string referenceBoundary)
             {
+                Contract.Assert(referenceBoundary != null);
+
                 _referenceBoundary[0] = MimeMultipartParser.CR;
                 _referenceBoundary[1] = MimeMultipartParser.LF;
                 _referenceBoundary[2] = MimeMultipartParser.Dash;
@@ -518,10 +516,31 @@ namespace System.Net.Http.Formatting.Parsers
             /// <param name="data">The data to append to the boundary.</param>
             /// <param name="offset">The offset into the data.</param>
             /// <param name="count">The number of bytes to append.</param>
-            public void AppendBoundary(byte[] data, int offset, int count)
+            public bool AppendBoundary(byte[] data, int offset, int count)
             {
+                // Check that potential boundary is not bigger than our reference boundary. 
+                // Allow for 2 extra characters to include the final boundary which ends with 
+                // an additional "--" sequence + plus up to 4 LWS characters (which are allowed). 
+                if (_boundaryLength + count > _referenceBoundaryLength + 6)
+                {
+                    return false;
+                }
+
+                int cnt = _boundaryLength;
                 Buffer.BlockCopy(data, offset, _boundary, _boundaryLength, count);
                 _boundaryLength += count;
+
+                // Verify that boundary matches so far
+                int maxCount = Math.Min(_boundaryLength, _referenceBoundaryLength);
+                for (; cnt < maxCount; cnt++)
+                {
+                    if (_boundary[cnt] != _referenceBoundary[cnt])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             /// <summary>

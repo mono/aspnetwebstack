@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Web.Http.Routing;
@@ -8,9 +8,6 @@ namespace System.Web.Http.WebHost.Routing
 {
     internal class HostedHttpRouteData : IHttpRouteData
     {
-        private readonly RouteData _routeData;
-        private readonly HostedHttpRoute _hostedHttpRoute;
-
         public HostedHttpRouteData(RouteData routeData)
         {
             if (routeData == null)
@@ -18,23 +15,19 @@ namespace System.Web.Http.WebHost.Routing
                 throw Error.ArgumentNull("routeData");
             }
 
-            _routeData = routeData;
-            _hostedHttpRoute = new HostedHttpRoute(_routeData.Route as Route);
+            OriginalRouteData = routeData;
+
+            HttpWebRoute route = routeData.Route as HttpWebRoute;
+            Route = route == null ? null : route.HttpRoute;
         }
 
-        public IHttpRoute Route
-        {
-            get { return _hostedHttpRoute; }
-        }
+        public IHttpRoute Route { get; private set; }
 
         public IDictionary<string, object> Values
         {
-            get { return _routeData.Values; }
+            get { return OriginalRouteData.Values; }
         }
 
-        internal RouteData OriginalRouteData
-        {
-            get { return _routeData; }
-        }
+        internal RouteData OriginalRouteData { get; private set; }
     }
 }

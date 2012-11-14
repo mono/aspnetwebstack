@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 // This file is used by Code Analysis to maintain SuppressMessage 
 // attributes that are applied to this project.
@@ -23,4 +23,3 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "LookUp", Scope = "member", Target = "Microsoft.Web.Http.Data.Metadata.MetadataProvider.#LookUpIsEntityType(System.Type)", Justification = "This is intended to read as two words")]
 [assembly: SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Scope = "member", Target = "Microsoft.Web.Http.Data.SubmitActionDescriptor.#Execute(System.Web.Http.HttpControllerContext,System.Collections.Generic.IDictionary`2<System.String,System.Object>)", Justification = "This object is being returned - it can't be disposed.")]
 [assembly: SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Scope = "member", Target = "Microsoft.Web.Http.Data.DataControllerConfiguration.#CloneConfiguration(System.Web.Http.HttpConfiguration)", Justification = "This object cannot be disposed - it is being set on the execution context")]
-[assembly: SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Scope = "member", Target = "Microsoft.Web.Http.Data.QueryFilterAttribute.#GetQueryResult`1(System.Linq.IQueryable`1<!!0>,System.Web.Http.Controllers.HttpActionContext)", Justification = "This object cannot be disposed - it is being returned as the result.")]

@@ -1,49 +1,20 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
-
-using System.Net.Http;
-using System.Web.Http.SelfHost;
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 namespace System.Web.Http.ModelBinding
 {
     /// <summary>
     /// End to end functional tests for model binding
     /// </summary>
-    public abstract class ModelBindingTests : IDisposable
+    public abstract class ModelBindingTests : HttpServerTestBase
     {
-        protected HttpSelfHostServer server = null;
-        protected HttpSelfHostConfiguration configuration = null;
-        protected string baseAddress = null;
-        protected HttpClient httpClient = null;
-
         protected ModelBindingTests()
+            : base("http://localhost/")
         {
-            this.SetupHost();
         }
 
-        public void Dispose()
+        protected override void ApplyConfiguration(HttpConfiguration configuration)
         {
-            this.CleanupHost();
-        }
-
-        public void SetupHost()
-        {
-            httpClient = new HttpClient();
-
-            baseAddress = String.Format("http://{0}/", Environment.MachineName);
-
-            configuration = new HttpSelfHostConfiguration(baseAddress);
             configuration.Routes.MapHttpRoute("Default", "{controller}/{action}", new { controller = "ModelBinding" });
-
-            server = new HttpSelfHostServer(configuration);
-            server.OpenAsync().Wait();
-        }
-
-        public void CleanupHost()
-        {
-            if (server != null)
-            {
-                server.CloseAsync().Wait();
-            }
         }
     }
 }

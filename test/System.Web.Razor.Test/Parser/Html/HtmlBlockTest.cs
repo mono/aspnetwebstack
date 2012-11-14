@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Editor;
 using System.Web.Razor.Generator;
@@ -8,8 +8,7 @@ using System.Web.Razor.Resources;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Text;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.Html
 {
@@ -28,8 +27,8 @@ namespace System.Web.Razor.Test.Parser.Html
         [Fact]
         public void ParseBlockHandlesOpenAngleAtEof()
         {
-            ParseDocumentTest(@"@{
-<",
+            ParseDocumentTest("@{" + Environment.NewLine
+                            + "<",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new StatementBlock(
@@ -46,9 +45,9 @@ namespace System.Web.Razor.Test.Parser.Html
         [Fact]
         public void ParseBlockHandlesOpenAngleWithProperTagFollowingIt()
         {
-            ParseDocumentTest(@"@{
-<
-</html>",
+            ParseDocumentTest("@{" + Environment.NewLine
+                            + "<" + Environment.NewLine
+                            + "</html>",
                 new MarkupBlock(
                     Factory.EmptyHtml(),
                     new StatementBlock(
@@ -75,8 +74,8 @@ namespace System.Web.Razor.Test.Parser.Html
         [Fact]
         public void TagWithoutCloseAngleDoesNotTerminateBlock()
         {
-            ParseBlockTest(@"<                      
-   ",
+            ParseBlockTest("<                      " + Environment.NewLine
+                         + "   ",
                 new MarkupBlock(
                     Factory.Markup("<                      \r\n   ")),
                 designTimeParser: true,
@@ -92,8 +91,8 @@ namespace System.Web.Razor.Test.Parser.Html
         [Fact]
         public void ParseBlockReadsToEndOfLineIfFirstCharacterAfterTransitionIsColon()
         {
-            ParseBlockTest(@"@:<li>Foo Bar Baz
-bork",
+            ParseBlockTest("@:<li>Foo Bar Baz" + Environment.NewLine
+                         + "bork",
                 new MarkupBlock(
                     Factory.MarkupTransition(),
                     Factory.MetaMarkup(":", HtmlSymbolType.Colon),

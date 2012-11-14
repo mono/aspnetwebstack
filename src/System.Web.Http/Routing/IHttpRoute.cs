@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
@@ -33,6 +33,12 @@ namespace System.Web.Http.Routing
         IDictionary<string, object> DataTokens { get; }
 
         /// <summary>
+        /// Gets the message handler that will be the recipient of the request. If <c>null</c>, the default handler will
+        /// be used (which dispatches messages to implementations of <see cref="IHttpController"/>).
+        /// </summary>
+        HttpMessageHandler Handler { get; }
+
+        /// <summary>
         /// Determine whether this route is a match for the incoming request by looking up the <see cref="IHttpRouteData"/> for the route.
         /// </summary>
         /// <param name="virtualPathRoot">The virtual path root.</param>
@@ -43,9 +49,9 @@ namespace System.Web.Http.Routing
         /// <summary>
         /// Compute a URI based on the route and the values provided.
         /// </summary>
-        /// <param name="controllerContext">The controller context.</param>
+        /// <param name="request">The request message.</param>
         /// <param name="values">The values.</param>
         /// <returns></returns>
-        IHttpVirtualPathData GetVirtualPath(HttpControllerContext controllerContext, IDictionary<string, object> values);
+        IHttpVirtualPathData GetVirtualPath(HttpRequestMessage request, IDictionary<string, object> values);
     }
 }

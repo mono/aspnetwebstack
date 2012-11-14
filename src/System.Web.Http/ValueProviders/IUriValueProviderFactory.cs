@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 
@@ -10,7 +10,7 @@ namespace System.Web.Http.ValueProviders
     /// an incoming <see cref="T:System.Net.Http.HttpRequestMessage"/>.
     /// </summary>
     [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces", Justification = "Tagging interface is intentional to allow Linq TypeOf")]
-    public interface IUriValueProviderFactory
+    internal interface IUriValueProviderFactory
     {
     }
 }

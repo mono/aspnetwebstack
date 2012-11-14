@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -9,6 +9,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
+using System.Web.Http.Properties;
 
 namespace System.Web.Http
 {
@@ -17,7 +18,6 @@ namespace System.Web.Http
     /// </summary>
     /// <remarks>You can declare multiple of these attributes per action. You can also use <see cref="AllowAnonymousAttribute"/>
     /// to disable authorization for a specific action.</remarks>
-    /// <seealso cref="M:AuthorizeCore"/>
     [SuppressMessage("Microsoft.Performance", "CA1813:AvoidUnsealedAttributes", Justification = "We want to support extensibility")]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
     public class AuthorizeAttribute : AuthorizationFilterAttribute
@@ -76,13 +76,19 @@ namespace System.Web.Http
 
         /// <summary>
         /// Determines whether access for this particular request is authorized. This method uses the user <see cref="IPrincipal"/>
-        /// returned via <see cref="System.Threading.Thread.CurrentPrincipal"/>. Authorization is denied if the user is not authenticated,
-        /// the user is not in the authorized group of <see cref="P:Users"/> (if defined), or if the user is not in any of the authorized 
-        /// <see cref="P:Roles"/> (if defined).
+        /// returned via <see cref="Thread.CurrentPrincipal"/>. Authorization is denied if the user is not authenticated,
+        /// the user is not in the authorized group of <see cref="Users"/> (if defined), or if the user is not in any of the authorized 
+        /// <see cref="Roles"/> (if defined).
         /// </summary>
+        /// <param name="actionContext">The context.</param>
         /// <returns><c>true</c> if access is authorized; otherwise <c>false</c>.</returns>
-        private bool AuthorizeCore()
+        protected virtual bool IsAuthorized(HttpActionContext actionContext)
         {
+            if (actionContext == null)
+            {
+                throw Error.ArgumentNull("actionContext");
+            }
+
             IPrincipal user = Thread.CurrentPrincipal;
             if (user == null || !user.Identity.IsAuthenticated)
             {
@@ -104,16 +110,17 @@ namespace System.Web.Http
 
         /// <summary>
         /// Called when an action is being authorized. This method uses the user <see cref="IPrincipal"/>
-        /// returned via <see cref="M:HttpRequestMessageExtensions.GetUserPrincipal"/>. Authorization is denied if
+        /// returned via <see cref="Thread.CurrentPrincipal"/>. Authorization is denied if
         /// - the request is not associated with any user.
         /// - the user is not authenticated,
-        /// - the user is authenticated but is not in the authorized group of <see cref="P:Users"/> (if defined), or if the user
-        /// is not in any of the authorized <see cref="P:Roles"/> (if defined).
+        /// - the user is authenticated but is not in the authorized group of <see cref="Users"/> (if defined), or if the user
+        /// is not in any of the authorized <see cref="Roles"/> (if defined).
         /// 
-        /// If authorization is denied then this method will invoke <see cref="M:HandleUnauthorizedRequest"/> to process the unauthorized request.
+        /// If authorization is denied then this method will invoke <see cref="HandleUnauthorizedRequest(HttpActionContext)"/> to process the unauthorized request.
         /// </summary>
         /// <remarks>You can use <see cref="AllowAnonymousAttribute"/> to cause authorization checks to be skipped for a particular
         /// action or controller.</remarks>
+        /// <seealso cref="IsAuthorized(HttpActionContext)" />
         /// <param name="actionContext">The context.</param>
         /// <exception cref="ArgumentNullException">The context parameter is null.</exception>
         public override void OnAuthorization(HttpActionContext actionContext)
@@ -128,7 +135,7 @@ namespace System.Web.Http
                 return;
             }
 
-            if (!AuthorizeCore())
+            if (!IsAuthorized(actionContext))
             {
                 HandleUnauthorizedRequest(actionContext);
             }
@@ -146,7 +153,7 @@ namespace System.Web.Http
                 throw Error.ArgumentNull("actionContext");
             }
 
-            actionContext.Response = actionContext.ControllerContext.Request.CreateResponse(HttpStatusCode.Unauthorized);
+            actionContext.Response = actionContext.ControllerContext.Request.CreateErrorResponse(HttpStatusCode.Unauthorized, SRResources.RequestNotAuthorized);
         }
 
         private static bool SkipAuthorization(HttpActionContext actionContext)

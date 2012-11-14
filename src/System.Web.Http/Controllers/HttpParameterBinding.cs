@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,7 +54,7 @@ namespace System.Web.Http.Controllers
         {
             get { return _descriptor; }
         }
-                
+
         /// <summary>
         /// Execute the binding for the given request.
         /// On success, this will add the parameter to the actionContext.ActionArguments dictionary.
@@ -65,6 +65,37 @@ namespace System.Web.Http.Controllers
         /// <param name="cancellationToken">Cancellation token for cancelling the binding operation. Or a binder can also bind a parameter to this.</param>
         /// <returns>Task that is signaled when the binding is complete. For simple bindings from a URI, this should be signalled immediately.
         /// For bindings that read the content body, this may do network IO.</returns>
-        public abstract Task ExecuteBindingAsync(ModelMetadataProvider metadataProvider, HttpActionContext actionContext, CancellationToken cancellationToken);                
+        public abstract Task ExecuteBindingAsync(ModelMetadataProvider metadataProvider, HttpActionContext actionContext, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Helper to get the parameter value from the action context's argument dictionary
+        /// </summary>
+        /// <param name="actionContext">action context </param>
+        /// <returns>the value for this parameter in the given action context, or null if the parameter has not yet been set.</returns>
+        protected object GetValue(HttpActionContext actionContext)
+        {
+            if (actionContext == null)
+            {
+                throw Error.ArgumentNull("actionContext");
+            }
+
+            object value;
+            actionContext.ActionArguments.TryGetValue(Descriptor.ParameterName, out value);
+            return value;
+        }
+
+        /// <summary>
+        /// Helper to set the result of this parameter binding in the action context's argument dictionary. 
+        /// </summary>
+        /// <param name="actionContext">action context.</param>
+        /// <param name="value">parameter value.</param>
+        protected void SetValue(HttpActionContext actionContext, object value)
+        {
+            if (actionContext == null)
+            {
+                throw Error.ArgumentNull("actionContext");
+            }
+            actionContext.ActionArguments[Descriptor.ParameterName] = value;
+        }
     }
 }

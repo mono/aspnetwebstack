@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.WebPages.Validation.Test
 {
@@ -155,7 +155,9 @@ namespace System.Web.WebPages.Validation.Test
 
             // Assert
             Assert.NotEqual(ValidationResult.Success, result);
-            Assert.Equal("Value must be a decimal between 10.8 and 12.2.", result.ErrorMessage);
+            Assert.Equal(
+                String.Format(CultureInfo.CurrentCulture, "Value must be a decimal between {0} and {1}.", 10.8, 12.2),
+                result.ErrorMessage);
             Assert.Equal("foo", result.MemberNames.Single());
         }
 

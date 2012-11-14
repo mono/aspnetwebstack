@@ -1,12 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Web.Razor.Editor;
 using System.Web.Razor.Parser;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.Razor.Test.Framework;
 using System.Web.Razor.Tokenizer.Symbols;
-using Xunit;
-using Xunit.Extensions;
+using Microsoft.TestCommon;
 
 namespace System.Web.Razor.Test.Parser.VB
 {
@@ -15,11 +14,11 @@ namespace System.Web.Razor.Test.Parser.VB
         [Fact]
         public void ParseBlockSwitchesToMarkupWhenAtSignFollowedByLessThanInStatementBlock()
         {
-            ParseBlockTest(@"Code
-    If True Then
-        @<p>It's True!</p>
-    End If
-End Code",
+            ParseBlockTest("Code" + Environment.NewLine
+                         + "    If True Then" + Environment.NewLine
+                         + "        @<p>It's True!</p>" + Environment.NewLine
+                         + "    End If" + Environment.NewLine
+                         + "End Code",
                 new StatementBlock(
                     Factory.MetaCode("Code").Accepts(AcceptedCharacters.None),
                     Factory.Code("\r\n    If True Then\r\n").AsStatement(),
@@ -34,9 +33,9 @@ End Code",
         [Fact]
         public void ParseBlockGivesWhiteSpacePreceedingMarkupBlockToCodeInDesignTimeMode()
         {
-            ParseBlockTest(@"Code
-    @<p>Foo</p>
-End Code",
+            ParseBlockTest("Code" + Environment.NewLine
+                         + "    @<p>Foo</p>" + Environment.NewLine
+                         + "End Code",
                 new StatementBlock(
                     Factory.MetaCode("Code").Accepts(AcceptedCharacters.None),
                     Factory.Code("\r\n    ").AsStatement(),
@@ -58,11 +57,11 @@ End Code",
         [InlineData("Using", "End Using", AcceptedCharacters.None)]
         public void SimpleMarkupSwitch(string keyword, string endSequence, AcceptedCharacters acceptedCharacters)
         {
-            ParseBlockTest(keyword + @"
-    If True Then
-        @<p>It's True!</p>
-    End If
-" + endSequence,
+            ParseBlockTest(keyword + Environment.NewLine
+                         + "    If True Then" + Environment.NewLine
+                         + "        @<p>It's True!</p>" + Environment.NewLine
+                         + "    End If" + Environment.NewLine
+                         + endSequence,
                 new StatementBlock(
                     Factory.Code(keyword + "\r\n    If True Then\r\n").AsStatement(),
                     new MarkupBlock(
@@ -82,12 +81,12 @@ End Code",
         [InlineData("Using", "End Using", AcceptedCharacters.None)]
         public void SingleLineMarkupSwitch(string keyword, string endSequence, AcceptedCharacters acceptedCharacters)
         {
-            ParseBlockTest(keyword + @"
-    If True Then
-        @:<p>It's True!</p>
-        This is code!
-    End If
-" + endSequence,
+            ParseBlockTest(keyword + Environment.NewLine
+                         + "    If True Then" + Environment.NewLine
+                         + "        @:<p>It's True!</p>" + Environment.NewLine
+                         + "        This is code!" + Environment.NewLine
+                         + "    End If" + Environment.NewLine
+                         + endSequence,
                 new StatementBlock(
                     Factory.Code(keyword + "\r\n    If True Then\r\n").AsStatement(),
                     new MarkupBlock(

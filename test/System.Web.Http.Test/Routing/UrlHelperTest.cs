@@ -1,33 +1,49 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Web.Http.Controllers;
+using System.Web.Http.Hosting;
 using Microsoft.TestCommon;
-using Xunit;
-using Xunit.Extensions;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Routing
 {
     public class UrlHelperTest
     {
+        public static TheoryDataSet<string, int?, string> UrlGeneratorTestData
+        {
+            get
+            {
+                return new TheoryDataSet<string, int?, string>()
+                {
+                    { null, 456, "/somerootpath/people/456"}, // Just override ID, so ID is replaced
+                    { "people", 456, "/somerootpath/people/456"}, // Just override ID, so ID is replaced
+                    { null, null, "/somerootpath/people/123"}, // Override nothing, so everything the same
+                    { "people", null, "/somerootpath/people/123"}, // Override nothing, so everything the same
+                    { "customers", 456, "/somerootpath/customers/456"}, // Override everything, so everything changed
+                    { "customers", null, null}, // Override controller, which clears out the ID, so it doesn't match (i.e. null)
+                };
+            }
+        }
+
+        public static TheoryDataSet<string> RequestUrlTestData
+        {
+            get
+            {
+                return new TheoryDataSet<string>
+                {
+                    "http://localhost",
+                    "http://localhost/123",
+                    "http://localhost/123?q=odata&$filter=123#123"
+                };
+            }
+        }
+
         [Fact]
         public void UrlHelper_CtorThrows_WithNullContext()
         {
             Assert.ThrowsArgumentNull(
                 () => new UrlHelper(null),
-                "controllerContext");
-        }
-
-        [Fact]
-        public void ControllerContext_HasUrlHelperWithValidContext()
-        {
-            HttpControllerContext cc = new HttpControllerContext();
-
-            Assert.NotNull(cc.Url);
-            Assert.IsType<UrlHelper>(cc.Url);
-            Assert.Same(cc, cc.Url.ControllerContext);
+                "request");
         }
 
         [Theory]
@@ -81,7 +97,7 @@ namespace System.Web.Http.Routing
         public void UrlHelper_LinkGeneration_GeneratesRightLinksWithDictionary(string controller, int? id, string expectedUrl, string requestUrl)
         {
             var urlHelper = GetUrlHelperForApi();
-            urlHelper.ControllerContext.Request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            urlHelper.Request.RequestUri = new Uri(requestUrl);
             Dictionary<string, object> routeValues = GetRouteValuesAsDictionary(controller, id);
             string baseUrl = new Uri(requestUrl).GetLeftPart(UriPartial.Authority);
 
@@ -97,7 +113,8 @@ namespace System.Web.Http.Routing
         public void UrlHelper_LinkGeneration_GeneratesRightLinksWithObject(string controller, int? id, string expectedUrl, string requestUrl)
         {
             var urlHelper = GetUrlHelperForApi();
-            urlHelper.ControllerContext.Request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            urlHelper.Request.Method = HttpMethod.Get;
+            urlHelper.Request.RequestUri = new Uri(requestUrl);
             object routeValues = GetRouteValuesAsObject(controller, id);
             string baseUrl = new Uri(requestUrl).GetLeftPart(UriPartial.Authority);
 
@@ -108,16 +125,15 @@ namespace System.Web.Http.Routing
 
         private static UrlHelper GetUrlHelperForApi()
         {
-            HttpControllerContext cc = new HttpControllerContext();
+            HttpRequestMessage request = new HttpRequestMessage();
 
             // Set up routes
             var routes = new HttpRouteCollection("/somerootpath");
             IHttpRoute route = routes.MapHttpRoute("route1", "{controller}/{id}");
-            cc.Configuration = new HttpConfiguration(routes);
+            request.Properties[HttpPropertyKeys.HttpConfigurationKey] = new HttpConfiguration(routes);
+            request.Properties[HttpPropertyKeys.HttpRouteDataKey] = new HttpRouteData(route, new HttpRouteValueDictionary(new { controller = "people", id = "123" }));
 
-            cc.RouteData = new HttpRouteData(route, new HttpRouteValueDictionary(new { controller = "people", id = "123" }));
-
-            return cc.Url;
+            return new UrlHelper(request);
         }
 
         private static object GetRouteValuesAsObject(string controller, int? id)
@@ -177,30 +193,6 @@ namespace System.Web.Http.Routing
             }
 
             return routeValues;
-        }
-
-        public static IEnumerable<object[]> UrlGeneratorTestData
-        {
-            get
-            {
-                return new TheoryDataSet<string, int?, string>()
-                {
-                    { null, 456, "/somerootpath/people/456"}, // Just override ID, so ID is replaced
-                    { "people", 456, "/somerootpath/people/456"}, // Just override ID, so ID is replaced
-                    { null, null, "/somerootpath/people/123"}, // Override nothing, so everything the same
-                    { "people", null, "/somerootpath/people/123"}, // Override nothing, so everything the same
-                    { "customers", 456, "/somerootpath/customers/456"}, // Override everything, so everything changed
-                    { "customers", null, null}, // Override controller, which clears out the ID, so it doesn't match (i.e. null)
-                };
-            }
-        }
-
-        public static IEnumerable<object> RequestUrlTestData
-        {
-            get
-            {
-                return new[] { "http://localhost", "http://localhost/123", "http://localhost/123?q=odata&$filter=123#123" };
-            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.IO;
@@ -7,27 +7,24 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Web.Http.SelfHost;
-using Xunit;
+using System.Web.Http.Util;
+using Microsoft.TestCommon;
 
 namespace System.Web.Http.ContentNegotiation
 {
-    public class CustomFormatterTests : IDisposable
+    public class CustomFormatterTests
     {
-        private HttpSelfHostServer server = null;
+        private HttpServer server = null;
         private string baseAddress = null;
         private HttpClient httpClient = null;
-        private HttpSelfHostConfiguration config = null;
+        private HttpConfiguration config = null;
 
         public CustomFormatterTests()
         {
             SetupHost();
-        }
-
-        public void Dispose()
-        {
-            this.CleanupHost();
         }
 
         [Fact]
@@ -47,7 +44,7 @@ namespace System.Web.Http.ContentNegotiation
             response.EnsureSuccessStatusCode();
 
             IEnumerable<string> versionHdr = null;
-            Assert.True(response.Headers.TryGetValues("Version", out versionHdr));
+            Assert.True(response.Content.Headers.TryGetValues("Version", out versionHdr));
             Assert.Equal<string>("1.3.5.0", versionHdr.First());
             Assert.NotNull(response.Content);
             Assert.NotNull(response.Content.Headers.ContentType);
@@ -73,7 +70,7 @@ namespace System.Web.Http.ContentNegotiation
             Assert.Equal<string>("Hello World!", response.Content.ReadAsStringAsync().Result);
         }
 
-        [Fact(Skip = "Test update needed, uses IKeyValueModel")]
+        [Fact]
         public void CustomFormatter_Post_Returns_Request_Integer_Content()
         {
             HttpRequestMessage request = new HttpRequestMessage
@@ -93,8 +90,7 @@ namespace System.Web.Http.ContentNegotiation
             Assert.Equal<int>(100, Convert.ToInt32(response.Content.ReadAsStringAsync().Result));
         }
 
-
-        [Fact(Skip = "Test update needed, uses IKeyValueModel")]
+        [Fact]
         public void CustomFormatter_Post_Returns_Request_ComplexType_Content()
         {
             Order reqOrdr = new Order() { OrderId = "100", OrderValue = 100.00 };
@@ -115,23 +111,15 @@ namespace System.Web.Http.ContentNegotiation
 
         private void SetupHost()
         {
-            httpClient = new HttpClient();
-            baseAddress = String.Format("http://{0}", Environment.MachineName);
+            baseAddress = "http://localhost/";
             config = new HttpSelfHostConfiguration(baseAddress);
             config.Routes.MapHttpRoute("Default", "{controller}/{action}", new { controller = "CustomFormatterTests", action = "EchoOrder" });
+            config.MessageHandlers.Add(new ConvertToStreamMessageHandler());
             config.Formatters.Add(new PlainTextFormatterWithVersionInfo());
             config.Formatters.Add(new PlainTextFormatter());
 
-            server = new HttpSelfHostServer(config);
-            server.OpenAsync().Wait();
-        }
-
-        private void CleanupHost()
-        {
-            if (server != null)
-            {
-                server.CloseAsync().Wait();
-            }
+            server = new HttpServer(config);
+            httpClient = new HttpClient(server);
         }
     }
 
@@ -152,31 +140,31 @@ namespace System.Web.Http.ContentNegotiation
             return true;
         }
 
-        public override void SetDefaultContentHeaders(Type objectType, HttpContentHeaders contentHeaders, string mediaType)
+        public override void SetDefaultContentHeaders(Type objectType, HttpContentHeaders contentHeaders, MediaTypeHeaderValue mediaType)
         {
             base.SetDefaultContentHeaders(objectType, contentHeaders, mediaType);
             contentHeaders.TryAddWithoutValidation("Version", "1.3.5.0");
         }
 
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            string content = null;
+            string stringContent = null;
 
-            using (var reader = new StreamReader(stream))
+            using (var reader = new StreamReader(readStream))
             {
-                content = reader.ReadToEnd();
+                stringContent = reader.ReadToEnd();
             }
 
             TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-            tcs.SetResult(content);
+            tcs.SetResult(stringContent);
 
             return tcs.Task;
         }
 
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
             var output = value.ToString();
-            var writer = new StreamWriter(stream);
+            var writer = new StreamWriter(writeStream);
             writer.Write(output);
             writer.Flush();
 
@@ -204,24 +192,33 @@ namespace System.Web.Http.ContentNegotiation
             return true;
         }
 
-        public override Task<object> ReadFromStreamAsync(Type type, Stream stream, HttpContentHeaders contentHeaders, IFormatterLogger formatterLogger)
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
         {
-            string content = null;
+            object result = null;
 
-            using (var reader = new StreamReader(stream))
+            using (var reader = new StreamReader(readStream))
             {
-                content = reader.ReadToEnd();
+                result = reader.ReadToEnd();
+            }
+
+            if (type == typeof(Int32))
+            {
+                result = Int32.Parse((string)result);
+            }
+            else if (type == typeof(Order))
+            {
+                result = new Order((string)result);
             }
 
             TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-            tcs.SetResult(content);
+            tcs.SetResult(result);
             return tcs.Task;
         }
 
-        public override Task WriteToStreamAsync(Type type, object value, Stream stream, HttpContentHeaders contentHeaders, TransportContext transportContext)
+        public override Task WriteToStreamAsync(Type type, object value, Stream writeStream, HttpContent content, TransportContext transportContext)
         {
             var output = value == null ? String.Empty : value.ToString();
-            var writer = new StreamWriter(stream);
+            var writer = new StreamWriter(writeStream);
             writer.Write(output);
             writer.Flush();
 
@@ -257,6 +254,16 @@ namespace System.Web.Http.ContentNegotiation
         public string OrderId { get; set; }
         public double OrderValue { get; set; }
 
+        public Order() { }
+
+        public Order(string value)
+        {
+            string[] pieces = value.Split(new[] { '\n' }, 2);
+
+            OrderId = pieces[0];
+            OrderValue = Double.Parse(pieces[1]);
+        }
+
         public bool Equals(Order other)
         {
             return (this.OrderId.Equals(other.OrderId) && this.OrderValue.Equals(other.OrderValue));
@@ -269,7 +276,7 @@ namespace System.Web.Http.ContentNegotiation
 
         public override string ToString()
         {
-            return String.Format("OrderId:{0}, OrderValue:{1}", OrderId, OrderValue);
+            return String.Format("{0}\n{1}", OrderId, OrderValue);
         }
     }
 }

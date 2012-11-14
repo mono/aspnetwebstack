@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +46,9 @@ namespace System.Web.Http.Validation
                 return false;
             }
 
-            if (!(member is PropertyInfo))
+            PropertyInfo property = member as PropertyInfo;
+            // if member is not a property or there is no public getter
+            if (property == null || property.GetGetMethod() == null)
             {
                 return false;
             }

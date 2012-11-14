@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -9,8 +9,8 @@ using System.Reflection;
 using System.Web.Compilation;
 using ASP;
 using Microsoft.CSharp;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
 
 namespace ASP
 {

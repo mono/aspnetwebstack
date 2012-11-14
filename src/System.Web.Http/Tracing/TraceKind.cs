@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 namespace System.Web.Http.Tracing
 {
@@ -10,7 +10,7 @@ namespace System.Web.Http.Tracing
         /// <summary>
         /// Single trace, not part of a Begin/End trace pair
         /// </summary>
-        Trace,
+        Trace = 0,
 
         /// <summary>
         /// Trace marking the beginning of some operation.

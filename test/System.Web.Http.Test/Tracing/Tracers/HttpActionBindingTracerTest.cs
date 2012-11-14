@@ -1,13 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.txt in the project root for license information.
 
 using System.Collections.ObjectModel;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
+using Microsoft.TestCommon;
 using Moq;
-using Xunit;
-using Assert = Microsoft.TestCommon.AssertEx;
 
 namespace System.Web.Http.Tracing.Tracers
 {
@@ -41,15 +40,38 @@ namespace System.Web.Http.Tracing.Tracers
         }
 
         [Fact]
+        public void ActionDescriptor_Uses_Inners()
+        {
+            // Arrange
+            HttpActionBinding binding = new Mock<HttpActionBinding>() { CallBase = true }.Object;
+            binding.ActionDescriptor = _mockActionDescriptor.Object;
+            HttpActionBindingTracer tracer = new HttpActionBindingTracer(binding, new TestTraceWriter());
+
+            // Assert
+            Assert.Same(binding.ActionDescriptor, tracer.ActionDescriptor);
+        }
+
+        [Fact]
+        public void ParameterBindings_Uses_Inners()
+        {
+            // Arrange
+            HttpActionBinding binding = new Mock<HttpActionBinding>() { CallBase = true }.Object;
+            HttpParameterBinding[] parameterBindings = new HttpParameterBinding[0];
+            binding.ParameterBindings = parameterBindings;
+            HttpActionBindingTracer tracer = new HttpActionBindingTracer(binding, new TestTraceWriter());
+
+            // Assert
+            Assert.Same(parameterBindings, tracer.ParameterBindings);
+        }
+
+        [Fact]
         public void BindValuesAsync_Invokes_Inner_And_Traces()
         {
             // Arrange
             bool wasInvoked = false;
             Mock<HttpActionBinding> mockBinder = new Mock<HttpActionBinding>() { CallBase = true };
-            mockBinder.Setup(b => b.ExecuteBindingAsync(
-                It.IsAny<HttpActionContext>(),
-                It.IsAny<CancellationToken>())).
-                    Callback(() => wasInvoked = true).Returns(TaskHelpers.Completed());
+            mockBinder.Setup(b => b.ExecuteBindingAsync(It.IsAny<HttpActionContext>(), It.IsAny<CancellationToken>()))
+                .Callback(() => wasInvoked = true).Returns(TaskHelpers.Completed());
 
             TestTraceWriter traceWriter = new TestTraceWriter();
             HttpActionBindingTracer tracer = new HttpActionBindingTracer(mockBinder.Object, traceWriter);
@@ -76,10 +98,8 @@ namespace System.Web.Http.Tracing.Tracers
             TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
             tcs.TrySetException(exception);
             Mock<HttpActionBinding> mockBinder = new Mock<HttpActionBinding>() { CallBase = true };
-            mockBinder.Setup(b => b.ExecuteBindingAsync(
-                 It.IsAny<HttpActionContext>(),
-                 It.IsAny<CancellationToken>())).
-                    Returns(tcs.Task);
+            mockBinder.Setup(b => b.ExecuteBindingAsync(It.IsAny<HttpActionContext>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
 
             TestTraceWriter traceWriter = new TestTraceWriter();
             HttpActionBindingTracer tracer = new HttpActionBindingTracer(mockBinder.Object, traceWriter);
