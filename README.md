@@ -25,12 +25,13 @@ your clone of the repository:
 
 When there are upstream changes you're interested in merging, fetch them but do not apply them to the tree:
 
-    git fetch upstream/master
+    git fetch upstream master
 
 You can replace 'master' with name of the remote branch you need to update from.
 
-To merge all upstream updates, do:
+To merge all upstream updates into master, do:
 
+    git checkout master
     git merge upstream/master
 
 followed by
@@ -40,8 +41,7 @@ followed by
 After that is done and you're ready to make the changes visible to mono, go to your mono repository clone,
 make sure the submodules are initialized and up to date:
 
-    git submodule init
-    git submodule update
+    git submodule update --recursive --init
 
 then go to he external/aspnetwebstack directory and get the changes:
 
