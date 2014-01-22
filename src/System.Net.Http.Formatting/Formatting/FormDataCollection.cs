@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net.Http.Formatting.Internal;
 using System.Net.Http.Formatting.Parsers;
 using System.Text;
@@ -43,39 +44,45 @@ namespace System.Net.Http.Formatting
         /// Uri and FormURl body have the same schema. 
         /// </summary>
         public FormDataCollection(Uri uri)
+            : this(ParseUri(uri))
+        {
+        }
+
+        /// <summary>
+        /// Initialize a form collection from a URL encoded query string.
+        /// Any leading question mark (?) will be considered part of the query string and treated as any other value.
+        /// </summary>        
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1057:StringUriOverloadsCallSystemUriOverloads", Justification = "string is a query string, not a URI")]
+        public FormDataCollection(string query)
+            : this(ParseQueryString(query))
+        {
+        }
+        
+        // Helper to invoke parser around a uri
+        private static IEnumerable<KeyValuePair<string, string>> ParseUri(Uri uri)
         {
             if (uri == null)
             {
                 throw Error.ArgumentNull("uri");
             }
-
+            
             string query = uri.Query;
-            if (query != null && query.Length > 0 && query[0] == '?')
+            if (!String.IsNullOrEmpty(query) && query[0] == '?')
             {
                 query = query.Substring(1);
             }
-
-            _pairs = ParseQueryString(query);
-        }
-
-        /// <summary>
-        /// Initialize a form collection from a URL encoded query string. Any leading question
-        /// mark (?) will be considered part of the query string and treated as any other value.
-        /// </summary>        
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1057:StringUriOverloadsCallSystemUriOverloads", Justification = "string is a query string, not a URI")]
-        public FormDataCollection(string query)
-        {
-            _pairs = ParseQueryString(query);
+            return ParseQueryString(query);
         }
 
         // Helper to invoke parser around a query string
         private static IEnumerable<KeyValuePair<string, string>> ParseQueryString(string query)
         {
-            List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
             if (String.IsNullOrWhiteSpace(query))
             {
-                return result;
+                return Enumerable.Empty<KeyValuePair<string, string>>();
             }
+            
+            List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
             byte[] bytes = Encoding.UTF8.GetBytes(query);
 
